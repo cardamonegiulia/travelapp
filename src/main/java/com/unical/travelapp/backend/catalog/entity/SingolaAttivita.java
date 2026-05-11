@@ -3,13 +3,12 @@ package com.unical.travelapp.backend.catalog.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
-import java.util.List;
 //import com.unical.travelapp.backend.identity.entity.Utente;
 
 @Entity
-@Table(name = "itinerari")
+@Table(name = "singole_attivita")
 @Data
-public class Itinerario {
+public class SingolaAttivita {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,23 +23,13 @@ public class Itinerario {
     @Column(columnDefinition = "TEXT")
     private String descrizione;
 
-    @Column(name = "destinazione_principale")
-    private String destinazionePrincipale;
+    private String luogo;
 
-    @Column(name = "prezzo_base")
-    private BigDecimal prezzoBase;
+    private BigDecimal prezzo;
 
-    @Column(name = "durata_giorni")
-    private Integer durataGiorni;
+    @Column(name = "durata_minuti")
+    private Integer durataMinuti;
 
     @Column(name = "max_partecipanti")
     private Integer maxPartecipanti;
-
-    private String stato;
-
-    @OneToMany(mappedBy = "itinerario", cascade = CascadeType.ALL)
-    private List<Tappa> tappe;
-
-    @OneToMany(mappedBy = "itinerario", cascade = CascadeType.ALL)
-    private List<DisponibilitaItinerario> disponibilita;
 }

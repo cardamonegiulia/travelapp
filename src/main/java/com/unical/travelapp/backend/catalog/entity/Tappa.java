@@ -2,6 +2,7 @@ package com.unical.travelapp.backend.catalog.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.util.List;
 
 @Entity
 @Table(name = "tappe")
@@ -10,19 +11,20 @@ public class Tappa {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_tappa")
     private Long id;
 
-    @Column(name = "ordine", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "itinerario_id")
+    private Itinerario itinerario;
+
+    @Column(name = "nome_citta")
+    private String nomeCitta;
+
     private Integer ordine;
 
-    @Column(name = "descrizione", length = 1000)
-    private String descrizione;
+    @Column(name = "giorni_permanenza")
+    private Integer giorniPermanenza;
 
-    @Column(name = "localita")
-    private String localita;
-
-    @ManyToOne
-    @JoinColumn(name = "id_itinerario")
-    private Itinerario itinerario;
+    @OneToMany(mappedBy = "tappa", cascade = CascadeType.ALL)
+    private List<Attivita> attivita;
 }
