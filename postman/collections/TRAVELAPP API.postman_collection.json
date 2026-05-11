@@ -1,0 +1,93 @@
+{
+  "info": {
+    "_postman_id": "7cf9ce2e-cfd3-4661-9463-b0bbad96566d",
+    "name": "TRAVELAPP API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Identity",
+      "item": [
+        {
+          "name": "Crea nuovo utente",
+          "id": "7a307e9a-33be-4167-8678-2cfd66d8d00c",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"keycloakId\": \"id-finto-123\",\r\n    \"nome\": \"Giulia\",\r\n    \"cognome\": \"Cardamone\",\r\n    \"email\": \"giulia@email.com\",\r\n    \"ruolo\": \"ORGANIZZATORE\",\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/utenti",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utenti"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lista utenti",
+          "id": "988bacaf-34d1-4431-a241-dd7be842f1ab",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/utenti",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utenti"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "c05b4eaf-0bfe-4f69-81a2-b5b2645cdc77"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "id": "c330ac3a-a5a7-4c8c-a5b7-5fa0917e4b80",
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "id": "bbc8acc7-00b3-49f8-83e3-dd8841dbd78a",
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "id": "4fc75283-5e82-430a-808c-c3b874370bb4",
+      "key": "base_url",
+      "value": ""
+    }
+  ]
+}
