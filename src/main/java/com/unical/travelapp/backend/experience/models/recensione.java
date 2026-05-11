@@ -1,4 +1,4 @@
-package com.unical.travelapp.backend.identity.models;
+package com.unical.travelapp.backend.experience.models;
 
 import jakarta.persistence.*;
 
