@@ -57,35 +57,9 @@
       "id": "c05b4eaf-0bfe-4f69-81a2-b5b2645cdc77"
     }
   ],
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "id": "c330ac3a-a5a7-4c8c-a5b7-5fa0917e4b80",
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "id": "bbc8acc7-00b3-49f8-83e3-dd8841dbd78a",
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
-    }
-  ],
   "variable": [
     {
-      "id": "4fc75283-5e82-430a-808c-c3b874370bb4",
+      "id": "2bc3fb4f-bab4-4666-8cb6-6402a5bd9365",
       "key": "base_url",
       "value": ""
     }
