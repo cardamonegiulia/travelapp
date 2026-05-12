@@ -4,23 +4,19 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table(name = "recensioni")
-public class recensione {
+@Table(name = "preferiti")
+public class preferito {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long Id;
-
-    @OneToMany
-    @JoinColumn(name = "prenotazione_id")
-    private Prenotazione prenotazione;
+    private long id;
 
     @OneToMany
     @NotNull
-    @JoinColumn(name = "autore_id")
+    @JoinColumn(name = "utente_id")
     private Utente utente;
 
-    private int voto;
-
-    private String commento;
+    @ManyToMany
+    @JoinColumn(name = "itinerario_id")
+    private Itinerario itinerario;
 }
