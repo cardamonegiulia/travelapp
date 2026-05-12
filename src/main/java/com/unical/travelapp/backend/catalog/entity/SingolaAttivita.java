@@ -3,7 +3,7 @@ package com.unical.travelapp.backend.catalog.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
-//import com.unical.travelapp.backend.identity.entity.Utente;
+import com.unical.travelapp.backend.identity.entity.Utente;
 
 @Entity
 @Table(name = "singole_attivita")
@@ -14,9 +14,9 @@ public class SingolaAttivita {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-//    @ManyToOne
-//    @JoinColumn(name = "organizzatore_id")
-//    private Utente organizzatore;
+    @ManyToOne
+    @JoinColumn(name = "organizzatore_id")
+    private Utente organizzatore;
 
     private String titolo;
 

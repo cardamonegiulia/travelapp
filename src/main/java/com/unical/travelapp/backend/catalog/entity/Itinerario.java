@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
-//import com.unical.travelapp.backend.identity.entity.Utente;
+import com.unical.travelapp.backend.identity.entity.Utente;
 
 @Entity
 @Table(name = "itinerari")
@@ -15,9 +15,9 @@ public class Itinerario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-//    @ManyToOne
-//    @JoinColumn(name = "organizzatore_id")
-//    private Utente organizzatore;
+    @ManyToOne
+    @JoinColumn(name = "organizzatore_id")
+    private Utente organizzatore;
 
     private String titolo;
 
