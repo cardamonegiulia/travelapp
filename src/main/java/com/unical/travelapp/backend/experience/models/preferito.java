@@ -5,6 +5,8 @@ import com.unical.travelapp.backend.identity.entity.Utente;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.List;
+
 @Entity
 @Table(name = "preferiti")
 public class preferito {
@@ -13,12 +15,16 @@ public class preferito {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    @OneToMany
+    @ManyToOne
     @NotNull
     @JoinColumn(name = "utente_id")
     private Utente utente;
 
     @ManyToMany
-    @JoinColumn(name = "itinerario_id")
-    private Itinerario itinerario;
+    @JoinTable(
+            name = "itinerario_preferito",
+            joinColumns = @JoinColumn(name = "preferito_id"),
+            inverseJoinColumns = @JoinColumn(name = "itinerario_id")
+    )
+    private List<Itinerario> itinerario;
 }

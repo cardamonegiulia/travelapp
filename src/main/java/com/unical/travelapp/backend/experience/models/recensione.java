@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.experience.models;
 
+import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -12,11 +13,11 @@ public class recensione {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long Id;
 
-    @OneToMany
+    @ManyToOne
     @JoinColumn(name = "prenotazione_id")
     private Prenotazione prenotazione;
 
-    @OneToMany
+    @ManyToOne
     @NotNull
     @JoinColumn(name = "autore_id")
     private Utente utente;
