@@ -1,5 +1,7 @@
 package com.unical.travelapp.backend.experience.models;
 
+import com.unical.travelapp.backend.catalog.entity.Itinerario;
+import com.unical.travelapp.backend.identity.entity.Utente;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
