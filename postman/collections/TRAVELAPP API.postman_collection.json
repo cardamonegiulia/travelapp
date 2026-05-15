@@ -9,14 +9,14 @@
       "name": "Identity",
       "item": [
         {
-          "name": "Crea nuovo utente",
-          "id": "7a307e9a-33be-4167-8678-2cfd66d8d00c",
+          "name": "Crea utente + assegna ruolo",
+          "id": "9e5c1214-519b-40dd-9301-667885ef3d77",
           "request": {
             "method": "POST",
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"keycloakId\": \"id-finto-123\",\r\n    \"nome\": \"Giulia\",\r\n    \"cognome\": \"Cardamone\",\r\n    \"email\": \"giulia@email.com\",\r\n    \"ruolo\": \"ORGANIZZATORE\",\r\n}",
+              "raw": "{\r\n  \"keycloakId\": \"abc-123-keycloak\",\r\n  \"nome\": \"Mario\",\r\n  \"cognome\": \"Rossi\",\r\n  \"email\": \"mario.rossi@email.com\",\r\n  \"ruolo\": \"VIAGGIATORE\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -24,12 +24,75 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/utenti",
+              "raw": "{{base_url}}/utenti/registrazione",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "utenti"
+                "utenti",
+                "registrazione"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dettaglio Utente(Id)",
+          "id": "b3d43683-8db8-4f1e-841a-5984b7619b31",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Profilo autenticato",
+          "id": "73175929-ac44-4632-8a52-42fc012ae1ea",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Aggiorna profilo",
+          "id": "bae5df24-31a4-4c92-8457-2102605d2919",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/utenti/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utenti",
+                "{id}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Elimina",
+          "id": "4abf0ec3-fb2d-4472-8c1c-a27741fbfafa",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/utenti/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "utenti",
+                "{id}"
               ]
             }
           },
@@ -37,18 +100,24 @@
         },
         {
           "name": "Lista utenti",
-          "id": "988bacaf-34d1-4431-a241-dd7be842f1ab",
+          "id": "13391e34-8290-43e8-b39d-11f3c5a6063e",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/utenti",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "utenti"
-              ]
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dettaglio Utente (ID Keyclock)",
+          "id": "894e4692-b98e-4cad-92b0-e78d33da498d",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
             }
           },
           "response": []
