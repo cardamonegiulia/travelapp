@@ -2,18 +2,23 @@ package com.unical.travelapp.backend.booking.service;
 
 import com.unical.travelapp.backend.booking.dto.CrePrenotazioneRequest;
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
+import com.unical.travelapp.backend.booking.entity.StatoPrenotazione;
 import com.unical.travelapp.backend.booking.repositories.ExtraPrenotazioneRepository;
 import com.unical.travelapp.backend.booking.repositories.PagamentoRepository;
 import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
+import com.unical.travelapp.backend.catalog.entity.Attivita;
 import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
+import com.unical.travelapp.backend.catalog.repository.AttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.DisponibilitaItinerarioRepository;
 import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRepository;
+import com.unical.travelapp.backend.identity.entity.Utente;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,8 +30,7 @@ public class PrenotazioneService {
     private final PrenotazioneRepository prenotazioneRepo;
     private final ExtraPrenotazioneRepository extraPrenotazioneRepo;
     private final PagamentoRepository pagamentoRepo;
-
-
+    private final AttivitaRepository attivitaRepo;
     //private final UtenteRepository utenteRepository;
     private final DisponibilitaItinerarioRepository disponibilitaItinerarioRepository;
     private final SessioneSingolaAttivitaRepository sessioneSingolaAttivitaRepository;
@@ -92,11 +96,40 @@ public class PrenotazioneService {
         return prezzoBase.multiply(partecipanti);
     }
 
+    private BigDecimal calcolaPrezzoExtra(List<Long> extraIds, Integer numeroPartecipanti) {
+        BigDecimal totale = BigDecimal.ZERO;
+
+        if(extraIds == null || extraIds.isEmpty()) return BigDecimal.ZERO;
+
+        for(Long id : extraIds) {
+            Optional<Attivita> optionalAtt = attivitaRepo.findById(id);
+            if(!optionalAtt.isPresent()) {
+                throw new IllegalArgumentException("Attività extra non trovata: " + id);
+            }
+            Attivita att = optionalAtt.get();
+            totale = totale.add(att.getPrezzoExtra().multiply(BigDecimal.valueOf(numeroPartecipanti)));
+        }
+
+        return totale;
+    }
+    private Prenotazione creaEntityPrenotazione (Utente viaggiatore, DisponibilitaItinerario disp, SessioneSingolaAttivita sessione, BigDecimal prezzoTotale, Integer numeroPartecipanti) {
+        return Prenotazione.builder()
+                .viaggiatore(viaggiatore)
+                .disponibilitaItinerario(disp)
+                .sessioneSingolaAttivita(sessione)
+                .numeroPartecipanti(numeroPartecipanti)
+                .prezzoTotale(prezzoTotale)
+                .stato(StatoPrenotazione.IN_ATTESA)
+                .dataPrenotazione(LocalDateTime.now())
+                .build();
+    }
+
 
 
 
     @Transactional
     public Prenotazione createPrenotazione(CrePrenotazioneRequest req) {
+
 
 
 
