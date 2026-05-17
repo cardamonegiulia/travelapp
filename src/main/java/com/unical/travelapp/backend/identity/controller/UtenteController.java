@@ -1,7 +1,9 @@
 package com.unical.travelapp.backend.identity.controller;
 
+import com.unical.travelapp.backend.identity.dto.UtenteDto;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.service.UtenteService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,10 +20,11 @@ public class UtenteController {
         this.utenteService = utenteService;
     }
 
-    // Rotta per creare un nuovo utente (POST)
+
     @PostMapping
-    public ResponseEntity<Utente> creaUtente(@RequestBody Utente utente) {
-        Utente nuovoUtente = utenteService.salvaUtente(utente);
+    public ResponseEntity<Utente> creaUtente(@Valid @RequestBody UtenteDto utenteDto) {
+        // Usiamo il metodo nuovo dello Chef (Service) che sa leggere il DTO
+        Utente nuovoUtente = utenteService.salvaUtenteDatoDTO(utenteDto);
         return ResponseEntity.ok(nuovoUtente);
     }
 

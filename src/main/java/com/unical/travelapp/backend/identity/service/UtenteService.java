@@ -1,5 +1,7 @@
 package com.unical.travelapp.backend.identity.service;
 
+import com.unical.travelapp.backend.identity.dto.UtenteDto;
+import com.unical.travelapp.backend.identity.entity.Ruolo;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.repository.UtenteRepository;
 import org.springframework.stereotype.Service;
@@ -20,7 +22,16 @@ public class UtenteService {
         // Qui andranno i controlli
         return utenteRepository.save(utente);
     }
+    public Utente salvaUtenteDatoDTO(UtenteDto dto) {
+        Utente utente = new Utente();
+        utente.setKeycloakId(dto.getKeycloakId());
+        utente.setNome(dto.getNome());
+        utente.setCognome(dto.getCognome());
+        utente.setEmail(dto.getEmail());
+        utente.setRuolo(dto.getRuolo() != null ? dto.getRuolo() : Ruolo.VIAGGIATORE);
 
+        return utenteRepository.save(utente);
+    }
     public List<Utente> ottieniTutti() {
         return utenteRepository.findAll();
     }
