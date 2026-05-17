@@ -1,6 +1,6 @@
 package com.unical.travelapp.backend.booking.service;
 
-import com.unical.travelapp.backend.booking.dto.CrePrenotazioneRequest;
+import com.unical.travelapp.backend.booking.dto.CreaPrenotazioneRequest;
 import com.unical.travelapp.backend.booking.entity.*;
 import com.unical.travelapp.backend.booking.repositories.ExtraPrenotazioneRepository;
 import com.unical.travelapp.backend.booking.repositories.PagamentoRepository;
@@ -49,7 +49,7 @@ public class PrenotazioneService {
         return utente.get();
     }
 
-    private void validaRichiesta(CrePrenotazioneRequest req){
+    private void validaRichiesta(CreaPrenotazioneRequest req){
         // qui controllo se numeroPartecipanti presente e > 0
         if(req.getNumeroPartecipanti() == null || req.getNumeroPartecipanti() <= 0){
             throw new IllegalArgumentException  ("numeri posti non disponibili");
@@ -174,8 +174,9 @@ public class PrenotazioneService {
             extraPrenotazioneRepo.save(extra);
         }
     }
-
-    private Pagamento creaPagamento (Prenotazione prenotazione, BigDecimal prezzoTotale) {
+    // al momento non sto usando il return quindi ho lascia cosi perche in futuro puo essre utile
+    // o lo levo e faccio un metodo void
+    private void creaPagamento (Prenotazione prenotazione, BigDecimal prezzoTotale) {
         Pagamento pay = Pagamento.builder()
                 .prenotazione(prenotazione)
                 .importo(prezzoTotale)
@@ -183,13 +184,10 @@ public class PrenotazioneService {
                 .stato(StatoPagamento.IN_ATTESA)
                 .build();
         pagamentoRepo.save(pay);
-
-        return pay;
     }
 
-
     @Transactional
-    public Prenotazione createPrenotazione(CrePrenotazioneRequest req) {
+    public Prenotazione createPrenotazione(CreaPrenotazioneRequest req) {
         validaRichiesta(req);
         Utente viaggiatore = recuperaUtente(req.getViaggiatoreId());
 
@@ -223,4 +221,89 @@ public class PrenotazioneService {
         creaPagamento(prenotazioneSave, prezzoTotale);
         return prenotazioneSave;
     }
+
+    public Prenotazione getPrenotazioneById(Long id){
+        Optional<Prenotazione> prenotazioneId = prenotazioneRepo.findById(id);
+        if(prenotazioneId.isPresent()) {
+            return prenotazioneId.get();
+        }
+        throw new IllegalArgumentException("Prenotazione non trovata: " + id);
+    }
+
+    public List<Prenotazione> getPrenotazioniByUtente(Long utenteId) {
+        recuperaUtente(utenteId);
+        return prenotazioneRepo.findByViaggiatoreId(utenteId);
+    }
+
+    // la firma è Prenotazione perchè dopo il pagamento il frontend vuole vedere la prenotazione aggiornata
+    // ma si poteva anche usare Pagamento ma non credo sia coerente per il motivo sopra riportato
+    @Transactional
+    public Prenotazione pagaPrenotazione(Long prenotazioneId){
+        Optional<Pagamento> pagamento = pagamentoRepo.findByPrenotazioneId(prenotazioneId);
+
+        if(!pagamento.isPresent()){
+            throw new IllegalArgumentException("Pagamento non trovato: " + prenotazioneId);
+        }
+
+        Pagamento pay = pagamento.get();
+        Prenotazione prenotazione = pay.getPrenotazione();
+
+        if(prenotazione.getStato().equals(StatoPrenotazione.CANCELLATA)){
+            throw new IllegalArgumentException("Non puoi pagare una prenotazione cancellata: " + prenotazioneId);
+        }
+
+        if(pay.getStato().equals(StatoPagamento.COMPLETATO)){
+            throw new IllegalArgumentException("Pagamento gia completato: " + prenotazioneId);
+        }
+
+        pay.setStato(StatoPagamento.COMPLETATO);
+        pay.setDataPagamento(LocalDateTime.now());
+
+        prenotazione.setStato(StatoPrenotazione.CONFERMATA);
+
+        pagamentoRepo.save(pay);
+        return prenotazioneRepo.save(prenotazione);
+    }
+
+    // qui gestisco l'annullamento di una prenotazione, da capire se posso compattarla
+    @Transactional
+    public Prenotazione annullaPrenotazione(Long prenotazioneId) {
+        Prenotazione prenotazione = getPrenotazioneById(prenotazioneId);
+
+        if(prenotazione.getStato().equals(StatoPrenotazione.CANCELLATA)) {
+            throw new IllegalArgumentException("Prenotazione gia cancellata: " + prenotazioneId);
+        }
+
+        //se itinerario ripristino i posti, stessa cosa dopo con sessione singola attività
+        if(prenotazione.getDisponibilitaItinerario() != null) {
+            DisponibilitaItinerario disp = prenotazione.getDisponibilitaItinerario();
+            disp.setPostiDisponibili(disp.getPostiDisponibili() + prenotazione.getNumeroPartecipanti());
+        }
+
+        if(prenotazione.getSessioneSingolaAttivita() != null) {
+            SessioneSingolaAttivita sessione = prenotazione.getSessioneSingolaAttivita();
+            sessione.setPostiDisponibili(sessione.getPostiDisponibili() + prenotazione.getNumeroPartecipanti());
+        }
+
+        // qui recupero il pagamento e poi controllo se esiste e in base allo stato effettuo un rimborso o altro
+        Optional<Pagamento> pagamento = pagamentoRepo.findByPrenotazioneId(prenotazioneId);
+
+        if(pagamento.isPresent()) {
+            Pagamento pay = pagamento.get();
+
+            if(pay.getStato().equals(StatoPagamento.COMPLETATO)) {
+                pay.setStato(StatoPagamento.RIMBORSATO);
+            } else if(pay.getStato().equals(StatoPagamento.IN_ATTESA)) {
+                pay.setStato(StatoPagamento.FALLITO);
+            }
+
+            pagamentoRepo.save(pay);
+        }
+
+        prenotazione.setStato(StatoPrenotazione.CANCELLATA);
+
+        return prenotazioneRepo.save(prenotazione);
+    }
+
+
 }
