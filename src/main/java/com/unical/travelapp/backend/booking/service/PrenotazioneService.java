@@ -12,12 +12,12 @@ import com.unical.travelapp.backend.catalog.repository.AttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.DisponibilitaItinerarioRepository;
 import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRepository;
 import com.unical.travelapp.backend.identity.entity.Utente;
+import com.unical.travelapp.backend.identity.repository.UtenteRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +31,7 @@ public class PrenotazioneService {
     private final ExtraPrenotazioneRepository extraPrenotazioneRepo;
     private final PagamentoRepository pagamentoRepo;
     private final AttivitaRepository attivitaRepo;
-    //private final UtenteRepository utenteRepository;
+    private final UtenteRepository utenteRepository;
     private final DisponibilitaItinerarioRepository disponibilitaItinerarioRepository;
     private final SessioneSingolaAttivitaRepository sessioneSingolaAttivitaRepository;
 
@@ -39,17 +39,35 @@ public class PrenotazioneService {
     // cretePrenotazione era diventata troppo grande quindi ora creo diversi piccoli metodi
     // cosi da avere una logica pulita e leggibile da usare poi dentro createPrenotazione.
 
+    private Utente recuperaUtente(Long id) {
+        Optional<Utente> utente = utenteRepository.findById(id);
+
+        if (!utente.isPresent()) {
+            throw new IllegalArgumentException("Utente non trovato");
+        }
+
+        return utente.get();
+    }
+
     private void validaRichiesta(CrePrenotazioneRequest req){
+        // qui controllo se numeroPartecipanti presente e > 0
         if(req.getNumeroPartecipanti() == null || req.getNumeroPartecipanti() <= 0){
             throw new IllegalArgumentException  ("numeri posti non disponibili");
         }
+        // qui che almeno uno tra itinerario/sessione è selezionato
         if(req.getDisponibilitaItinerarioId() == null && req.getSessioneSingolaAttivitaId() == null ){
             throw new IllegalArgumentException ("Devi selezionare un itinerario o una singola attività");
         }
+        // qui che non possono essere entrambi insieme/selezionati
         if(req.getDisponibilitaItinerarioId() != null && req.getSessioneSingolaAttivitaId() != null ){
             throw new IllegalArgumentException ("Devi selezionare un itinerario o una singola attività");
         }
+        // qui vieto gli extra per sessione singola
+        if(req.getSessioneSingolaAttivitaId() != null && req.getAttivitaExtraIds() != null && !req.getAttivitaExtraIds().isEmpty()){
+            throw new IllegalArgumentException("Non ci sono attività extra per le singole attività");
+        }
     }
+
     private DisponibilitaItinerario recuperaDisponibilita (Long id){
         Optional<DisponibilitaItinerario> dispon = disponibilitaItinerarioRepository.findById(id);
         if(!dispon.isPresent()){
@@ -96,22 +114,39 @@ public class PrenotazioneService {
         return prezzoBase.multiply(partecipanti);
     }
 
-    private BigDecimal calcolaPrezzoExtra(List<Long> extraIds, Integer numeroPartecipanti) {
+    private Attivita recuperaEValidaAttivitaExtra(Long id, DisponibilitaItinerario disp) {
+        Optional<Attivita> optionalAtt = attivitaRepo.findById(id);
+
+        if(!optionalAtt.isPresent()) {
+            throw new IllegalArgumentException("Attivita non trovata: " + id);
+        }
+
+        Attivita att = optionalAtt.get();
+
+        if(att.getTappa() == null || att.getTappa().getItinerario() == null){
+            throw new IllegalArgumentException("Tappa o itinerario non associati all'attività: " + id);
+        }
+
+        if(!att.getTappa().getItinerario().getId().equals(disp.getItinerario().getId())){
+            throw new IllegalArgumentException("Attivita non inerente all'itinerario scelto!");
+        }
+
+        return att;
+    }
+
+    private BigDecimal calcolaPrezzoExtra(List<Long> extraIds, Integer numeroPartecipanti, DisponibilitaItinerario disp) {
         BigDecimal totale = BigDecimal.ZERO;
 
         if(extraIds == null || extraIds.isEmpty()) return BigDecimal.ZERO;
 
         for(Long id : extraIds) {
-            Optional<Attivita> optionalAtt = attivitaRepo.findById(id);
-            if(!optionalAtt.isPresent()) {
-                throw new IllegalArgumentException("Attività extra non trovata: " + id);
-            }
-            Attivita att = optionalAtt.get();
+            Attivita att = recuperaEValidaAttivitaExtra(id, disp);
             totale = totale.add(att.getPrezzoExtra().multiply(BigDecimal.valueOf(numeroPartecipanti)));
         }
 
         return totale;
     }
+
     private Prenotazione creaEntityPrenotazione (Utente viaggiatore, DisponibilitaItinerario disp, SessioneSingolaAttivita sessione, BigDecimal prezzoTotale, Integer numeroPartecipanti) {
         return Prenotazione.builder()
                 .viaggiatore(viaggiatore)
@@ -124,20 +159,18 @@ public class PrenotazioneService {
                 .build();
     }
 
-    private void creaExtraPrenotazione (Prenotazione prenotazione, List<Long> extraIds) {
+    private void creaExtraPrenotazione(Prenotazione prenotazione, List<Long> extraIds, DisponibilitaItinerario disp) {
         if(extraIds == null || extraIds.isEmpty()) return;
 
         for(Long id : extraIds) {
-            Optional<Attivita> optionalAtt = attivitaRepo.findById(id);
-            if(!optionalAtt.isPresent()) {
-                throw new IllegalArgumentException("Attivita non trovata: " + id);
-            }
-            Attivita att = optionalAtt.get();
+            Attivita att = recuperaEValidaAttivitaExtra(id, disp);
+
             ExtraPrenotazione extra = ExtraPrenotazione.builder()
                     .prenotazione(prenotazione)
                     .attivita(att)
                     .prezzoExtra(att.getPrezzoExtra())
                     .build();
+
             extraPrenotazioneRepo.save(extra);
         }
     }
@@ -155,16 +188,39 @@ public class PrenotazioneService {
     }
 
 
-
-
-
-
     @Transactional
     public Prenotazione createPrenotazione(CrePrenotazioneRequest req) {
+        validaRichiesta(req);
+        Utente viaggiatore = recuperaUtente(req.getViaggiatoreId());
 
+        boolean isItinerario = req.getDisponibilitaItinerarioId() != null;
 
+        DisponibilitaItinerario disponibilitaItinerario = null;
+        SessioneSingolaAttivita sessioneSingolaAttivita = null;
+        BigDecimal prezzoBase;
+        BigDecimal prezzoExtra;
+        BigDecimal prezzoTotale;
 
+        if(isItinerario) {
+            disponibilitaItinerario = recuperaDisponibilita(req.getDisponibilitaItinerarioId());
+            controllaEScalaPostiItinerario(disponibilitaItinerario, req.getNumeroPartecipanti());
+            prezzoBase = calcolaPrezzoItinerario(disponibilitaItinerario, req.getNumeroPartecipanti());
+            prezzoExtra = calcolaPrezzoExtra(req.getAttivitaExtraIds(), req.getNumeroPartecipanti(), disponibilitaItinerario);
+            prezzoTotale = prezzoBase.add(prezzoExtra);
+        }else{
+            sessioneSingolaAttivita = recuperaSingolaAttivita(req.getSessioneSingolaAttivitaId());
+            controllaEScalaPostiSessione(sessioneSingolaAttivita, req.getNumeroPartecipanti());
+            prezzoBase = calcolaPrezzoSessioneSingola(sessioneSingolaAttivita, req.getNumeroPartecipanti());
+            prezzoTotale = prezzoBase;
+        }
 
-        return null;
+        Prenotazione prenotazione= creaEntityPrenotazione(viaggiatore,disponibilitaItinerario, sessioneSingolaAttivita, prezzoTotale, req.getNumeroPartecipanti());
+        Prenotazione prenotazioneSave = prenotazioneRepo.save(prenotazione);
+
+        if(isItinerario){
+            creaExtraPrenotazione(prenotazioneSave, req.getAttivitaExtraIds(), disponibilitaItinerario);
+        }
+        creaPagamento(prenotazioneSave, prezzoTotale);
+        return prenotazioneSave;
     }
 }
