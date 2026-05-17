@@ -15,22 +15,24 @@ public class UtenteController {
 
     private final UtenteService utenteService;
 
-    // Iniezione del Service
     public UtenteController(UtenteService utenteService) {
         this.utenteService = utenteService;
     }
 
-
     @PostMapping
     public ResponseEntity<Utente> creaUtente(@Valid @RequestBody UtenteDto utenteDto) {
-        // Usiamo il metodo nuovo dello Chef (Service) che sa leggere il DTO
         Utente nuovoUtente = utenteService.salvaUtenteDatoDTO(utenteDto);
-        return ResponseEntity.ok(nuovoUtente);
+        return ResponseEntity.status(201).body(nuovoUtente);
     }
 
-    // Rotta per leggere tutti gli utenti (GET)
     @GetMapping
     public ResponseEntity<List<Utente>> getTuttiGliUtenti() {
         return ResponseEntity.ok(utenteService.ottieniTutti());
+    }
+
+    // Nuovo
+    @GetMapping("/{id}")
+    public ResponseEntity<Utente> getUtentePerId(@PathVariable Long id) {
+        return ResponseEntity.ok(utenteService.ottieniPerId(id));
     }
 }
