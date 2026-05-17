@@ -2,15 +2,18 @@ package com.unical.travelapp.backend.booking.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "pagamenti")
 public class Pagamento {
@@ -26,7 +29,7 @@ public class Pagamento {
     private BigDecimal importo;
 
     @Column(nullable = false)
-    private Timestamp dataPagamento;
+    private LocalDateTime dataPagamento;
 
     @Enumerated(EnumType.STRING)
     private StatoPagamento stato;

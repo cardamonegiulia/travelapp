@@ -1,8 +1,7 @@
 package com.unical.travelapp.backend.booking.service;
 
 import com.unical.travelapp.backend.booking.dto.CrePrenotazioneRequest;
-import com.unical.travelapp.backend.booking.entity.Prenotazione;
-import com.unical.travelapp.backend.booking.entity.StatoPrenotazione;
+import com.unical.travelapp.backend.booking.entity.*;
 import com.unical.travelapp.backend.booking.repositories.ExtraPrenotazioneRepository;
 import com.unical.travelapp.backend.booking.repositories.PagamentoRepository;
 import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
@@ -18,6 +17,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -123,6 +123,38 @@ public class PrenotazioneService {
                 .dataPrenotazione(LocalDateTime.now())
                 .build();
     }
+
+    private void creaExtraPrenotazione (Prenotazione prenotazione, List<Long> extraIds) {
+        if(extraIds == null || extraIds.isEmpty()) return;
+
+        for(Long id : extraIds) {
+            Optional<Attivita> optionalAtt = attivitaRepo.findById(id);
+            if(!optionalAtt.isPresent()) {
+                throw new IllegalArgumentException("Attivita non trovata: " + id);
+            }
+            Attivita att = optionalAtt.get();
+            ExtraPrenotazione extra = ExtraPrenotazione.builder()
+                    .prenotazione(prenotazione)
+                    .attivita(att)
+                    .prezzoExtra(att.getPrezzoExtra())
+                    .build();
+            extraPrenotazioneRepo.save(extra);
+        }
+    }
+
+    private Pagamento creaPagamento (Prenotazione prenotazione, BigDecimal prezzoTotale) {
+        Pagamento pay = Pagamento.builder()
+                .prenotazione(prenotazione)
+                .importo(prezzoTotale)
+                .dataPagamento(LocalDateTime.now())
+                .stato(StatoPagamento.IN_ATTESA)
+                .build();
+        pagamentoRepo.save(pay);
+
+        return pay;
+    }
+
+
 
 
 
