@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CrePrenotazioneRequest {
+public class CreaPrenotazioneRequest {
     //chi prenota
     private Long viaggiatoreId;
     //se prenota un itinerario
