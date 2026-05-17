@@ -1,6 +1,7 @@
 package com.unical.travelapp.backend.identity.controller;
 
 import com.unical.travelapp.backend.identity.dto.UtenteDto;
+import com.unical.travelapp.backend.identity.dto.UtenteResponseDto;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import jakarta.validation.Valid;
@@ -20,19 +21,17 @@ public class UtenteController {
     }
 
     @PostMapping
-    public ResponseEntity<Utente> creaUtente(@Valid @RequestBody UtenteDto utenteDto) {
-        Utente nuovoUtente = utenteService.salvaUtenteDatoDTO(utenteDto);
-        return ResponseEntity.status(201).body(nuovoUtente);
+    public ResponseEntity<UtenteResponseDto> creaUtente(@Valid @RequestBody UtenteDto utenteDto) {
+        return ResponseEntity.status(201).body(utenteService.salvaUtenteDatoDTO(utenteDto));
     }
 
     @GetMapping
-    public ResponseEntity<List<Utente>> getTuttiGliUtenti() {
+    public ResponseEntity<List<UtenteResponseDto>> getTuttiGliUtenti() {
         return ResponseEntity.ok(utenteService.ottieniTutti());
     }
 
-    // Nuovo
     @GetMapping("/{id}")
-    public ResponseEntity<Utente> getUtentePerId(@PathVariable Long id) {
+    public ResponseEntity<UtenteResponseDto> getUtentePerId(@PathVariable Long id) {
         return ResponseEntity.ok(utenteService.ottieniPerId(id));
     }
 }
