@@ -2,6 +2,7 @@ package com.unical.travelapp.backend.identity.service;
 
 import com.unical.travelapp.backend.identity.dto.UtenteDto;
 import com.unical.travelapp.backend.identity.dto.UtenteResponseDto;
+import com.unical.travelapp.backend.identity.dto.UtenteUpdateDto;
 import com.unical.travelapp.backend.identity.entity.Ruolo;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
@@ -66,5 +67,23 @@ public class UtenteService {
 
     public Utente salvaUtente(Utente utente) {
         return utenteRepository.save(utente);
+    }
+    public UtenteResponseDto aggiornaUtente(Long id, UtenteUpdateDto dto) {
+        Utente utente = utenteRepository.findById(id)
+                .orElseThrow(() -> new UtenteNonTrovatoException(
+                        "Utente con id " + id + " non trovato"
+                ));
+
+        // controllo email duplicata solo se è stata modificata
+        if (dto.getEmail() != null &&
+                !utente.getEmail().equals(dto.getEmail()) &&
+                utenteRepository.existsByEmail(dto.getEmail())) {
+            throw new UtenteGiaEsistenteException(
+                    "Esiste già un utente con email: " + dto.getEmail()
+            );
+        }
+
+        utenteMapper.updateEntity(utente, dto);
+        return utenteMapper.toResponseDto(utenteRepository.save(utente));
     }
 }

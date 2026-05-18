@@ -9,14 +9,83 @@
       "name": "Identity",
       "item": [
         {
-          "name": "Crea utente + assegna ruolo",
-          "id": "9e5c1214-519b-40dd-9301-667885ef3d77",
+          "name": "ottieni token",
+          "id": "ce74b78b-5d4a-4d8d-afb1-9f1c72039990",
           "request": {
             "method": "POST",
             "header": [],
             "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text",
+                  "uuid": "77dadf12-465d-4162-9de5-d42a73e62c8f"
+                },
+                {
+                  "key": "client_id",
+                  "value": "travelapp-backend",
+                  "type": "text",
+                  "uuid": "28daa838-7cd7-4a05-9e34-0382cc7ca73e"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "teYdBrYper9ym5i2PxsJ3lqBWp7lPlG1",
+                  "type": "text",
+                  "uuid": "2d1f9cfc-cdd7-4fa1-9f00-b3cf185a0f01"
+                },
+                {
+                  "key": "username",
+                  "value": "testuser",
+                  "type": "text",
+                  "uuid": "eb863095-f3af-411b-9501-51e6ff863aee"
+                },
+                {
+                  "key": "password",
+                  "value": "test123",
+                  "type": "text",
+                  "uuid": "647a9bb5-daf6-4db1-9917-8b05520aee6a"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8180/realms/travelapp/protocol/openid-connect/token",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8180",
+              "path": [
+                "realms",
+                "travelapp",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "crea utente",
+          "id": "0289f1d3-e08c-4b9d-8d2e-c8e200081277",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVekloZnFzUDBiQlVUYlZxbHoyR3dwZG81QUxMRGJZNERIclVLRFZsYkVFIn0.eyJleHAiOjE3NzkwOTE4OTgsImlhdCI6MTc3OTA5MTU5OCwianRpIjoiZGFhNDNiM2ItZDViMy00YzliLTllMjYtNDk2ZGY5NDM4YWVjIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy90cmF2ZWxhcHAiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiMGEzYWIwNDctMzQ1Ny00ODVjLThjNzAtNWYzYWQxNTBmYmJlIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidHJhdmVsYXBwLWJhY2tlbmQiLCJzZXNzaW9uX3N0YXRlIjoiODZlZDc4ZmMtMWIwMS00MjA0LThlZDQtOGUxNGZkZmNmM2U5IiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIvKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJkZWZhdWx0LXJvbGVzLXRyYXZlbGFwcCIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwic2lkIjoiODZlZDc4ZmMtMWIwMS00MjA0LThlZDQtOGUxNGZkZmNmM2U5IiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJ0ZXN0IHVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciIsImdpdmVuX25hbWUiOiJ0ZXN0IiwiZmFtaWx5X25hbWUiOiJ1c2VyIiwiZW1haWwiOiJ0ZXN0dXNlckB0cmF2ZWxhcHAuY29tIn0.SgNKw-vhDbPrRYHfPipmlZ-Fsdj39dQGHFXOwWJeNCeXm6hLbPO50l4UTEaOvVHquY2WxmL0Yfhgy2_GWGX6M2YXYJ76lMoVpPMNPfxuBrEJ-w-SfUa7SqAaV-At8XXHC92aOz3TqJdGce62xuA-9Nvt3k4PUWbw50KCkGOpw-CwymP6Gd_hneCklHDkqaIZa6_cXZGEJHUjGUzvMuArbk_mHP4ihrT45y2TCSRDxn1a3vI80i0JQKEQiW-csV2AyBqflig54iqaP2ZtxS0uB5u_4SFGw233DoJrT86YbKSHF-n_Xp45zdA5NWB0z9upxiXmhWl6f6sajzyXrRVb8g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"keycloakId\": \"abc-123-keycloak\",\r\n  \"nome\": \"Mario\",\r\n  \"cognome\": \"Rossi\",\r\n  \"email\": \"mario.rossi@email.com\",\r\n  \"ruolo\": \"VIAGGIATORE\"\r\n}",
+              "raw": "{\r\n    \"keycloakId\": \"test-keycloak-id\",\r\n    \"nome\": \"Mario\",\r\n    \"cognome\": \"Rossi\",\r\n    \"email\": \"mario@travelapp.com\",\r\n    \"ruolo\": \"VIAGGIATORE\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -24,21 +93,23 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/utenti/registrazione",
+              "raw": "http://localhost:8080/api/utenti",
+              "protocol": "http",
               "host": [
-                "{{base_url}}"
+                "localhost"
               ],
+              "port": "8080",
               "path": [
-                "utenti",
-                "registrazione"
+                "api",
+                "utenti"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "Dettaglio Utente(Id)",
-          "id": "b3d43683-8db8-4f1e-841a-5984b7619b31",
+          "name": "utente per id",
+          "id": "c79b2ccf-9161-4800-8c74-e07d830898e6",
           "request": {
             "method": "GET",
             "header": [],
@@ -49,8 +120,8 @@
           "response": []
         },
         {
-          "name": "Profilo autenticato",
-          "id": "73175929-ac44-4632-8a52-42fc012ae1ea",
+          "name": "utente per id INESISTENTE",
+          "id": "a83d1dd8-ffdf-4b4a-8c5d-82b46a85a9df",
           "request": {
             "method": "GET",
             "header": [],
@@ -61,93 +132,215 @@
           "response": []
         },
         {
-          "name": "Aggiorna profilo",
-          "id": "bae5df24-31a4-4c92-8457-2102605d2919",
+          "name": "Aggiorna solo il nome",
+          "id": "ce810747-0593-498c-bc8b-cb04a56d1deb",
           "request": {
             "method": "PUT",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/utenti/{id}",
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "aggiorna con email già esistente",
+          "id": "24304b11-a803-4da9-8737-158663e7fd64",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVekloZnFzUDBiQlVUYlZxbHoyR3dwZG81QUxMRGJZNERIclVLRFZsYkVFIn0.eyJleHAiOjE3NzkwOTIxMzcsImlhdCI6MTc3OTA5MTgzNywianRpIjoiM2VjZjFjNDMtZGQxZC00NThkLWIwNWQtMGY5M2VjNTBlZjNiIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy90cmF2ZWxhcHAiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiMGEzYWIwNDctMzQ1Ny00ODVjLThjNzAtNWYzYWQxNTBmYmJlIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidHJhdmVsYXBwLWJhY2tlbmQiLCJzZXNzaW9uX3N0YXRlIjoiMTU0NDZkMjQtOTliOS00YTExLTllY2YtOGM4YWJmZDMzZDFiIiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIvKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJkZWZhdWx0LXJvbGVzLXRyYXZlbGFwcCIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwic2lkIjoiMTU0NDZkMjQtOTliOS00YTExLTllY2YtOGM4YWJmZDMzZDFiIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJ0ZXN0IHVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciIsImdpdmVuX25hbWUiOiJ0ZXN0IiwiZmFtaWx5X25hbWUiOiJ1c2VyIiwiZW1haWwiOiJ0ZXN0dXNlckB0cmF2ZWxhcHAuY29tIn0.Z4Kv8X9NZuNE_1YDpl6UoYrnKsaXtCX2DzmHPDqOsFvbHZDzRQDE-ObxwRrVX8NUiZMDPO6YTfp9WaqvqKM5BGkF_Z3dKzwCKA9oK6ho06MSx-HiDOqCcnwdfB4hvE2XwAL2zOWU0wBe54DimfOjMbkT9PAVBS1-rGSGM8yOd-sAg0j2IO5rTyuwFtsI-X_GkKb_d-4qhJ1-m5rpkSFWnvZ0k0CmXh-CeSzaEdGrqES0BNtU5JScPkgz2Sq46Qxqi1P7DrBAi2CxjzOCtioggrLbqjXhIZ2vKuJ-Olb6-tPqbE38q9jK6EHo2jWEozqcGeOdp8IOI9GBq5gHRx-omg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"mario@travelapp.com\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/utenti/1",
+              "protocol": "http",
               "host": [
-                "{{base_url}}"
+                "localhost"
               ],
+              "port": "8080",
               "path": [
+                "api",
                 "utenti",
-                "{id}"
+                "1"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "Elimina",
-          "id": "4abf0ec3-fb2d-4472-8c1c-a27741fbfafa",
+          "name": "aggiorna con email non valida",
+          "id": "81d0fbcf-92cb-47e3-8100-8fd9ce6a3074",
           "request": {
-            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVekloZnFzUDBiQlVUYlZxbHoyR3dwZG81QUxMRGJZNERIclVLRFZsYkVFIn0.eyJleHAiOjE3NzkwOTI2NDcsImlhdCI6MTc3OTA5MjM0NywianRpIjoiYjZhM2I1OWQtNWZmYi00OThmLWI1YmYtNDUzNjgxNTZhMTBiIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy90cmF2ZWxhcHAiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiMGEzYWIwNDctMzQ1Ny00ODVjLThjNzAtNWYzYWQxNTBmYmJlIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidHJhdmVsYXBwLWJhY2tlbmQiLCJzZXNzaW9uX3N0YXRlIjoiNTgwMzhjYjQtMjc0MC00MzE2LWFlYzYtZTM3OTFhODA5NDUyIiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIvKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJkZWZhdWx0LXJvbGVzLXRyYXZlbGFwcCIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwic2lkIjoiNTgwMzhjYjQtMjc0MC00MzE2LWFlYzYtZTM3OTFhODA5NDUyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJ0ZXN0IHVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciIsImdpdmVuX25hbWUiOiJ0ZXN0IiwiZmFtaWx5X25hbWUiOiJ1c2VyIiwiZW1haWwiOiJ0ZXN0dXNlckB0cmF2ZWxhcHAuY29tIn0.UyyBRxAXRMZVrUPvN5wet-wscXLDw0iCyaRa464bqkkqbmKw66qSYb2gDfthn5rh0GPzCEIf0f-FHqSaM7BC1EN1UoRr0KyAiNkOF6e9foY9XvXuSJVQgTMy-ObjLA4aIpJEmdLiCcaCTwD03iV81KwG5zDgOHuQrrFtw9yVsIr05YMrNSxijj61plqzYKAZKtuUDsOd5xNIS2VosDCT20ae3rEC19420OrlMiecFU_3fKW63MmGqB5jOH1v5lhLaOAZ8-yGNCOflCzGtaF87W2XznC7TJQVTtaL-LecQDqsZVfcsL-dhGSis3Ps_xXmhBYsQM8ImJlSFurA92QcAw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
             "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"nonèunemail\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": "{{base_url}}/utenti/{id}",
+              "raw": "http://localhost:8080/api/utenti/1",
+              "protocol": "http",
               "host": [
-                "{{base_url}}"
+                "localhost"
               ],
+              "port": "8080",
               "path": [
+                "api",
                 "utenti",
-                "{id}"
+                "1"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "Lista utenti",
-          "id": "13391e34-8290-43e8-b39d-11f3c5a6063e",
+          "name": "Aggiorna utente inesistente",
+          "id": "1f0e0364-9979-478a-b610-919086eed888",
           "request": {
-            "method": "GET",
+            "method": "PUT",
             "header": [],
             "url": {
-              "raw": ""
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Dettaglio Utente (ID Keyclock)",
-          "id": "894e4692-b98e-4cad-92b0-e78d33da498d",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": ""
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "New Request",
-          "id": "ce74b78b-5d4a-4d8d-afb1-9f1c72039990",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": ""
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "New Request",
-          "id": "debcc2d8-8bbc-44ce-a8d1-bcb4e966e441",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": ""
+              "raw": "http://localhost:8080/api/utenti/9999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "utenti",
+                "9999"
+              ]
             }
           },
           "response": []
         }
       ],
       "id": "c05b4eaf-0bfe-4f69-81a2-b5b2645cdc77"
+    },
+    {
+      "name": "crea utente duplicato",
+      "id": "7e3703bc-53de-46cc-bda1-9f912ff86545",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVekloZnFzUDBiQlVUYlZxbHoyR3dwZG81QUxMRGJZNERIclVLRFZsYkVFIn0.eyJleHAiOjE3NzkwOTIxMzcsImlhdCI6MTc3OTA5MTgzNywianRpIjoiM2VjZjFjNDMtZGQxZC00NThkLWIwNWQtMGY5M2VjNTBlZjNiIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy90cmF2ZWxhcHAiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiMGEzYWIwNDctMzQ1Ny00ODVjLThjNzAtNWYzYWQxNTBmYmJlIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidHJhdmVsYXBwLWJhY2tlbmQiLCJzZXNzaW9uX3N0YXRlIjoiMTU0NDZkMjQtOTliOS00YTExLTllY2YtOGM4YWJmZDMzZDFiIiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIvKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJkZWZhdWx0LXJvbGVzLXRyYXZlbGFwcCIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwic2lkIjoiMTU0NDZkMjQtOTliOS00YTExLTllY2YtOGM4YWJmZDMzZDFiIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJ0ZXN0IHVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciIsImdpdmVuX25hbWUiOiJ0ZXN0IiwiZmFtaWx5X25hbWUiOiJ1c2VyIiwiZW1haWwiOiJ0ZXN0dXNlckB0cmF2ZWxhcHAuY29tIn0.Z4Kv8X9NZuNE_1YDpl6UoYrnKsaXtCX2DzmHPDqOsFvbHZDzRQDE-ObxwRrVX8NUiZMDPO6YTfp9WaqvqKM5BGkF_Z3dKzwCKA9oK6ho06MSx-HiDOqCcnwdfB4hvE2XwAL2zOWU0wBe54DimfOjMbkT9PAVBS1-rGSGM8yOd-sAg0j2IO5rTyuwFtsI-X_GkKb_d-4qhJ1-m5rpkSFWnvZ0k0CmXh-CeSzaEdGrqES0BNtU5JScPkgz2Sq46Qxqi1P7DrBAi2CxjzOCtioggrLbqjXhIZ2vKuJ-Olb6-tPqbE38q9jK6EHo2jWEozqcGeOdp8IOI9GBq5gHRx-omg",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"keycloakId\": \"test-keycloak-id\",\r\n    \"nome\": \"Mario\",\r\n    \"cognome\": \"Rossi\",\r\n    \"email\": \"mario@travelapp.com\",\r\n    \"ruolo\": \"VIAGGIATORE\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/utenti",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "utenti"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "crea utente dati non validi",
+      "id": "ec77355c-0614-4f25-b880-9cd4a870cfb3",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVekloZnFzUDBiQlVUYlZxbHoyR3dwZG81QUxMRGJZNERIclVLRFZsYkVFIn0.eyJleHAiOjE3NzkwOTIxMzcsImlhdCI6MTc3OTA5MTgzNywianRpIjoiM2VjZjFjNDMtZGQxZC00NThkLWIwNWQtMGY5M2VjNTBlZjNiIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy90cmF2ZWxhcHAiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiMGEzYWIwNDctMzQ1Ny00ODVjLThjNzAtNWYzYWQxNTBmYmJlIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidHJhdmVsYXBwLWJhY2tlbmQiLCJzZXNzaW9uX3N0YXRlIjoiMTU0NDZkMjQtOTliOS00YTExLTllY2YtOGM4YWJmZDMzZDFiIiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIvKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJkZWZhdWx0LXJvbGVzLXRyYXZlbGFwcCIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwic2lkIjoiMTU0NDZkMjQtOTliOS00YTExLTllY2YtOGM4YWJmZDMzZDFiIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJ0ZXN0IHVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciIsImdpdmVuX25hbWUiOiJ0ZXN0IiwiZmFtaWx5X25hbWUiOiJ1c2VyIiwiZW1haWwiOiJ0ZXN0dXNlckB0cmF2ZWxhcHAuY29tIn0.Z4Kv8X9NZuNE_1YDpl6UoYrnKsaXtCX2DzmHPDqOsFvbHZDzRQDE-ObxwRrVX8NUiZMDPO6YTfp9WaqvqKM5BGkF_Z3dKzwCKA9oK6ho06MSx-HiDOqCcnwdfB4hvE2XwAL2zOWU0wBe54DimfOjMbkT9PAVBS1-rGSGM8yOd-sAg0j2IO5rTyuwFtsI-X_GkKb_d-4qhJ1-m5rpkSFWnvZ0k0CmXh-CeSzaEdGrqES0BNtU5JScPkgz2Sq46Qxqi1P7DrBAi2CxjzOCtioggrLbqjXhIZ2vKuJ-Olb6-tPqbE38q9jK6EHo2jWEozqcGeOdp8IOI9GBq5gHRx-omg",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"keycloakId\": \"test-id-2\",\r\n    \"nome\": \"A\",\r\n    \"cognome\": \"B\",\r\n    \"email\": \"nonèunemail\",\r\n    \"ruolo\": \"VIAGGIATORE\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/utenti",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "utenti"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "lista utenti",
+      "id": "ccd3138d-ab8c-45fc-bbc7-709a148193c5",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
     }
   ],
   "variable": [
