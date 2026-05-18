@@ -28,8 +28,13 @@ public class RecensioneController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
 
-
+    @PostMapping("/addRecensione")
     public boolean addNewRecensione(Prenotazione prenotazione, int voto, String commento){
+        RecensioneDTO dto = new RecensioneDTO();
+        dto.setVotazione(voto);
+        dto.setComm(commento);
+        dto.setPreno(prenotazione);
 
+        return  service.addNewRecensione(dto);
     }
 }

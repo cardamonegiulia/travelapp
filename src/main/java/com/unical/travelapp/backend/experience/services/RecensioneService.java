@@ -36,14 +36,17 @@ public class RecensioneService {
         return dto;
     }
 
-    public boolean addNewRecensione(Prenotazione prenotazione, int voto, String commento){
+    public boolean addNewRecensione(RecensioneDTO dto){
+        Recensione recensione = new Recensione();
         try{
-            RecensioneDTO dto = new RecensioneDTO();
-            dto.setVotazione(voto);
-            dto.setComm(commento);
-            dto.setPreno(prenotazione);
+            recensione.setPrenotazione(dto.getPreno());
+            recensione.setCommento(dto.getComm());
+            recensione.setVoto(dto.getVotazione());
+            repo.save(recensione);
+            return true;
         }catch(Exception e){
             System.out.println(e);
+            return false;
         }
     }
 }
