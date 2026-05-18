@@ -1,8 +1,10 @@
 package com.unical.travelapp.backend.experience.controllers;
 
+import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.experience.models.DTO.RecensioneDTO;
 import com.unical.travelapp.backend.experience.models.Recensione;
 import com.unical.travelapp.backend.experience.services.RecensioneService;
+import com.unical.travelapp.backend.identity.entity.Utente;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,4 +29,7 @@ public class RecensioneController {
     }
 
 
+    public boolean addNewRecensione(Prenotazione prenotazione, int voto, String commento){
+
+    }
 }

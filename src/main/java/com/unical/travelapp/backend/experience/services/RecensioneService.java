@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.experience.services;
 
+import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.experience.models.DTO.RecensioneDTO;
 import com.unical.travelapp.backend.experience.models.Recensione;
 import com.unical.travelapp.backend.experience.repository.RecensioneRepository;
@@ -33,5 +34,16 @@ public class RecensioneService {
         }
 
         return dto;
+    }
+
+    public boolean addNewRecensione(Prenotazione prenotazione, int voto, String commento){
+        try{
+            RecensioneDTO dto = new RecensioneDTO();
+            dto.setVotazione(voto);
+            dto.setComm(commento);
+            dto.setPreno(prenotazione);
+        }catch(Exception e){
+            System.out.println(e);
+        }
     }
 }
