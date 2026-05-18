@@ -10,6 +10,7 @@ import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException
 import com.unical.travelapp.backend.identity.mapper.UtenteMapper;
 import com.unical.travelapp.backend.identity.repository.UtenteRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.List;
 
@@ -85,5 +86,16 @@ public class UtenteService {
 
         utenteMapper.updateEntity(utente, dto);
         return utenteMapper.toResponseDto(utenteRepository.save(utente));
+    }
+    // Il metodo centralizzato per ottenere utente
+    public Utente ottieniUtenteDaToken(Jwt jwt) {
+        String keycloakId = jwt.getSubject(); // Estrae il sotto (ID) dal token
+        return utenteRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new UtenteNonTrovatoException("Utente loggato non trovato nel database locale"));
+    }
+
+    // Se servisse ESCLUSIVAMENTE il numero ID (Long):
+    public Long ottieniIdDaToken(Jwt jwt) {
+        return ottieniUtenteDaToken(jwt).getId();
     }
 }
