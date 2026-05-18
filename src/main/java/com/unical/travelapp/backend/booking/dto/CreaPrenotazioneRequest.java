@@ -21,3 +21,8 @@ public class CreaPrenotazioneRequest {
     //attivita opzionali
     private List<Long> attivitaExtraIds;
 }
+
+
+
+
+
