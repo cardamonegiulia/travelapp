@@ -6,6 +6,7 @@ import com.unical.travelapp.backend.identity.entity.Ruolo;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
 import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
+import com.unical.travelapp.backend.identity.mapper.UtenteMapper;
 import com.unical.travelapp.backend.identity.repository.UtenteRepository;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +16,11 @@ import java.util.List;
 public class UtenteService {
 
     private final UtenteRepository utenteRepository;
+    private final UtenteMapper utenteMapper;
 
-    public UtenteService(UtenteRepository utenteRepository) {
+    public UtenteService(UtenteRepository utenteRepository, UtenteMapper utenteMapper) {
         this.utenteRepository = utenteRepository;
+        this.utenteMapper = utenteMapper;
     }
 
     public UtenteResponseDto salvaUtenteDatoDTO(UtenteDto dto) {
@@ -31,52 +34,37 @@ public class UtenteService {
                     "Esiste già un utente con keycloakId: " + dto.getKeycloakId()
             );
         }
-
-        Utente utente = new Utente();
-        utente.setKeycloakId(dto.getKeycloakId());
-        utente.setNome(dto.getNome());
-        utente.setCognome(dto.getCognome());
-        utente.setEmail(dto.getEmail());
-        utente.setRuolo(dto.getRuolo() != null ? dto.getRuolo() : Ruolo.VIAGGIATORE);
-
-        return convertiInDto(utenteRepository.save(utente));
+        return utenteMapper.toResponseDto(
+                utenteRepository.save(utenteMapper.toEntity(dto))
+        );
     }
 
     public List<UtenteResponseDto> ottieniTutti() {
         return utenteRepository.findAll()
                 .stream()
-                .map(this::convertiInDto)
+                .map(utenteMapper::toResponseDto)
                 .toList();
     }
 
     public UtenteResponseDto ottieniPerId(Long id) {
-        Utente utente = utenteRepository.findById(id)
-                .orElseThrow(() -> new UtenteNonTrovatoException(
-                        "Utente con id " + id + " non trovato"
-                ));
-        return convertiInDto(utente);
+        return utenteMapper.toResponseDto(
+                utenteRepository.findById(id)
+                        .orElseThrow(() -> new UtenteNonTrovatoException(
+                                "Utente con id " + id + " non trovato"
+                        ))
+        );
     }
 
     public UtenteResponseDto ottieniPerKeycloakId(String keycloakId) {
-        Utente utente = utenteRepository.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new UtenteNonTrovatoException(
-                        "Utente con keycloakId " + keycloakId + " non trovato"
-                ));
-        return convertiInDto(utente);
+        return utenteMapper.toResponseDto(
+                utenteRepository.findByKeycloakId(keycloakId)
+                        .orElseThrow(() -> new UtenteNonTrovatoException(
+                                "Utente con keycloakId " + keycloakId + " non trovato"
+                        ))
+        );
     }
 
-    // metodo legacy, tenuto per compatibilità interna
     public Utente salvaUtente(Utente utente) {
         return utenteRepository.save(utente);
-    }
-
-    private UtenteResponseDto convertiInDto(Utente utente) {
-        UtenteResponseDto dto = new UtenteResponseDto();
-        dto.setId(utente.getId());
-        dto.setNome(utente.getNome());
-        dto.setCognome(utente.getCognome());
-        dto.setEmail(utente.getEmail());
-        dto.setRuolo(utente.getRuolo());
-        return dto;
     }
 }
