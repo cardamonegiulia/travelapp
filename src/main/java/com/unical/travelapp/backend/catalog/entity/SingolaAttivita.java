@@ -3,6 +3,7 @@ package com.unical.travelapp.backend.catalog.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
+import java.util.List;
 import com.unical.travelapp.backend.identity.entity.Utente;
 
 @Entity
@@ -32,4 +33,7 @@ public class SingolaAttivita {
 
     @Column(name = "max_partecipanti")
     private Integer maxPartecipanti;
+
+    @OneToMany(mappedBy = "singolaAttivita", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SessioneSingolaAttivita> sessioni;
 }
