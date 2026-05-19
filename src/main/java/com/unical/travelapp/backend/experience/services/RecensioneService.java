@@ -1,6 +1,10 @@
 package com.unical.travelapp.backend.experience.services;
 
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
+import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
+import com.unical.travelapp.backend.booking.service.PrenotazioneService;
+import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
+import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
 import com.unical.travelapp.backend.experience.models.DTO.RecensioneDTO;
 import com.unical.travelapp.backend.experience.models.Recensione;
 import com.unical.travelapp.backend.experience.repository.RecensioneRepository;
@@ -20,6 +24,7 @@ public class RecensioneService {
     @Autowired
     private RecensioneRepository repo;
     private UtenteService utenteService;
+    private PrenotazioneRepository prenotazioneRepository;
 
     public RecensioneDTO getById(Long id){
         RecensioneDTO dto = null;
@@ -42,37 +47,31 @@ public class RecensioneService {
         return dto;
     }
 
-    public boolean addNewRecensione(RecensioneDTO dto) {
+    public void addNewRecensione(RecensioneDTO dto) {
 
-        try {
-            Authentication authentication =
-                    SecurityContextHolder.getContext().getAuthentication();
+        Utente utente = utenteService.getUtenteSessione();
 
-            Jwt jwt = (Jwt) authentication.getPrincipal();
+        Prenotazione prenotazione = prenotazioneRepository
+                .findById(dto.getPrenotazioneId())
+                .orElseThrow(() -> new PrenotazioneNonTrovata("Prenotazione non trovata"));
 
-            Utente utente = utenteService.ottieniUtenteDaToken(jwt);
-
-            Prenotazione prenotazione = prenotazioneRepository
-                    .findById(dto.getPrenotazioneId())
-                    .orElseThrow();
-
-            if (!prenotazione.getUtente().getId().equals(utente.getId())) {
-                throw new RuntimeException("Non autorizzato");
-            }
-
-            Recensione recensione = new Recensione();
-            recensione.setUtente(utente);
-            recensione.setPrenotazione(prenotazione);
-            recensione.setCommento(dto.getComm());
-            recensione.setVoto(dto.getVotazione());
-
-            repo.save(recensione);
-
-            return true;
-
-        } catch (Exception e) {
-            System.out.println(e);
-            return false;
+        if (!prenotazione.getViaggiatore().getId().equals(utente.getId())) {
+            throw new SecurityException("Non autorizzato a recensire questa prenotazione");
         }
+
+        Recensione recensione = new Recensione();
+        recensione.setUtente(utente);
+        recensione.setPrenotazione(prenotazione);
+        recensione.setCommento(dto.getComm());
+        recensione.setVoto(dto.getVotazione());
+
+        repo.save(recensione);
+    }
+
+    public void deleteRecensione(Long id){
+        Recensione recensione = repo.findById(id)
+                .orElseThrow(() -> new RecensioneNonTrovata("Recensione non trovata"));
+
+        repo.delete(recensione);
     }
 }

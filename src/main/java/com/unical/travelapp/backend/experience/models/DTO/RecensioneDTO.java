@@ -14,4 +14,8 @@ public class RecensioneDTO {
     private Utente ut;
     private int votazione;
     private String comm;
+
+    public Long getPrenotazioneId() {
+        return preno.getId();
+    }
 }

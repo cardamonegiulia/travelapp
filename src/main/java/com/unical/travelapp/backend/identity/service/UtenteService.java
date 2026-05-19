@@ -9,6 +9,8 @@ import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteExcepti
 import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
 import com.unical.travelapp.backend.identity.mapper.UtenteMapper;
 import com.unical.travelapp.backend.identity.repository.UtenteRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.oauth2.jwt.Jwt;
 
@@ -92,6 +94,14 @@ public class UtenteService {
         String keycloakId = jwt.getSubject(); // Estrae il sotto (ID) dal token
         return utenteRepository.findByKeycloakId(keycloakId)
                 .orElseThrow(() -> new UtenteNonTrovatoException("Utente loggato non trovato nel database locale"));
+    }
+
+    public Utente getUtenteSessione(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        Utente utente = ottieniUtenteDaToken(jwt);
+
+        return utente;
     }
 
     // Se servisse ESCLUSIVAMENTE il numero ID (Long):

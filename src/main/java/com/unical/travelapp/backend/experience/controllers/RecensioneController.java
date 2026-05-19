@@ -29,12 +29,21 @@ public class RecensioneController {
     }
 
     @PostMapping("/addRecensione")
-    public boolean addNewRecensione(Prenotazione prenotazione, int voto, String commento){
+    public ResponseEntity<?> addNewRecensione(Prenotazione prenotazione, int voto, String commento) {
+
         RecensioneDTO dto = new RecensioneDTO();
         dto.setVotazione(voto);
         dto.setComm(commento);
         dto.setPreno(prenotazione);
 
-        return  service.addNewRecensione(dto);
+        service.addNewRecensione(dto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("Recensione aggiunta con successo!");
+    }
+
+    public ResponseEntity<?> removeRecensione(Long id){
+        service.deleteRecensione(id);
+
+        return ResponseEntity.ok().build();
     }
 }

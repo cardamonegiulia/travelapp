@@ -1,5 +1,7 @@
 package com.unical.travelapp.backend.exception;
 
+import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
+import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
 import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
 import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
 import org.springframework.http.HttpStatus;
@@ -56,6 +58,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleGenerico(Exception ex) {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Errore interno del server");
+    }
+
+    @ExceptionHandler(PrenotazioneNonTrovata.class)
+    public ResponseEntity<Map<String, Object>> handlePrenotazioneNonTrovata(PrenotazioneNonTrovata ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(RecensioneNonTrovata.class)
+    public ResponseEntity<Map<String, Object>> handleRecensioneNonTrovata(RecensioneNonTrovata ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     // Metodo di supporto per costruire la risposta JSON standard
