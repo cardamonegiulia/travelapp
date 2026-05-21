@@ -10,7 +10,7 @@ import lombok.Setter;
 @Data
 public class RecensioneDTO {
 
-    public Prenotazione preno;
+    private Prenotazione preno;
     private Utente ut;
     private int votazione;
     private String comm;
