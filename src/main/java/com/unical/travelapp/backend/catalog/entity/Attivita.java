@@ -1,7 +1,7 @@
 package com.unical.travelapp.backend.catalog.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Data; //Lombok, tramite l'annotazione @Data, genera i metodi getter e setter a tempo di compilazione
 import java.math.BigDecimal;
 import java.time.LocalTime;
 
