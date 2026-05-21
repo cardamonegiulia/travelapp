@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.exception;
 
+import com.unical.travelapp.backend.experience.exeption.ItinerarioNonTrovato;
 import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
 import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
@@ -67,6 +68,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RecensioneNonTrovata.class)
     public ResponseEntity<Map<String, Object>> handleRecensioneNonTrovata(RecensioneNonTrovata ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(ItinerarioNonTrovato.class)
+    public ResponseEntity<Map<String, Object>> handleItinerarioNonTrovato(ItinerarioNonTrovato ex){
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 

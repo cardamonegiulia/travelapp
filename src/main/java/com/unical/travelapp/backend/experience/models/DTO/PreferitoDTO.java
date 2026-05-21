@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 public class PreferitoDTO {
 
+    private Long id;
     private Utente utente;
     private List<Itinerario> itinerarioList;
 }

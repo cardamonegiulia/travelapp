@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.experience.controllers;
 
+import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.experience.models.DTO.PreferitoDTO;
 import com.unical.travelapp.backend.experience.models.Preferito;
@@ -32,7 +33,7 @@ public class PreferitoController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
 
-    public ResponseEntity<?> addItinerarioNeiPreferiti(Itinerario itinerario){
+    public ResponseEntity<?> addItinerarioNeiPreferiti(ItinerarioDTO itinerario){
         service.addPreferito(itinerario);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(null);
     }

@@ -1,6 +1,9 @@
 package com.unical.travelapp.backend.experience.services;
 
+import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
+import com.unical.travelapp.backend.catalog.repository.ItinerarioRepository;
+import com.unical.travelapp.backend.experience.exeption.ItinerarioNonTrovato;
 import com.unical.travelapp.backend.experience.models.DTO.PreferitoDTO;
 import com.unical.travelapp.backend.experience.models.Preferito;
 import com.unical.travelapp.backend.experience.repository.PreferitoRepository;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PreferitoService {
@@ -22,6 +26,7 @@ public class PreferitoService {
     @Autowired
     private UtenteService utenteService;
     private PreferitoRepository repo;
+    ItinerarioRepository itinerarioRepository;
 
     public PreferitoDTO getPreferiti(){
         Utente utente = utenteService.getUtenteSessione();
@@ -41,11 +46,15 @@ public class PreferitoService {
     }
 
     @Transactional
-    public void addPreferito(Itinerario itinerario){
+    public void addPreferito(ItinerarioDTO itinerario){
         Utente utente = utenteService.getUtenteSessione();
 
         if (utente != null){
             Preferito prefe = repo.findByUtente(utente);
+            Itinerario itin = itinerarioRepository.findById(itinerario.getId())
+                    .orElseThrow(() -> new ItinerarioNonTrovato("itinerario non trovato"));
+
+            prefe.getItinerario().add(itin);
         }
     }
 }
