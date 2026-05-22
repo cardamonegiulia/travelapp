@@ -20,6 +20,10 @@ public class CreaPrenotazioneRequest {
     private Integer numeroPartecipanti;
     //attivita opzionali
     private List<Long> attivitaExtraIds;
+    //se e sessioni singola o it
+    private String tipoPrenotazione;
+    private String titolo;
+    private String luogo;
 }
 
 

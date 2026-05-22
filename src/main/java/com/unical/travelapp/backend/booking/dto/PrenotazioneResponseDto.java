@@ -15,16 +15,19 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class PrenotazioneResponseDto {
-    private Long id;                           // id prenotazione
-    private Long viaggiatoreId;                // id utente
-    private String nomeViaggiatore;            // nome utente
-    private String cognomeViaggiatore;         // cognome utente
-    private Long disponibilitaItinerarioId;    // id disponibilità itinerario
-    private Long sessioneSingolaAttivitaId;   // id sessione singola se presente
-    private String destinazione;               // destinazione dell’itinerario
-    private Integer numeroPartecipanti;        // posti prenotati
-    private BigDecimal prezzoTotale;           // prezzo totale prenotazione
-    private StatoPrenotazione statoPrenotazione; // stato prenotazione
-    private StatoPagamento statoPagamento;     // stato pagamento
-    private LocalDateTime dataPrenotazione;    // data di creazione prenotazione
+    private Long id;
+    private Long viaggiatoreId;
+    private String nomeViaggiatore;
+    private String cognomeViaggiatore;
+    private Long disponibilitaItinerarioId;
+    private Long sessioneSingolaAttivitaId;
+    private String destinazione;
+    private Integer numeroPartecipanti;
+    private BigDecimal prezzoTotale;
+    private StatoPrenotazione statoPrenotazione;
+    private StatoPagamento statoPagamento;
+    private LocalDateTime dataPrenotazione;
+    private String tipoPrenotazione;
+    private String titolo;
+    private String luogo;
 }
