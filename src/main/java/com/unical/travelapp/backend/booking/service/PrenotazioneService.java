@@ -176,6 +176,7 @@ public class PrenotazioneService {
     }
     // al momento non sto usando il return quindi ho lascia cosi perche in futuro puo essre utile
     // o lo levo e faccio un metodo void
+    // void al momento non serve restituirlo
     private void creaPagamento (Prenotazione prenotazione, BigDecimal prezzoTotale) {
         Pagamento pay = Pagamento.builder()
                 .prenotazione(prenotazione)
