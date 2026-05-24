@@ -22,3 +22,4 @@ public class PagamentoController {
         return pagamentoRepo.findAll();
     }
 }
+// controller al momento che non serve (gestisco quello che serve in prenotazione controller)

@@ -2,6 +2,13 @@ package com.unical.travelapp.backend.exception;
 
 import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
 import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
+import com.unical.travelapp.backend.booking.exception.AttivitaExtraNonValidaException;
+import com.unical.travelapp.backend.booking.exception.DisponibilitaNonTrovataException;
+import com.unical.travelapp.backend.booking.exception.PagamentoNonTrovatoException;
+import com.unical.travelapp.backend.booking.exception.PostiInsufficientiException;
+import com.unical.travelapp.backend.booking.exception.PrenotazioneNonTrovataException;
+import com.unical.travelapp.backend.booking.exception.RichiestaPrenotazioneNonValidaException;
+import com.unical.travelapp.backend.booking.exception.StatoPrenotazioneNonValidoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -49,6 +56,62 @@ public class GlobalExceptionHandler {
         body.put("dettagli", erroriCampi);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    // 400 - Richiesta prenotazione non valida
+    @ExceptionHandler(RichiestaPrenotazioneNonValidaException.class)
+    public ResponseEntity<Map<String, Object>> handleRichiestaPrenotazioneNonValida(
+            RichiestaPrenotazioneNonValidaException ex) {
+
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    // 400 - Attività extra non valida
+    @ExceptionHandler(AttivitaExtraNonValidaException.class)
+    public ResponseEntity<Map<String, Object>> handleAttivitaExtraNonValida(
+            AttivitaExtraNonValidaException ex) {
+
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    // 404 - Disponibilità o sessione non trovata
+    @ExceptionHandler(DisponibilitaNonTrovataException.class)
+    public ResponseEntity<Map<String, Object>> handleDisponibilitaNonTrovata(
+            DisponibilitaNonTrovataException ex) {
+
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    // 404 - Prenotazione non trovata
+    @ExceptionHandler(PrenotazioneNonTrovataException.class)
+    public ResponseEntity<Map<String, Object>> handlePrenotazioneNonTrovata(
+            PrenotazioneNonTrovataException ex) {
+
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    // 404 - Pagamento non trovato
+    @ExceptionHandler(PagamentoNonTrovatoException.class)
+    public ResponseEntity<Map<String, Object>> handlePagamentoNonTrovato(
+            PagamentoNonTrovatoException ex) {
+
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    // 409 - Posti insufficienti
+    @ExceptionHandler(PostiInsufficientiException.class)
+    public ResponseEntity<Map<String, Object>> handlePostiInsufficienti(
+            PostiInsufficientiException ex) {
+
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    // 409 - Stato prenotazione/pagamento non valido
+    @ExceptionHandler(StatoPrenotazioneNonValidoException.class)
+    public ResponseEntity<Map<String, Object>> handleStatoPrenotazioneNonValido(
+            StatoPrenotazioneNonValidoException ex) {
+
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     // 500 - Fallback generico per qualsiasi altra eccezione non gestita
