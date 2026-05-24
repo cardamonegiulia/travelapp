@@ -2,6 +2,7 @@ package com.unical.travelapp.backend.experience.models;
 
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.identity.entity.Utente;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -16,20 +17,25 @@ public class Recensione {
     @Id
     @Column(name = "recensione_id")
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Schema(description = "ID generato automaticamente", example = "123")
     private long Id;
 
     @ManyToOne
     @JoinColumn(name = "prenotazione_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @Schema(description = "prenotazione a cui appartiene la recensione")
     private Prenotazione prenotazione;
 
     @ManyToOne
     @NotNull
     @JoinColumn(name = "autore_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @Schema(description = "utente che ha scritto la recensione")
     private Utente utente;
 
+    @Schema(description = "votazione del viaggio", example = "3")
     private int voto;
 
+    @Schema(description = "testo della recensione", example = "il viaggio e' stato molto divertente e interessante")
     private String commento;
 }

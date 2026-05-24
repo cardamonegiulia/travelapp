@@ -57,4 +57,17 @@ public class PreferitoService {
             prefe.getItinerario().add(itin);
         }
     }
+
+    @Transactional
+    public void removePreferito(ItinerarioDTO itinerarioDTO){
+        Utente utente = utenteService.getUtenteSessione();
+
+        if (utente != null){
+            Preferito preferiti = repo.findByUtente(utente);
+            Itinerario itinerario = itinerarioRepository.findById(itinerarioDTO.getId())
+                    .orElseThrow(() -> new ItinerarioNonTrovato("itinerario non trovato"));
+
+            preferiti.getItinerario().remove(itinerario);
+        }
+    }
 }
