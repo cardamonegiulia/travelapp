@@ -43,4 +43,10 @@ public class UtenteController {
             @Valid @RequestBody UtenteUpdateDto utenteUpdateDto) {
         return ResponseEntity.ok(utenteService.aggiornaUtente(id, utenteUpdateDto));
     }
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Elimina un utente per id")
+    public ResponseEntity<Void> eliminaUtente(@PathVariable Long id) {
+        utenteService.eliminaUtente(id);
+        return ResponseEntity.noContent().build();
+    }
 }

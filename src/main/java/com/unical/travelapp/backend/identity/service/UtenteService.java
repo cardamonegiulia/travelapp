@@ -87,6 +87,14 @@ public class UtenteService {
         utenteMapper.updateEntity(utente, dto);
         return utenteMapper.toResponseDto(utenteRepository.save(utente));
     }
+    public void eliminaUtente(Long id) {
+        if (!utenteRepository.existsById(id)) {
+            throw new UtenteNonTrovatoException(
+                    "Utente con id " + id + " non trovato"
+            );
+        }
+        utenteRepository.deleteById(id);
+    }
     // Il metodo centralizzato per ottenere utente
     public Utente ottieniUtenteDaToken(Jwt jwt) {
         String keycloakId = jwt.getSubject(); // Estrae il sotto (ID) dal token
@@ -98,4 +106,5 @@ public class UtenteService {
     public Long ottieniIdDaToken(Jwt jwt) {
         return ottieniUtenteDaToken(jwt).getId();
     }
+
 }
