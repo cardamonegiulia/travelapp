@@ -32,9 +32,8 @@ public class ItinerarioController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ItinerarioDTO> getItinerarioById(@PathVariable Long id) {
-        Optional<Itinerario> itinerario = itinerarioService.getItinerarioById(id);
-        return itinerario.map(it -> ResponseEntity.ok(itinerarioMapper.toDTO(it)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        Itinerario itinerario = itinerarioService.getItinerarioById(id);
+        return ResponseEntity.ok(itinerarioMapper.toDTO(itinerario));
     }
 
     @PostMapping

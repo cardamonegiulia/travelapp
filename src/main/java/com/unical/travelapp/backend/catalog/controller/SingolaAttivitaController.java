@@ -34,9 +34,8 @@ public class SingolaAttivitaController {
 
     @GetMapping("/{id}")
     public ResponseEntity<SingolaAttivitaDTO> getAttivitaById(@PathVariable Long id) {
-        Optional<SingolaAttivita> attivita = attivitaService.getAttivitaById(id);
-        return attivita.map(att -> ResponseEntity.ok(attivitaMapper.toDTO(att)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        SingolaAttivita attivita = attivitaService.getAttivitaById(id);
+        return ResponseEntity.ok(attivitaMapper.toDTO(attivita));
     }
 
     @PostMapping("/con-sessioni")

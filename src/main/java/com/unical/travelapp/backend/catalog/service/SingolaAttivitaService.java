@@ -4,13 +4,13 @@ import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
 import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
 import com.unical.travelapp.backend.catalog.repository.SingolaAttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRepository;
+import com.unical.travelapp.backend.catalog.exception.RisorsaNonTrovataException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class SingolaAttivitaService {
@@ -25,8 +25,9 @@ public class SingolaAttivitaService {
         return singolaAttivitaRepository.findAll();
     }
 
-    public Optional<SingolaAttivita> getAttivitaById(Long id) {
-        return singolaAttivitaRepository.findById(id);
+    public SingolaAttivita getAttivitaById(Long id) {
+        return singolaAttivitaRepository.findById(id)
+                .orElseThrow(() -> new RisorsaNonTrovataException("Attività con ID " + id + " non trovata nel catalogo"));
     }
 
     @Transactional
@@ -62,6 +63,9 @@ public class SingolaAttivitaService {
 
     @Transactional
     public void deleteAttivita(Long id) {
+        if (!singolaAttivitaRepository.existsById(id)) {
+            throw new RisorsaNonTrovataException("Impossibile eliminare: Attività con ID " + id + " non esiste");
+        }
         singolaAttivitaRepository.deleteById(id);
     }
 }

@@ -71,4 +71,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(body);
     }
 
+    // 404 - Risorsa del catalogo (itinerario o attività) non trovata
+    @ExceptionHandler(com.unical.travelapp.backend.catalog.exception.RisorsaNonTrovataException.class)
+    public ResponseEntity<Map<String, Object>> handleRisorsaNonTrovata(
+            com.unical.travelapp.backend.catalog.exception.RisorsaNonTrovataException ex) {
+
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
 }
