@@ -40,7 +40,6 @@ public class PrenotazioneMapper {
                 .cognomeViaggiatore(prenotazione.getViaggiatore().getCognome())
                 .disponibilitaItinerarioId(prenotazione.getDisponibilitaItinerario() != null ? prenotazione.getDisponibilitaItinerario().getId() : null)
                 .sessioneSingolaAttivitaId(prenotazione.getSessioneSingolaAttivita() != null ? prenotazione.getSessioneSingolaAttivita().getId() : null)
-                .destinazione(prenotazione.getDisponibilitaItinerario() != null ? prenotazione.getDisponibilitaItinerario().getItinerario().getDestinazionePrincipale() : null)
                 .numeroPartecipanti(prenotazione.getNumeroPartecipanti()).prezzoTotale(prenotazione.getPrezzoTotale()).statoPrenotazione(prenotazione.getStato())
                 .statoPagamento(pagamento != null ? pagamento.getStato() : null)
                 .dataPrenotazione(prenotazione.getDataPrenotazione())
