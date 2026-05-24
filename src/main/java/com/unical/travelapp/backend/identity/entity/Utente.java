@@ -29,4 +29,8 @@ public class Utente {
 
     @Enumerated(EnumType.STRING) // Salva il nome del ruolo come stringa nel DB
     private Ruolo ruolo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tema")
+    private Tema tema = Tema.CHIARO;
 }
