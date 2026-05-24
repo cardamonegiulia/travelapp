@@ -4,6 +4,7 @@ import com.unical.travelapp.backend.identity.dto.UtenteDto;
 import com.unical.travelapp.backend.identity.dto.UtenteResponseDto;
 import com.unical.travelapp.backend.identity.dto.UtenteUpdateDto;
 import com.unical.travelapp.backend.identity.entity.Ruolo;
+import com.unical.travelapp.backend.identity.entity.Tema;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
 import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
@@ -105,6 +106,27 @@ public class UtenteService {
     // Se servisse ESCLUSIVAMENTE il numero ID (Long):
     public Long ottieniIdDaToken(Jwt jwt) {
         return ottieniUtenteDaToken(jwt).getId();
+    }
+    public UtenteResponseDto sincronizzaUtente(org.springframework.security.oauth2.jwt.Jwt jwt) {
+        String keycloakId = jwt.getSubject();
+
+        // se l'utente esiste già nel DB lo restituisce
+        return utenteRepository.findByKeycloakId(keycloakId)
+                .map(utenteMapper::toResponseDto)
+                .orElseGet(() -> {
+                    // altrimenti lo crea con i dati del token
+                    Utente nuovo = new Utente();
+                    nuovo.setKeycloakId(keycloakId);
+                    nuovo.setNome(jwt.getClaimAsString("given_name") != null ?
+                            jwt.getClaimAsString("given_name") : "");
+                    nuovo.setCognome(jwt.getClaimAsString("family_name") != null ?
+                            jwt.getClaimAsString("family_name") : "");
+                    nuovo.setEmail(jwt.getClaimAsString("email") != null ?
+                            jwt.getClaimAsString("email") : "");
+                    nuovo.setRuolo(Ruolo.VIAGGIATORE);
+                    nuovo.setTema(Tema.CHIARO);
+                    return utenteMapper.toResponseDto(utenteRepository.save(nuovo));
+                });
     }
 
 }

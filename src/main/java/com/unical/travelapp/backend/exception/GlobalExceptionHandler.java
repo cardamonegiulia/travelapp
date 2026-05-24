@@ -54,6 +54,7 @@ public class GlobalExceptionHandler {
     // 500 - Fallback generico per qualsiasi altra eccezione non gestita
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenerico(Exception ex) {
+
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Errore interno del server");
     }
@@ -69,4 +70,5 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(status).body(body);
     }
+
 }

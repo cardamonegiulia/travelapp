@@ -8,6 +8,8 @@ import com.unical.travelapp.backend.identity.service.UtenteService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -48,5 +50,10 @@ public class UtenteController {
     public ResponseEntity<Void> eliminaUtente(@PathVariable Long id) {
         utenteService.eliminaUtente(id);
         return ResponseEntity.noContent().build();
+    }
+    @PostMapping("/me")
+    @Operation(summary = "Sincronizza l'utente loggato con il database locale")
+    public ResponseEntity<UtenteResponseDto> sincronizzaUtente(@AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(utenteService.sincronizzaUtente(jwt));
     }
 }

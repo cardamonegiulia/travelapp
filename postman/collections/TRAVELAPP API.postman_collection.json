@@ -360,6 +360,18 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "sincronizza utente",
+          "id": "9ff751f4-02bc-4aec-9a8c-0555f5414a93",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
         }
       ],
       "id": "c05b4eaf-0bfe-4f69-81a2-b5b2645cdc77"
