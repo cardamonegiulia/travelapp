@@ -45,6 +45,6 @@ public class Itinerario {
     @OneToMany(mappedBy = "itinerario", cascade = CascadeType.ALL)
     private List<DisponibilitaItinerario> disponibilita;
 
-    @OneToMany(mappedBy = "recensione", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "itinerario", cascade = CascadeType.ALL)
     private List<Recensione> recensioni;
 }
