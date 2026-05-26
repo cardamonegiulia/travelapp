@@ -1,10 +1,7 @@
 package com.unical.travelapp.backend.experience.controllers;
 
-import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.experience.models.DTO.RecensioneDTO;
-import com.unical.travelapp.backend.experience.models.Recensione;
 import com.unical.travelapp.backend.experience.services.RecensioneService;
-import com.unical.travelapp.backend.identity.entity.Utente;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/recensioni")
+@RequestMapping("/api/recensioni")
 @Tag(name = "Gestione Recensioni", description = "Endpoint per le recensioni degli utenti")
 public class RecensioneController {
 
@@ -22,7 +19,7 @@ public class RecensioneController {
 
     @GetMapping("/{id}")
     @Operation(
-            summary = "restituisce le recensioni dell'utente"
+            summary = "restituisce la recensione tramite id"
     )
     public ResponseEntity<RecensioneDTO> getById(@PathVariable Long id){
 
@@ -34,30 +31,23 @@ public class RecensioneController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
 
-    @PostMapping("/addRecensione")
+    @PostMapping
     @Operation(
             summary = "aggiunge una nuova recensione",
-            description = "prende in input una prenotazione, il voto e il commento, crea il DTO e lo passa al service"
+            description = "riceve in input il DTO con prenotazioneId, voto e commento e lo passa al service"
     )
-    public ResponseEntity<?> addNewRecensione(Prenotazione prenotazione, int voto, String commento) {
-
-        RecensioneDTO dto = new RecensioneDTO();
-        dto.setVotazione(voto);
-        dto.setComm(commento);
-        dto.setPreno(prenotazione);
-
+    public ResponseEntity<?> addNewRecensione(@RequestBody RecensioneDTO dto) {
         service.addNewRecensione(dto);
-
         return ResponseEntity.status(HttpStatus.CREATED).body("Recensione aggiunta con successo!");
     }
 
+    @DeleteMapping("/{id}")
     @Operation(
-            summary = "rimuove le recensioni",
+            summary = "rimuove una recensione",
             description = "riceve l'id della recensione e la rimuove"
     )
-    public ResponseEntity<?> removeRecensione(Long id){
+    public ResponseEntity<?> removeRecensione(@PathVariable Long id){
         service.deleteRecensione(id);
-
         return ResponseEntity.ok().build();
     }
 }

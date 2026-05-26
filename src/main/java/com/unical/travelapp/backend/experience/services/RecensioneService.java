@@ -2,7 +2,6 @@ package com.unical.travelapp.backend.experience.services;
 
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
-import com.unical.travelapp.backend.booking.service.PrenotazioneService;
 import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
 import com.unical.travelapp.backend.experience.models.DTO.RecensioneDTO;
@@ -11,9 +10,6 @@ import com.unical.travelapp.backend.experience.repository.RecensioneRepository;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -32,10 +28,10 @@ public class RecensioneService {
         Optional<Recensione> recensione = repo.findById(id);
 
         try {
-            if (recensione != null) {
+            if (recensione.isPresent()) {
                 dto = new RecensioneDTO();
-                dto.setPreno(recensione.get().getPrenotazione());
-                dto.setUt(recensione.get().getUtente());
+                dto.setPrenotazioneId(recensione.get().getPrenotazione().getId());
+                dto.setUtenteId(recensione.get().getUtente().getId());
                 dto.setComm(recensione.get().getCommento());
                 dto.setVotazione(recensione.get().getVoto());
             }

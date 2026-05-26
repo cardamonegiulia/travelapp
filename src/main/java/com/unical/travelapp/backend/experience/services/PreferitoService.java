@@ -8,17 +8,12 @@ import com.unical.travelapp.backend.experience.models.DTO.PreferitoDTO;
 import com.unical.travelapp.backend.experience.models.Preferito;
 import com.unical.travelapp.backend.experience.repository.PreferitoRepository;
 import com.unical.travelapp.backend.identity.entity.Utente;
-import com.unical.travelapp.backend.identity.repository.UtenteRepository;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class PreferitoService {
@@ -36,8 +31,24 @@ public class PreferitoService {
 
             if (preferito != null){
                 PreferitoDTO preDTO = new PreferitoDTO();
-                preDTO.setItinerarioList(preferito.getItinerario());
-                preDTO.setUtente(preferito.getUtente());
+                preDTO.setUtenteId(preferito.getUtente().getId());
+                preDTO.setItinerariList(
+                    preferito.getItinerario().stream()
+                        .map(itin -> {
+                            ItinerarioDTO dto = new ItinerarioDTO();
+                            dto.setId(itin.getId());
+                            dto.setOrganizzatoreId(itin.getOrganizzatore().getId());
+                            dto.setTitolo(itin.getTitolo());
+                            dto.setDescrizione(itin.getDescrizione());
+                            dto.setDestinazionePrincipale(itin.getDestinazionePrincipale());
+                            dto.setPrezzoBase(itin.getPrezzoBase());
+                            dto.setDurataGiorni(itin.getDurataGiorni());
+                            dto.setMaxPartecipanti(itin.getMaxPartecipanti());
+                            dto.setStato(itin.getStato());
+                            return dto;
+                        })
+                        .toList()
+                );
                 return preDTO;
             }
         }

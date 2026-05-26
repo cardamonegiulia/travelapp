@@ -1,7 +1,6 @@
 package com.unical.travelapp.backend.experience.models.DTO;
 
-import com.unical.travelapp.backend.catalog.entity.Itinerario;
-import com.unical.travelapp.backend.identity.entity.Utente;
+import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import lombok.Data;
 
 import java.util.List;
@@ -10,6 +9,6 @@ import java.util.List;
 public class PreferitoDTO {
 
     private Long id;
-    private Utente utente;
-    private List<Itinerario> itinerarioList;
+    private Long utenteId;
+    private List<ItinerarioDTO> itinerariList;
 }
