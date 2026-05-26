@@ -20,7 +20,9 @@ public class PreferitoService {
 
     @Autowired
     private UtenteService utenteService;
+    @Autowired
     private PreferitoRepository repo;
+    @Autowired
     ItinerarioRepository itinerarioRepository;
 
     public PreferitoDTO getPreferiti(){
@@ -62,6 +64,10 @@ public class PreferitoService {
 
         if (utente != null){
             Preferito prefe = repo.findByUtente(utente);
+            if(prefe == null){
+                prefe = new Preferito();
+                prefe.setUtente(utente);
+            }
             Itinerario itin = itinerarioRepository.findById(itinerario.getId())
                     .orElseThrow(() -> new ItinerarioNonTrovato("itinerario non trovato"));
 

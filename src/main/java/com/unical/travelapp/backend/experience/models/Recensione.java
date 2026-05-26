@@ -1,6 +1,7 @@
 package com.unical.travelapp.backend.experience.models;
 
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
+import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
@@ -38,4 +39,10 @@ public class Recensione {
 
     @Schema(description = "testo della recensione", example = "il viaggio e' stato molto divertente e interessante")
     private String commento;
+
+    @ManyToOne
+    @JoinColumn(name = "itinerario_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @Schema(description = "itinerario a cui appartiene recensione")
+    private Itinerario itinerario;
 }

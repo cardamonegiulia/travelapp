@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.catalog.entity;
 
+import com.unical.travelapp.backend.experience.models.Recensione;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -43,4 +44,7 @@ public class Itinerario {
 
     @OneToMany(mappedBy = "itinerario", cascade = CascadeType.ALL)
     private List<DisponibilitaItinerario> disponibilita;
+
+    @OneToMany(mappedBy = "recensione", cascade = CascadeType.ALL)
+    private List<Recensione> recensioni;
 }
