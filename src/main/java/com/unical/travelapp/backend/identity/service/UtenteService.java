@@ -1,0 +1,132 @@
+package com.unical.travelapp.backend.identity.service;
+
+import com.unical.travelapp.backend.identity.dto.UtenteDto;
+import com.unical.travelapp.backend.identity.dto.UtenteResponseDto;
+import com.unical.travelapp.backend.identity.dto.UtenteUpdateDto;
+import com.unical.travelapp.backend.identity.entity.Ruolo;
+import com.unical.travelapp.backend.identity.entity.Tema;
+import com.unical.travelapp.backend.identity.entity.Utente;
+import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
+import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
+import com.unical.travelapp.backend.identity.mapper.UtenteMapper;
+import com.unical.travelapp.backend.identity.repository.UtenteRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.security.oauth2.jwt.Jwt;
+
+import java.util.List;
+
+@Service
+public class UtenteService {
+
+    private final UtenteRepository utenteRepository;
+    private final UtenteMapper utenteMapper;
+
+    public UtenteService(UtenteRepository utenteRepository, UtenteMapper utenteMapper) {
+        this.utenteRepository = utenteRepository;
+        this.utenteMapper = utenteMapper;
+    }
+
+    public UtenteResponseDto salvaUtenteDatoDTO(UtenteDto dto) {
+        if (utenteRepository.existsByEmail(dto.getEmail())) {
+            throw new UtenteGiaEsistenteException(
+                    "Esiste già un utente con email: " + dto.getEmail()
+            );
+        }
+        if (utenteRepository.findByKeycloakId(dto.getKeycloakId()).isPresent()) {
+            throw new UtenteGiaEsistenteException(
+                    "Esiste già un utente con keycloakId: " + dto.getKeycloakId()
+            );
+        }
+        return utenteMapper.toResponseDto(
+                utenteRepository.save(utenteMapper.toEntity(dto))
+        );
+    }
+
+    public List<UtenteResponseDto> ottieniTutti() {
+        return utenteRepository.findAll()
+                .stream()
+                .map(utenteMapper::toResponseDto)
+                .toList();
+    }
+
+    public UtenteResponseDto ottieniPerId(Long id) {
+        return utenteMapper.toResponseDto(
+                utenteRepository.findById(id)
+                        .orElseThrow(() -> new UtenteNonTrovatoException(
+                                "Utente con id " + id + " non trovato"
+                        ))
+        );
+    }
+
+    public UtenteResponseDto ottieniPerKeycloakId(String keycloakId) {
+        return utenteMapper.toResponseDto(
+                utenteRepository.findByKeycloakId(keycloakId)
+                        .orElseThrow(() -> new UtenteNonTrovatoException(
+                                "Utente con keycloakId " + keycloakId + " non trovato"
+                        ))
+        );
+    }
+
+    public Utente salvaUtente(Utente utente) {
+        return utenteRepository.save(utente);
+    }
+    public UtenteResponseDto aggiornaUtente(Long id, UtenteUpdateDto dto) {
+        Utente utente = utenteRepository.findById(id)
+                .orElseThrow(() -> new UtenteNonTrovatoException(
+                        "Utente con id " + id + " non trovato"
+                ));
+
+        // controllo email duplicata solo se è stata modificata
+        if (dto.getEmail() != null &&
+                !utente.getEmail().equals(dto.getEmail()) &&
+                utenteRepository.existsByEmail(dto.getEmail())) {
+            throw new UtenteGiaEsistenteException(
+                    "Esiste già un utente con email: " + dto.getEmail()
+            );
+        }
+
+        utenteMapper.updateEntity(utente, dto);
+        return utenteMapper.toResponseDto(utenteRepository.save(utente));
+    }
+    public void eliminaUtente(Long id) {
+        if (!utenteRepository.existsById(id)) {
+            throw new UtenteNonTrovatoException(
+                    "Utente con id " + id + " non trovato"
+            );
+        }
+        utenteRepository.deleteById(id);
+    }
+    // Il metodo centralizzato per ottenere utente
+    public Utente ottieniUtenteDaToken(Jwt jwt) {
+        String keycloakId = jwt.getSubject(); // Estrae il sotto (ID) dal token
+        return utenteRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new UtenteNonTrovatoException("Utente loggato non trovato nel database locale"));
+    }
+
+    // Se servisse ESCLUSIVAMENTE il numero ID (Long):
+    public Long ottieniIdDaToken(Jwt jwt) {
+        return ottieniUtenteDaToken(jwt).getId();
+    }
+    public UtenteResponseDto sincronizzaUtente(org.springframework.security.oauth2.jwt.Jwt jwt) {
+        String keycloakId = jwt.getSubject();
+
+        // se l'utente esiste già nel DB lo restituisce
+        return utenteRepository.findByKeycloakId(keycloakId)
+                .map(utenteMapper::toResponseDto)
+                .orElseGet(() -> {
+                    // altrimenti lo crea con i dati del token
+                    Utente nuovo = new Utente();
+                    nuovo.setKeycloakId(keycloakId);
+                    nuovo.setNome(jwt.getClaimAsString("given_name") != null ?
+                            jwt.getClaimAsString("given_name") : "");
+                    nuovo.setCognome(jwt.getClaimAsString("family_name") != null ?
+                            jwt.getClaimAsString("family_name") : "");
+                    nuovo.setEmail(jwt.getClaimAsString("email") != null ?
+                            jwt.getClaimAsString("email") : "");
+                    nuovo.setRuolo(Ruolo.VIAGGIATORE);
+                    nuovo.setTema(Tema.CHIARO);
+                    return utenteMapper.toResponseDto(utenteRepository.save(nuovo));
+                });
+    }
+
+}
