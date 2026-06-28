@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.identity.dto;
 
+import com.unical.travelapp.backend.identity.entity.Tema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -16,4 +17,6 @@ public class UtenteUpdateDto {
     @Email(message = "Inserire un indirizzo email valido")
     @Size(max = 100, message = "L'email non può superare i 100 caratteri")
     private String email;
+
+    private Tema tema;
 }

@@ -50,12 +50,12 @@
               ]
             },
             "url": {
-              "raw": "http://localhost:8180/realms/travelapp/protocol/openid-connect/token",
+              "raw": "http://localhost:8190/realms/travelapp/protocol/openid-connect/token",
               "protocol": "http",
               "host": [
                 "localhost"
               ],
-              "port": "8180",
+              "port": "8190",
               "path": [
                 "realms",
                 "travelapp",
@@ -243,6 +243,132 @@
                 "utenti",
                 "9999"
               ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cambia Tema a SCURO",
+          "id": "c83d0f98-a9d5-4945-b231-864b8461361c",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVekloZnFzUDBiQlVUYlZxbHoyR3dwZG81QUxMRGJZNERIclVLRFZsYkVFIn0.eyJleHAiOjE3Nzk2MjA0MTcsImlhdCI6MTc3OTYyMDExNywianRpIjoiNDY3ODUyMDMtMTc1ZS00YTI0LWI0YTEtNjgxMDgxMjhkYTVlIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy90cmF2ZWxhcHAiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiMGEzYWIwNDctMzQ1Ny00ODVjLThjNzAtNWYzYWQxNTBmYmJlIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidHJhdmVsYXBwLWJhY2tlbmQiLCJzZXNzaW9uX3N0YXRlIjoiZDUzN2E2NDktNDdjZi00ZjRjLThhYWMtZWZiNWQ1ZjE3NmU2IiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIvKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJkZWZhdWx0LXJvbGVzLXRyYXZlbGFwcCIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwic2lkIjoiZDUzN2E2NDktNDdjZi00ZjRjLThhYWMtZWZiNWQ1ZjE3NmU2IiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJ0ZXN0IHVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciIsImdpdmVuX25hbWUiOiJ0ZXN0IiwiZmFtaWx5X25hbWUiOiJ1c2VyIiwiZW1haWwiOiJ0ZXN0dXNlckB0cmF2ZWxhcHAuY29tIn0.oZ7Kra3-CTpLMxgUse61FGwmf2uB4SMJ-yntfaH0NQtC6vZ0fuiTN7WtURraL_MTDVD9yqXSGKCQnjwcjuEqEFnG7oCOXvUiBsiqhMD7iTr-nS2qHDau_3J8Zw3NrJaTxiBZP2Hht1YNg2AOuVfUjL3l5pupGZQpOYgI8LzRfnYG6EHlif51a5M-pug7z5OB8QFrThmzKQWIXSZdtqBH0uB2LDRrOBkI-rza8H6q7jZE98A8zIZd6P3kDFRAhyPyA3mBfyuA_KcXgfK4q68bEmSDxNWOSbyF_fq1mnzqjTO4emdIqRolduj54bxvIHPyFezDGWGoFG3mxINa2iCgOg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"tema\": \"SCURO\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/utenti/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "utenti",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cambia tema a CHIARO",
+          "id": "a3b16334-eb6b-4911-86e0-e8e8987132c7",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVekloZnFzUDBiQlVUYlZxbHoyR3dwZG81QUxMRGJZNERIclVLRFZsYkVFIn0.eyJleHAiOjE3Nzk2MjA0MTcsImlhdCI6MTc3OTYyMDExNywianRpIjoiNDY3ODUyMDMtMTc1ZS00YTI0LWI0YTEtNjgxMDgxMjhkYTVlIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy90cmF2ZWxhcHAiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiMGEzYWIwNDctMzQ1Ny00ODVjLThjNzAtNWYzYWQxNTBmYmJlIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidHJhdmVsYXBwLWJhY2tlbmQiLCJzZXNzaW9uX3N0YXRlIjoiZDUzN2E2NDktNDdjZi00ZjRjLThhYWMtZWZiNWQ1ZjE3NmU2IiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIvKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJkZWZhdWx0LXJvbGVzLXRyYXZlbGFwcCIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwic2lkIjoiZDUzN2E2NDktNDdjZi00ZjRjLThhYWMtZWZiNWQ1ZjE3NmU2IiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJ0ZXN0IHVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciIsImdpdmVuX25hbWUiOiJ0ZXN0IiwiZmFtaWx5X25hbWUiOiJ1c2VyIiwiZW1haWwiOiJ0ZXN0dXNlckB0cmF2ZWxhcHAuY29tIn0.oZ7Kra3-CTpLMxgUse61FGwmf2uB4SMJ-yntfaH0NQtC6vZ0fuiTN7WtURraL_MTDVD9yqXSGKCQnjwcjuEqEFnG7oCOXvUiBsiqhMD7iTr-nS2qHDau_3J8Zw3NrJaTxiBZP2Hht1YNg2AOuVfUjL3l5pupGZQpOYgI8LzRfnYG6EHlif51a5M-pug7z5OB8QFrThmzKQWIXSZdtqBH0uB2LDRrOBkI-rza8H6q7jZE98A8zIZd6P3kDFRAhyPyA3mBfyuA_KcXgfK4q68bEmSDxNWOSbyF_fq1mnzqjTO4emdIqRolduj54bxvIHPyFezDGWGoFG3mxINa2iCgOg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"tema\": \"CHIARO\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/utenti/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "utenti",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "elimina utente",
+          "id": "906e424d-f62d-4137-a050-70cdd392df7d",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVekloZnFzUDBiQlVUYlZxbHoyR3dwZG81QUxMRGJZNERIclVLRFZsYkVFIn0.eyJleHAiOjE3Nzk2MjI2MzMsImlhdCI6MTc3OTYyMjMzMywianRpIjoiYTI3NjdlNTktZDc2NS00MjI4LTllYzgtMDc3NDk0ODljYTNlIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy90cmF2ZWxhcHAiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiMGEzYWIwNDctMzQ1Ny00ODVjLThjNzAtNWYzYWQxNTBmYmJlIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidHJhdmVsYXBwLWJhY2tlbmQiLCJzZXNzaW9uX3N0YXRlIjoiOTY1NzY2N2ItMzYyZC00YWEwLWI3YjMtMWJiNjUwNzI1YjNlIiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIvKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJkZWZhdWx0LXJvbGVzLXRyYXZlbGFwcCIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwic2lkIjoiOTY1NzY2N2ItMzYyZC00YWEwLWI3YjMtMWJiNjUwNzI1YjNlIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJ0ZXN0IHVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciIsImdpdmVuX25hbWUiOiJ0ZXN0IiwiZmFtaWx5X25hbWUiOiJ1c2VyIiwiZW1haWwiOiJ0ZXN0dXNlckB0cmF2ZWxhcHAuY29tIn0.YPMYR3SfPwnJKoOKmdV4Ttazqh398GS6tRsX_srXFoEZH33R7Kwe_ADVM1EehUQzq1Q9iTzpeLvJqq7iRPiVzwa0aUquYi5n4KqZhfx7Zv9CiuCwfcy-muMPSkhYNmDZ1G13yQ_YA8WT0tN-oogNrKrPPF8mX4PapeUO0BPo_iMmC883t7jruREkqKp96k3pI9M7RPu6Le0sex9t-YQojSjV7VN_UF667SuZsWYbKbYZE5wDmrNAyUmbmfPt90CldIt6034jI9ydtm4OB9f8ytiqY3WFtDplWMgylJ51T8_N4Drx99v_LGsrcMzBP6lfGdyGqFaOqPnhxF_WDHPkWw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/utenti/9999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "utenti",
+                "9999"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "sincronizza utente",
+          "id": "9ff751f4-02bc-4aec-9a8c-0555f5414a93",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
             }
           },
           "response": []
