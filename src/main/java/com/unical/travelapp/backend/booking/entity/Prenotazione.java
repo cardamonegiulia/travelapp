@@ -44,9 +44,10 @@ public class Prenotazione {
     @Column(nullable = false)
     private Integer numeroPartecipanti;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal prezzoTotale;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private StatoPrenotazione stato;
 
