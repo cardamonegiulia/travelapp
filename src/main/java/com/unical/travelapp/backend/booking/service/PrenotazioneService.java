@@ -1,5 +1,7 @@
 package com.unical.travelapp.backend.booking.service;
 
+import com.unical.travelapp.backend.booking.exception.*;
+import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
 import com.unical.travelapp.backend.booking.dto.CreaPrenotazioneRequest;
 import com.unical.travelapp.backend.booking.entity.*;
 import com.unical.travelapp.backend.booking.repositories.ExtraPrenotazioneRepository;
@@ -42,63 +44,67 @@ public class PrenotazioneService {
     private Utente recuperaUtente(Long id) {
         Optional<Utente> utente = utenteRepository.findById(id);
 
-        if (!utente.isPresent()) {
-            throw new IllegalArgumentException("Utente non trovato");
+        if (utente.isEmpty()) {
+            throw new UtenteNonTrovatoException("Utente non trovato");
         }
 
         return utente.get();
     }
 
     private void validaRichiesta(CreaPrenotazioneRequest req){
-        // qui controllo se numeroPartecipanti presente e > 0
         if(req.getNumeroPartecipanti() == null || req.getNumeroPartecipanti() <= 0){
-            throw new IllegalArgumentException  ("numeri posti non disponibili");
+            throw new RichiestaPrenotazioneNonValidaException("Numero partecipanti non valido");
         }
-        // qui che almeno uno tra itinerario/sessione è selezionato
+
         if(req.getDisponibilitaItinerarioId() == null && req.getSessioneSingolaAttivitaId() == null ){
-            throw new IllegalArgumentException ("Devi selezionare un itinerario o una singola attività");
+            throw new RichiestaPrenotazioneNonValidaException("Devi selezionare un itinerario o una singola attività");
         }
-        // qui che non possono essere entrambi insieme/selezionati
+
         if(req.getDisponibilitaItinerarioId() != null && req.getSessioneSingolaAttivitaId() != null ){
-            throw new IllegalArgumentException ("Devi selezionare un itinerario o una singola attività");
+            throw new RichiestaPrenotazioneNonValidaException("Devi selezionare un itinerario o una singola attività");
         }
-        // qui vieto gli extra per sessione singola
+
         if(req.getSessioneSingolaAttivitaId() != null && req.getAttivitaExtraIds() != null && !req.getAttivitaExtraIds().isEmpty()){
-            throw new IllegalArgumentException("Non ci sono attività extra per le singole attività");
+            throw new RichiestaPrenotazioneNonValidaException("Non ci sono attività extra per le singole attività");
         }
     }
 
-    private DisponibilitaItinerario recuperaDisponibilita (Long id){
+    private DisponibilitaItinerario recuperaDisponibilita(Long id){
         Optional<DisponibilitaItinerario> dispon = disponibilitaItinerarioRepository.findById(id);
-        if(!dispon.isPresent()){
-            throw new IllegalArgumentException("Itinerario non trovato");
-        }
-        return dispon.get();
 
-    }
-    private SessioneSingolaAttivita recuperaSingolaAttivita (Long id){
-        Optional<SessioneSingolaAttivita> sessioneSing = sessioneSingolaAttivitaRepository.findById(id);
-        if(!sessioneSing.isPresent()){
-            throw new IllegalArgumentException("Sessione non trovata");
+        if(dispon.isEmpty()){
+            throw new DisponibilitaNonTrovataException("Disponibilità itinerario non trovata");
         }
+
+        return dispon.get();
+    }
+
+    private SessioneSingolaAttivita recuperaSingolaAttivita(Long id){
+        Optional<SessioneSingolaAttivita> sessioneSing = sessioneSingolaAttivitaRepository.findById(id);
+
+        if(sessioneSing.isEmpty()){
+            throw new DisponibilitaNonTrovataException("Sessione singola non trovata");
+        }
+
         return sessioneSing.get();
     }
 
     // piu avanti evito la duplicazioni dei due metodi scalaposti.
     private void controllaEScalaPostiSessione(SessioneSingolaAttivita sessione, Integer numeroPartecipanti){
-        if (sessione.getPostiDisponibili()<numeroPartecipanti ){
-            throw new IllegalArgumentException("Numero posti non disponibili");
+        if (sessione.getPostiDisponibili() < numeroPartecipanti){
+            throw new PostiInsufficientiException("Numero posti non disponibili");
         }
-        sessione.setPostiDisponibili(sessione.getPostiDisponibili() - numeroPartecipanti);
 
+        sessione.setPostiDisponibili(sessione.getPostiDisponibili() - numeroPartecipanti);
     }
+
     private void controllaEScalaPostiItinerario(DisponibilitaItinerario disp, Integer numeroPartecipanti){
-        if (disp.getPostiDisponibili()<numeroPartecipanti ){
-            throw new IllegalArgumentException("Numero posti non disponibili");
+        if (disp.getPostiDisponibili() < numeroPartecipanti){
+            throw new PostiInsufficientiException("Numero posti non disponibili");
         }
+
         disp.setPostiDisponibili(disp.getPostiDisponibili() - numeroPartecipanti);
     }
-
     // Lo compatto appena capisco e cerco poi di evitare i duplicati come con scala posto. Sorry guys.
     private BigDecimal calcolaPrezzoItinerario(DisponibilitaItinerario disp, Integer numeroPartecipanti) {
         BigDecimal prezzoBase = disp.getItinerario().getPrezzoBase();
@@ -117,18 +123,18 @@ public class PrenotazioneService {
     private Attivita recuperaEValidaAttivitaExtra(Long id, DisponibilitaItinerario disp) {
         Optional<Attivita> optionalAtt = attivitaRepo.findById(id);
 
-        if(!optionalAtt.isPresent()) {
-            throw new IllegalArgumentException("Attivita non trovata: " + id);
+        if(optionalAtt.isEmpty()) {
+            throw new AttivitaExtraNonValidaException("Attività extra non trovata: " + id);
         }
 
         Attivita att = optionalAtt.get();
 
         if(att.getTappa() == null || att.getTappa().getItinerario() == null){
-            throw new IllegalArgumentException("Tappa o itinerario non associati all'attività: " + id);
+            throw new AttivitaExtraNonValidaException("Tappa o itinerario non associati all'attività: " + id);
         }
 
         if(!att.getTappa().getItinerario().getId().equals(disp.getItinerario().getId())){
-            throw new IllegalArgumentException("Attivita non inerente all'itinerario scelto!");
+            throw new AttivitaExtraNonValidaException("Attività non inerente all'itinerario scelto");
         }
 
         return att;
@@ -176,6 +182,7 @@ public class PrenotazioneService {
     }
     // al momento non sto usando il return quindi ho lascia cosi perche in futuro puo essre utile
     // o lo levo e faccio un metodo void
+    // void al momento non serve restituirlo
     private void creaPagamento (Prenotazione prenotazione, BigDecimal prezzoTotale) {
         Pagamento pay = Pagamento.builder()
                 .prenotazione(prenotazione)
@@ -224,10 +231,12 @@ public class PrenotazioneService {
 
     public Prenotazione getPrenotazioneById(Long id){
         Optional<Prenotazione> prenotazioneId = prenotazioneRepo.findById(id);
+
         if(prenotazioneId.isPresent()) {
             return prenotazioneId.get();
         }
-        throw new IllegalArgumentException("Prenotazione non trovata: " + id);
+
+        throw new PrenotazioneNonTrovataException("Prenotazione non trovata: " + id);
     }
 
     public List<Prenotazione> getPrenotazioniByUtente(Long utenteId) {
@@ -241,19 +250,19 @@ public class PrenotazioneService {
     public Prenotazione pagaPrenotazione(Long prenotazioneId){
         Optional<Pagamento> pagamento = pagamentoRepo.findByPrenotazioneId(prenotazioneId);
 
-        if(!pagamento.isPresent()){
-            throw new IllegalArgumentException("Pagamento non trovato: " + prenotazioneId);
+        if(pagamento.isEmpty()){
+            throw new PagamentoNonTrovatoException("Pagamento non trovato: " + prenotazioneId);
         }
 
         Pagamento pay = pagamento.get();
         Prenotazione prenotazione = pay.getPrenotazione();
 
         if(prenotazione.getStato().equals(StatoPrenotazione.CANCELLATA)){
-            throw new IllegalArgumentException("Non puoi pagare una prenotazione cancellata: " + prenotazioneId);
+            throw new StatoPrenotazioneNonValidoException("Non puoi pagare una prenotazione cancellata: " + prenotazioneId);
         }
 
         if(pay.getStato().equals(StatoPagamento.COMPLETATO)){
-            throw new IllegalArgumentException("Pagamento gia completato: " + prenotazioneId);
+            throw new StatoPrenotazioneNonValidoException("Pagamento già completato: " + prenotazioneId);
         }
 
         pay.setStato(StatoPagamento.COMPLETATO);
@@ -271,10 +280,9 @@ public class PrenotazioneService {
         Prenotazione prenotazione = getPrenotazioneById(prenotazioneId);
 
         if(prenotazione.getStato().equals(StatoPrenotazione.CANCELLATA)) {
-            throw new IllegalArgumentException("Prenotazione gia cancellata: " + prenotazioneId);
+            throw new StatoPrenotazioneNonValidoException("Prenotazione già cancellata: " + prenotazioneId);
         }
 
-        //se itinerario ripristino i posti, stessa cosa dopo con sessione singola attività
         if(prenotazione.getDisponibilitaItinerario() != null) {
             DisponibilitaItinerario disp = prenotazione.getDisponibilitaItinerario();
             disp.setPostiDisponibili(disp.getPostiDisponibili() + prenotazione.getNumeroPartecipanti());
@@ -285,25 +293,24 @@ public class PrenotazioneService {
             sessione.setPostiDisponibili(sessione.getPostiDisponibili() + prenotazione.getNumeroPartecipanti());
         }
 
-        // qui recupero il pagamento e poi controllo se esiste e in base allo stato effettuo un rimborso o altro
         Optional<Pagamento> pagamento = pagamentoRepo.findByPrenotazioneId(prenotazioneId);
 
-        if(pagamento.isPresent()) {
-            Pagamento pay = pagamento.get();
-
-            if(pay.getStato().equals(StatoPagamento.COMPLETATO)) {
-                pay.setStato(StatoPagamento.RIMBORSATO);
-            } else if(pay.getStato().equals(StatoPagamento.IN_ATTESA)) {
-                pay.setStato(StatoPagamento.FALLITO);
-            }
-
-            pagamentoRepo.save(pay);
+        if(pagamento.isEmpty()) {
+            throw new PagamentoNonTrovatoException("Pagamento non trovato: " + prenotazioneId);
         }
+
+        Pagamento pay = pagamento.get();
+
+        if(pay.getStato().equals(StatoPagamento.COMPLETATO)) {
+            pay.setStato(StatoPagamento.RIMBORSATO);
+        } else if(pay.getStato().equals(StatoPagamento.IN_ATTESA)) {
+            pay.setStato(StatoPagamento.FALLITO);
+        }
+
+        pagamentoRepo.save(pay);
 
         prenotazione.setStato(StatoPrenotazione.CANCELLATA);
 
         return prenotazioneRepo.save(prenotazione);
     }
-
-
 }

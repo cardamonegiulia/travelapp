@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 @Data
@@ -25,12 +24,13 @@ public class Pagamento {
     @JoinColumn(nullable = false)
     private Prenotazione prenotazione;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal importo;
 
     @Column(nullable = false)
     private LocalDateTime dataPagamento;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private StatoPagamento stato;
 }

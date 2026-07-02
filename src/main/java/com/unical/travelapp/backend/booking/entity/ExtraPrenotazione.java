@@ -30,7 +30,7 @@ public class ExtraPrenotazione {
     @JoinColumn(nullable = false)
     private Attivita attivita;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal prezzoExtra;
 
 }
