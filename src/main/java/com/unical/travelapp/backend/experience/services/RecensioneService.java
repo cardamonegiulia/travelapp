@@ -7,12 +7,14 @@ import com.unical.travelapp.backend.catalog.repository.ItinerarioRepository;
 import com.unical.travelapp.backend.experience.exeption.ItinerarioNonTrovato;
 import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
-import com.unical.travelapp.backend.experience.models.DTO.RecensioneDTO;
+import com.unical.travelapp.backend.experience.models.DTO.RecensioneRequest;
+import com.unical.travelapp.backend.experience.models.DTO.RecensioneResponse;
 import com.unical.travelapp.backend.experience.models.Recensione;
 import com.unical.travelapp.backend.experience.repository.RecensioneRepository;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,17 +36,17 @@ public class RecensioneService {
     private ItinerarioRepository itinerarioRepository;
 
 
-    public RecensioneDTO getById(Long id) {
+    public RecensioneResponse getById(Long id) {
         Recensione recensione = repo.findById(id)
                 .orElseThrow(() -> new RecensioneNonTrovata("Recensione non trovata con id: " + id));
-        return toDTO(recensione);
+        return toResponse(recensione);
     }
 
 
-    public List<RecensioneDTO> getRecensioniDaItinerarioId(Long itinerarioId) {
+    public List<RecensioneResponse> getRecensioniDaItinerarioId(Long itinerarioId) {
         return repo.findByItinerario_Id(itinerarioId)
                 .stream()
-                .map(this::toDTO)
+                .map(this::toResponse)
                 .toList();
     }
 
@@ -58,7 +60,7 @@ public class RecensioneService {
     }
 
 
-    public void addNewRecensione(RecensioneDTO dto) {
+    public void addNewRecensione(RecensioneRequest dto) {
 
         Utente utente = utenteService.getUtenteSessione();
 
@@ -73,7 +75,7 @@ public class RecensioneService {
                     .orElseThrow(() -> new PrenotazioneNonTrovata("Prenotazione non trovata"));
 
             if (!prenotazione.getViaggiatore().getId().equals(utente.getId())) {
-                throw new SecurityException("Non autorizzato a recensire questa prenotazione");
+                throw new AccessDeniedException("Non autorizzato a recensire questa prenotazione");
             }
 
             if (repo.existsByPrenotazione(prenotazione)) {
@@ -99,15 +101,16 @@ public class RecensioneService {
 
         Utente utente = utenteService.getUtenteSessione();
         if (!recensione.getUtente().getId().equals(utente.getId())) {
-            throw new SecurityException("Non autorizzato a eliminare questa recensione");
+            throw new AccessDeniedException("Non autorizzato a eliminare questa recensione");
         }
 
         repo.delete(recensione);
     }
 
 
-    private RecensioneDTO toDTO(Recensione r) {
-        RecensioneDTO dto = new RecensioneDTO();
+    private RecensioneResponse toResponse(Recensione r) {
+        RecensioneResponse dto = new RecensioneResponse();
+        dto.setId(r.getId());
         dto.setUtenteId(r.getUtente().getId());
         dto.setComm(r.getCommento());
         dto.setVotazione(r.getVoto());
@@ -122,7 +125,7 @@ public class RecensioneService {
     }
 
 
-    private Itinerario resolveItinerario(RecensioneDTO dto) {
+    private Itinerario resolveItinerario(RecensioneRequest dto) {
         if (dto.getItinerarioId() != null) {
             return itinerarioRepository.findById(dto.getItinerarioId())
                     .orElseThrow(() -> new ItinerarioNonTrovato("Itinerario non trovato"));

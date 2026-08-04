@@ -1,0 +1,82 @@
+package com.unical.travelapp.backend.validation;
+
+import com.unical.travelapp.backend.booking.dto.CreaPrenotazioneRequest;
+import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+// Prova che i DTO di request introdotti in Fase 2 rifiutano payload invalidi/incompleti
+// invece di lasciarli passare fino al service (allow-list via bean validation).
+class RequestValidationTest {
+
+    private static final ValidatorFactory FACTORY = Validation.buildDefaultValidatorFactory();
+    private static final Validator VALIDATOR = FACTORY.getValidator();
+
+    @Test
+    void richiestaPrenotazioneSenzaNumeroPartecipantiNonEValida() {
+        CreaPrenotazioneRequest req = new CreaPrenotazioneRequest();
+        req.setDisponibilitaItinerarioId(1L);
+
+        Set<ConstraintViolation<CreaPrenotazioneRequest>> violazioni = VALIDATOR.validate(req);
+
+        assertThat(violazioni).anyMatch(v -> v.getPropertyPath().toString().equals("numeroPartecipanti"));
+    }
+
+    @Test
+    void richiestaPrenotazioneConNumeroPartecipantiNegativoNonEValida() {
+        CreaPrenotazioneRequest req = new CreaPrenotazioneRequest();
+        req.setNumeroPartecipanti(-1);
+        req.setDisponibilitaItinerarioId(1L);
+
+        Set<ConstraintViolation<CreaPrenotazioneRequest>> violazioni = VALIDATOR.validate(req);
+
+        assertThat(violazioni).anyMatch(v -> v.getPropertyPath().toString().equals("numeroPartecipanti"));
+    }
+
+    @Test
+    void richiestaItinerarioSenzaTitoloNonEValida() {
+        ItinerarioRequestDTO dto = new ItinerarioRequestDTO();
+        dto.setDestinazionePrincipale("Roma");
+        dto.setPrezzoBase(BigDecimal.TEN);
+        dto.setDurataGiorni(3);
+        dto.setMaxPartecipanti(10);
+
+        Set<ConstraintViolation<ItinerarioRequestDTO>> violazioni = VALIDATOR.validate(dto);
+
+        assertThat(violazioni).anyMatch(v -> v.getPropertyPath().toString().equals("titolo"));
+    }
+
+    @Test
+    void richiestaItinerarioConPrezzoNegativoNonEValida() {
+        ItinerarioRequestDTO dto = new ItinerarioRequestDTO();
+        dto.setTitolo("Tour di Roma");
+        dto.setDestinazionePrincipale("Roma");
+        dto.setPrezzoBase(BigDecimal.valueOf(-10));
+        dto.setDurataGiorni(3);
+        dto.setMaxPartecipanti(10);
+
+        Set<ConstraintViolation<ItinerarioRequestDTO>> violazioni = VALIDATOR.validate(dto);
+
+        assertThat(violazioni).anyMatch(v -> v.getPropertyPath().toString().equals("prezzoBase"));
+    }
+
+    @Test
+    void richiestaItinerarioCompletaEValida() {
+        ItinerarioRequestDTO dto = new ItinerarioRequestDTO();
+        dto.setTitolo("Tour di Roma");
+        dto.setDestinazionePrincipale("Roma");
+        dto.setPrezzoBase(BigDecimal.valueOf(199.90));
+        dto.setDurataGiorni(3);
+        dto.setMaxPartecipanti(10);
+
+        assertThat(VALIDATOR.validate(dto)).isEmpty();
+    }
+}

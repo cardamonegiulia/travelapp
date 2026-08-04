@@ -15,6 +15,8 @@ import com.unical.travelapp.backend.catalog.repository.DisponibilitaItinerarioRe
 import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRepository;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.repository.UtenteRepository;
+import com.unical.travelapp.backend.identity.service.UtenteService;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class PrenotazioneService {
     private final UtenteRepository utenteRepository;
     private final DisponibilitaItinerarioRepository disponibilitaItinerarioRepository;
     private final SessioneSingolaAttivitaRepository sessioneSingolaAttivitaRepository;
+    private final UtenteService utenteService;
 
 
     // cretePrenotazione era diventata troppo grande quindi ora creo diversi piccoli metodi
@@ -196,7 +199,8 @@ public class PrenotazioneService {
     @Transactional
     public Prenotazione createPrenotazione(CreaPrenotazioneRequest req) {
         validaRichiesta(req);
-        Utente viaggiatore = recuperaUtente(req.getViaggiatoreId());
+        // il viaggiatore e' sempre l'utente autenticato, mai un id passato dal client
+        Utente viaggiatore = utenteService.getUtenteSessione();
 
         boolean isItinerario = req.getDisponibilitaItinerarioId() != null;
 
@@ -229,17 +233,25 @@ public class PrenotazioneService {
         return prenotazioneSave;
     }
 
+    // ownership nella query: se la prenotazione esiste ma e' di un altro utente, 404 (non 403)
+    // per non rivelare l'esistenza dell'id a chi non ne ha diritto. L'admin vede tutto.
     public Prenotazione getPrenotazioneById(Long id){
-        Optional<Prenotazione> prenotazioneId = prenotazioneRepo.findById(id);
-
-        if(prenotazioneId.isPresent()) {
-            return prenotazioneId.get();
+        if (utenteService.isAdmin()) {
+            return prenotazioneRepo.findById(id)
+                    .orElseThrow(() -> new PrenotazioneNonTrovataException("Prenotazione non trovata: " + id));
         }
 
-        throw new PrenotazioneNonTrovataException("Prenotazione non trovata: " + id);
+        Long viaggiatoreId = utenteService.getUtenteSessione().getId();
+        return prenotazioneRepo.findByIdAndViaggiatoreId(id, viaggiatoreId)
+                .orElseThrow(() -> new PrenotazioneNonTrovataException("Prenotazione non trovata: " + id));
     }
 
     public List<Prenotazione> getPrenotazioniByUtente(Long utenteId) {
+        Utente richiedente = utenteService.getUtenteSessione();
+        if (!utenteService.isAdmin() && !richiedente.getId().equals(utenteId)) {
+            throw new AccessDeniedException("Non puoi consultare le prenotazioni di un altro utente");
+        }
+
         recuperaUtente(utenteId);
         return prenotazioneRepo.findByViaggiatoreId(utenteId);
     }
@@ -248,6 +260,9 @@ public class PrenotazioneService {
     // ma si poteva anche usare Pagamento ma non credo sia coerente per il motivo sopra riportato
     @Transactional
     public Prenotazione pagaPrenotazione(Long prenotazioneId){
+        // ownership verificata qui: 404 se la prenotazione non esiste o non e' dell'utente corrente
+        Prenotazione prenotazione = getPrenotazioneById(prenotazioneId);
+
         Optional<Pagamento> pagamento = pagamentoRepo.findByPrenotazioneId(prenotazioneId);
 
         if(pagamento.isEmpty()){
@@ -255,7 +270,6 @@ public class PrenotazioneService {
         }
 
         Pagamento pay = pagamento.get();
-        Prenotazione prenotazione = pay.getPrenotazione();
 
         if(prenotazione.getStato().equals(StatoPrenotazione.CANCELLATA)){
             throw new StatoPrenotazioneNonValidoException("Non puoi pagare una prenotazione cancellata: " + prenotazioneId);

@@ -1,9 +1,11 @@
 package com.unical.travelapp.backend.experience.controllers;
 
-import com.unical.travelapp.backend.experience.models.DTO.RecensioneDTO;
+import com.unical.travelapp.backend.experience.models.DTO.RecensioneRequest;
+import com.unical.travelapp.backend.experience.models.DTO.RecensioneResponse;
 import com.unical.travelapp.backend.experience.services.RecensioneService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +23,7 @@ public class RecensioneController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Restituisce una recensione tramite il suo ID")
-    public ResponseEntity<RecensioneDTO> getById(@PathVariable Long id) {
+    public ResponseEntity<RecensioneResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
@@ -32,7 +34,7 @@ public class RecensioneController {
             description = "Dato l'ID di un itinerario, ritorna la lista di tutte le recensioni collegate. " +
                     "Restituisce lista vuota se non ce ne sono"
     )
-    public ResponseEntity<List<RecensioneDTO>> leggiRecensioniItinerario(@PathVariable Long itinerarioId) {
+    public ResponseEntity<List<RecensioneResponse>> leggiRecensioniItinerario(@PathVariable Long itinerarioId) {
         return ResponseEntity.ok(service.getRecensioniDaItinerarioId(itinerarioId));
     }
 
@@ -53,7 +55,7 @@ public class RecensioneController {
             description = "Riceve il DTO con itinerarioId (o prenotazioneId), voto e commento. " +
                     "Se viene passata la prenotazione, verifica che appartenga all'utente e che non sia gia' stata recensita"
     )
-    public ResponseEntity<?> addNewRecensione(@RequestBody RecensioneDTO dto) {
+    public ResponseEntity<?> addNewRecensione(@Valid @RequestBody RecensioneRequest dto) {
         service.addNewRecensione(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body("Recensione aggiunta con successo!");
     }

@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.exception;
 
+import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
 import com.unical.travelapp.backend.experience.exeption.ItinerarioNonTrovato;
 import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
@@ -14,6 +15,9 @@ import com.unical.travelapp.backend.booking.exception.RichiestaPrenotazioneNonVa
 import com.unical.travelapp.backend.booking.exception.StatoPrenotazioneNonValidoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -117,6 +121,24 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    // 403 - Autenticato ma senza i permessi necessari (ruolo insufficiente o risorsa non propria)
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        return buildResponse(HttpStatus.FORBIDDEN, "Accesso negato");
+    }
+
+    // 401 - Autenticazione mancante o non valida
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthentication(AuthenticationException ex) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Autenticazione richiesta");
+    }
+
+    // 400 - JSON malformato o con campi non previsti dal DTO (es. FAIL_ON_UNKNOWN_PROPERTIES)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleMessaggioNonLeggibile(HttpMessageNotReadableException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "Payload JSON non valido o con campi non previsti");
+    }
+
     // 500 - Fallback generico per qualsiasi altra eccezione non gestita
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenerico(Exception ex) {
@@ -137,6 +159,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ItinerarioNonTrovato.class)
     public ResponseEntity<Map<String, Object>> handleItinerarioNonTrovato(ItinerarioNonTrovato ex){
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException.class)
+    public ResponseEntity<Map<String, Object>> handleItinerarioNonTrovatoException(
+            com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException ex){
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(SingolaAttivitaNonTrovataException.class)
+    public ResponseEntity<Map<String, Object>> handleSingolaAttivitaNonTrovata(SingolaAttivitaNonTrovataException ex){
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 

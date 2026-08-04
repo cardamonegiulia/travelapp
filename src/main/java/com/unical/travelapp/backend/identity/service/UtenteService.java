@@ -113,6 +113,12 @@ public class UtenteService {
         return utente;
     }
 
+    public boolean isAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+    }
+
     // Se servisse ESCLUSIVAMENTE il numero ID (Long):
     public Long ottieniIdDaToken(Jwt jwt) {
         return ottieniUtenteDaToken(jwt).getId();

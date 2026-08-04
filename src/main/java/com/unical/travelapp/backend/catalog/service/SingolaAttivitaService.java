@@ -2,8 +2,10 @@ package com.unical.travelapp.backend.catalog.service;
 
 import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
 import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
+import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
 import com.unical.travelapp.backend.catalog.repository.SingolaAttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRepository;
+import com.unical.travelapp.backend.identity.entity.Utente;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,8 +62,19 @@ public class SingolaAttivitaService {
         return attivitaSalvata;
     }
 
+    // ownership nella query: l'organizzatore puo' cancellare solo le proprie attivita', l'admin qualsiasi
     @Transactional
-    public void deleteAttivita(Long id) {
-        singolaAttivitaRepository.deleteById(id);
+    public void deleteAttivita(Long id, Utente richiedente, boolean isAdmin) {
+        if (isAdmin) {
+            if (!singolaAttivitaRepository.existsById(id)) {
+                throw new SingolaAttivitaNonTrovataException("Attività non trovata: " + id);
+            }
+            singolaAttivitaRepository.deleteById(id);
+            return;
+        }
+
+        SingolaAttivita attivita = singolaAttivitaRepository.findByIdAndOrganizzatore_Id(id, richiedente.getId())
+                .orElseThrow(() -> new SingolaAttivitaNonTrovataException("Attività non trovata: " + id));
+        singolaAttivitaRepository.delete(attivita);
     }
 }

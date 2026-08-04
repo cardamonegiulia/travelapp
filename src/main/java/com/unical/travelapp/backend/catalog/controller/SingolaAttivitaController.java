@@ -1,12 +1,16 @@
 package com.unical.travelapp.backend.catalog.controller;
 
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaDTO;
+import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaRequestDTO;
 import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
 import com.unical.travelapp.backend.catalog.mapper.SingolaAttivitaMapper;
 import com.unical.travelapp.backend.catalog.service.SingolaAttivitaService;
+import com.unical.travelapp.backend.identity.service.UtenteService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -24,6 +28,9 @@ public class SingolaAttivitaController {
     @Autowired
     private SingolaAttivitaMapper attivitaMapper;
 
+    @Autowired
+    private UtenteService utenteService;
+
     @GetMapping
     public ResponseEntity<List<SingolaAttivitaDTO>> getAllAttivita() {
         List<SingolaAttivitaDTO> dtos = attivitaService.getAllAttivita().stream()
@@ -40,20 +47,24 @@ public class SingolaAttivitaController {
     }
 
     @PostMapping("/con-sessioni")
+    @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     public ResponseEntity<SingolaAttivitaDTO> createAttivitaConSessioni(
-            @RequestBody SingolaAttivitaDTO attivitaDTO,
+            @Valid @RequestBody SingolaAttivitaRequestDTO attivitaRequest,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inizio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fine,
             @RequestParam List<Integer> giorni) {
 
-        SingolaAttivita entity = attivitaMapper.toEntity(attivitaDTO);
+        SingolaAttivita entity = attivitaMapper.fromRequest(attivitaRequest);
+        // l'organizzatore e' sempre l'utente autenticato, mai un id passato dal client
+        entity.setOrganizzatore(utenteService.getUtenteSessione());
         SingolaAttivita salvata = attivitaService.saveAttivitaConSessioni(entity, inizio, fine, giorni);
         return ResponseEntity.ok(attivitaMapper.toDTO(salvata));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     public ResponseEntity<Void> deleteAttivita(@PathVariable Long id) {
-        attivitaService.deleteAttivita(id);
+        attivitaService.deleteAttivita(id, utenteService.getUtenteSessione(), utenteService.isAdmin());
         return ResponseEntity.noContent().build();
     }
 }

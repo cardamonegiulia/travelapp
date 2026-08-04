@@ -13,8 +13,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 public class PreferitoService {
 
@@ -59,7 +57,7 @@ public class PreferitoService {
     }
 
     @Transactional
-    public void addPreferito(ItinerarioDTO itinerario){
+    public void addPreferito(Long itinerarioId){
         Utente utente = utenteService.getUtenteSessione();
 
         if (utente != null){
@@ -68,23 +66,27 @@ public class PreferitoService {
                 prefe = new Preferito();
                 prefe.setUtente(utente);
             }
-            Itinerario itin = itinerarioRepository.findById(itinerario.getId())
+            Itinerario itin = itinerarioRepository.findById(itinerarioId)
                     .orElseThrow(() -> new ItinerarioNonTrovato("itinerario non trovato"));
 
             prefe.getItinerario().add(itin);
+            repo.save(prefe);
         }
     }
 
     @Transactional
-    public void removePreferito(ItinerarioDTO itinerarioDTO){
+    public void removePreferito(Long itinerarioId){
         Utente utente = utenteService.getUtenteSessione();
 
         if (utente != null){
             Preferito preferiti = repo.findByUtente(utente);
-            Itinerario itinerario = itinerarioRepository.findById(itinerarioDTO.getId())
+            Itinerario itinerario = itinerarioRepository.findById(itinerarioId)
                     .orElseThrow(() -> new ItinerarioNonTrovato("itinerario non trovato"));
 
-            preferiti.getItinerario().remove(itinerario);
+            if (preferiti != null) {
+                preferiti.getItinerario().remove(itinerario);
+                repo.save(preferiti);
+            }
         }
     }
 }

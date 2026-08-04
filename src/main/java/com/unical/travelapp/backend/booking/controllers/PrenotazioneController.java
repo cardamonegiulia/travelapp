@@ -5,6 +5,7 @@ import com.unical.travelapp.backend.booking.dto.PrenotazioneResponseDto;
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.booking.mapper.PrenotazioneMapper;
 import com.unical.travelapp.backend.booking.service.PrenotazioneService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ public class PrenotazioneController {
     private final PrenotazioneMapper prenotazioneMapper;
 
     @PostMapping
-    public ResponseEntity<PrenotazioneResponseDto> creaPrenotazione(@RequestBody CreaPrenotazioneRequest request) {
+    public ResponseEntity<PrenotazioneResponseDto> creaPrenotazione(@Valid @RequestBody CreaPrenotazioneRequest request) {
         Prenotazione prenotazione = prenotazioneService.createPrenotazione(request);
         PrenotazioneResponseDto responseDto = prenotazioneMapper.toResponseDto(prenotazione);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
