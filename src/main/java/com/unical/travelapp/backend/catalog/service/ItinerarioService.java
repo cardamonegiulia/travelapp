@@ -5,10 +5,11 @@ import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoExcept
 import com.unical.travelapp.backend.catalog.repository.ItinerarioRepository;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -17,9 +18,9 @@ public class ItinerarioService {
     @Autowired
     private ItinerarioRepository itinerarioRepository;
 
-   
-    public List<Itinerario> getAllItinerari() {
-        return itinerarioRepository.findAll();
+
+    public Page<Itinerario> getAllItinerari(Pageable pageable) {
+        return itinerarioRepository.findAll(pageable);
     }
 
 

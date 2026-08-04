@@ -8,13 +8,14 @@ import com.unical.travelapp.backend.catalog.service.ItinerarioService;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/itinerari")
@@ -30,11 +31,8 @@ public class ItinerarioController {
     private UtenteService utenteService;
 
     @GetMapping
-    public ResponseEntity<List<ItinerarioDTO>> getAllItinerari() {
-        List<ItinerarioDTO> dtos = itinerarioService.getAllItinerari().stream()
-                .map(itinerarioMapper::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
+    public ResponseEntity<Page<ItinerarioDTO>> getAllItinerari(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(itinerarioService.getAllItinerari(pageable).map(itinerarioMapper::toDTO));
     }
 
     @GetMapping("/{id}")

@@ -10,12 +10,12 @@ import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteExcepti
 import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
 import com.unical.travelapp.backend.identity.mapper.UtenteMapper;
 import com.unical.travelapp.backend.identity.repository.UtenteRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.oauth2.jwt.Jwt;
-
-import java.util.List;
 
 @Service
 public class UtenteService {
@@ -44,11 +44,9 @@ public class UtenteService {
         );
     }
 
-    public List<UtenteResponseDto> ottieniTutti() {
-        return utenteRepository.findAll()
-                .stream()
-                .map(utenteMapper::toResponseDto)
-                .toList();
+    public Page<UtenteResponseDto> ottieniTutti(Pageable pageable) {
+        return utenteRepository.findAll(pageable)
+                .map(utenteMapper::toResponseDto);
     }
 
     public UtenteResponseDto ottieniPerId(Long id) {

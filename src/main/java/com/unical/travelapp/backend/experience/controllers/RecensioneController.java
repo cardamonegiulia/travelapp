@@ -7,11 +7,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/recensioni")
@@ -34,8 +35,9 @@ public class RecensioneController {
             description = "Dato l'ID di un itinerario, ritorna la lista di tutte le recensioni collegate. " +
                     "Restituisce lista vuota se non ce ne sono"
     )
-    public ResponseEntity<List<RecensioneResponse>> leggiRecensioniItinerario(@PathVariable Long itinerarioId) {
-        return ResponseEntity.ok(service.getRecensioniDaItinerarioId(itinerarioId));
+    public ResponseEntity<Page<RecensioneResponse>> leggiRecensioniItinerario(
+            @PathVariable Long itinerarioId, @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.getRecensioniDaItinerarioId(itinerarioId, pageable));
     }
 
 

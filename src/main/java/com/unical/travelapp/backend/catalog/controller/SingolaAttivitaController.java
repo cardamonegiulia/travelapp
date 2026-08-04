@@ -8,6 +8,9 @@ import com.unical.travelapp.backend.catalog.service.SingolaAttivitaService;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/attivita")
@@ -32,11 +34,8 @@ public class SingolaAttivitaController {
     private UtenteService utenteService;
 
     @GetMapping
-    public ResponseEntity<List<SingolaAttivitaDTO>> getAllAttivita() {
-        List<SingolaAttivitaDTO> dtos = attivitaService.getAllAttivita().stream()
-                .map(attivitaMapper::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
+    public ResponseEntity<Page<SingolaAttivitaDTO>> getAllAttivita(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(attivitaService.getAllAttivita(pageable).map(attivitaMapper::toDTO));
     }
 
     @GetMapping("/{id}")

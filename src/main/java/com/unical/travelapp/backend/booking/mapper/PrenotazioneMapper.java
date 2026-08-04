@@ -7,8 +7,6 @@ import com.unical.travelapp.backend.booking.repositories.PagamentoRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
 @AllArgsConstructor
 public class PrenotazioneMapper {
@@ -48,9 +46,5 @@ public class PrenotazioneMapper {
                 .luogo(luogo)
                 .destinazione(luogo)
                 .build();
-    }
-    public List<PrenotazioneResponseDto> toListResponseDto(List<Prenotazione> prenotazioni) {
-        //con prenotazioni.stream() scorro la lista, map(...) trasformo ogni Prenotazione in una PrenotazioneResponseDto, e infine con toList ricreo una lista finale di DTO
-        return prenotazioni.stream().map(this::toResponseDto).toList();
     }
 }

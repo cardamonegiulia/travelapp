@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.util.Optional;
@@ -85,7 +87,8 @@ class PrenotazioneServiceOwnershipTest {
         when(utenteService.isAdmin()).thenReturn(false);
         when(utenteService.getUtenteSessione()).thenReturn(utente(1L));
 
-        assertThatThrownBy(() -> service().getPrenotazioniByUtente(2L))
+        Pageable pageable = PageRequest.of(0, 20);
+        assertThatThrownBy(() -> service().getPrenotazioniByUtente(2L, pageable))
                 .isInstanceOf(AccessDeniedException.class);
     }
 }

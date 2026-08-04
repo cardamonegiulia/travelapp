@@ -16,6 +16,8 @@ import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRe
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.repository.UtenteRepository;
 import com.unical.travelapp.backend.identity.service.UtenteService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
@@ -246,14 +248,14 @@ public class PrenotazioneService {
                 .orElseThrow(() -> new PrenotazioneNonTrovataException("Prenotazione non trovata: " + id));
     }
 
-    public List<Prenotazione> getPrenotazioniByUtente(Long utenteId) {
+    public Page<Prenotazione> getPrenotazioniByUtente(Long utenteId, Pageable pageable) {
         Utente richiedente = utenteService.getUtenteSessione();
         if (!utenteService.isAdmin() && !richiedente.getId().equals(utenteId)) {
             throw new AccessDeniedException("Non puoi consultare le prenotazioni di un altro utente");
         }
 
         recuperaUtente(utenteId);
-        return prenotazioneRepo.findByViaggiatoreId(utenteId);
+        return prenotazioneRepo.findByViaggiatoreId(utenteId, pageable);
     }
 
     // la firma è Prenotazione perchè dopo il pagamento il frontend vuole vedere la prenotazione aggiornata

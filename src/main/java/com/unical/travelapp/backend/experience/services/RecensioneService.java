@@ -14,6 +14,8 @@ import com.unical.travelapp.backend.experience.repository.RecensioneRepository;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -43,11 +45,8 @@ public class RecensioneService {
     }
 
 
-    public List<RecensioneResponse> getRecensioniDaItinerarioId(Long itinerarioId) {
-        return repo.findByItinerario_Id(itinerarioId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    public Page<RecensioneResponse> getRecensioniDaItinerarioId(Long itinerarioId, Pageable pageable) {
+        return repo.findByItinerario_Id(itinerarioId, pageable).map(this::toResponse);
     }
 
 

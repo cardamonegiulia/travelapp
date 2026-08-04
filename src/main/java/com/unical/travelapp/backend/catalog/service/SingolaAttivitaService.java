@@ -7,6 +7,8 @@ import com.unical.travelapp.backend.catalog.repository.SingolaAttivitaRepository
 import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRepository;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,8 +25,8 @@ public class SingolaAttivitaService {
     @Autowired
     private SessioneSingolaAttivitaRepository sessioneRepository;
 
-    public List<SingolaAttivita> getAllAttivita() {
-        return singolaAttivitaRepository.findAll();
+    public Page<SingolaAttivita> getAllAttivita(Pageable pageable) {
+        return singolaAttivitaRepository.findAll(pageable);
     }
 
     public Optional<SingolaAttivita> getAttivitaById(Long id) {
