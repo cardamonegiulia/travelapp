@@ -3,6 +3,7 @@ package com.unical.travelapp.backend.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,6 +17,10 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
@@ -36,12 +41,40 @@ public class SecurityConfig {
     @Value("${app.security.resource-client-id}")
     private String resourceClientId;
 
+    @Value("${app.security.require-https:false}")
+    private boolean requireHttps;
+
+    @Value("${app.security.cors.allowed-origins}")
+    private List<String> corsAllowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitFilter rateLimitFilter) throws Exception {
         http
+                // API stateless a bearer token (Authorization: Bearer <jwt>), nessun cookie di sessione:
+                // il CSRF classico sfrutta l'invio automatico dei cookie dal browser, qui non si applica.
+                // Se in futuro si introducesse un flusso basato su cookie di sessione, va riabilitato.
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(contentType -> {})
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)
+                        )
+                        .referrerPolicy(referrer -> referrer
+                                .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+                        )
+                        // 'unsafe-inline' e' necessario solo per gli asset bundled di springdoc/swagger-ui;
+                        // le risposte JSON dell'API non eseguono script quindi la CSP e' qui difesa in profondita'.
+                        // In produzione swagger-ui e' comunque disabilitato (vedi application-prod.properties).
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; frame-ancestors 'none'; object-src 'none'; " +
+                                        "style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
+                        ))
                 )
                 .authorizeHttpRequests(auth -> auth
                         // rotte pubbliche
@@ -63,7 +96,29 @@ public class SecurityConfig {
                 // dopo l'autenticazione: qui il claim "sub" del JWT e' gia' disponibile per la chiave del rate limit
                 .addFilterAfter(rateLimitFilter, BearerTokenAuthenticationFilter.class);
 
+        // HTTPS obbligatorio solo quando esplicitamente richiesto (profilo prod): in sviluppo
+        // locale Keycloak gira su HTTP, forzare HTTPS romperebbe l'ambiente di dev.
+        if (requireHttps) {
+            http.redirectToHttps(Customizer.withDefaults());
+        }
+
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(corsAllowedOrigins);
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        // Bearer token nell'header Authorization, non cookie: nessuna credenziale cross-origin da consentire.
+        // Mai combinare allowCredentials=true con un allow-list permissiva o con "*".
+        configuration.setAllowCredentials(false);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
     }
 
     @Bean
