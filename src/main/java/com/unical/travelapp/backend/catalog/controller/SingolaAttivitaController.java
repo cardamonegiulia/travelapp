@@ -5,6 +5,7 @@ import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaRequestDTO;
 import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
 import com.unical.travelapp.backend.catalog.mapper.SingolaAttivitaMapper;
 import com.unical.travelapp.backend.catalog.service.SingolaAttivitaService;
+import com.unical.travelapp.backend.common.audit.AuditLogger;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,9 @@ public class SingolaAttivitaController {
     @Autowired
     private UtenteService utenteService;
 
+    @Autowired
+    private AuditLogger auditLogger;
+
     @GetMapping
     public ResponseEntity<Page<SingolaAttivitaDTO>> getAllAttivita(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(attivitaService.getAllAttivita(pageable).map(attivitaMapper::toDTO));
@@ -57,6 +61,7 @@ public class SingolaAttivitaController {
         // l'organizzatore e' sempre l'utente autenticato, mai un id passato dal client
         entity.setOrganizzatore(utenteService.getUtenteSessione());
         SingolaAttivita salvata = attivitaService.saveAttivitaConSessioni(entity, inizio, fine, giorni);
+        auditLogger.success("ATTIVITA_CREATA", "SingolaAttivita", String.valueOf(salvata.getId()));
         return ResponseEntity.ok(attivitaMapper.toDTO(salvata));
     }
 
@@ -64,6 +69,7 @@ public class SingolaAttivitaController {
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     public ResponseEntity<Void> deleteAttivita(@PathVariable Long id) {
         attivitaService.deleteAttivita(id, utenteService.getUtenteSessione(), utenteService.isAdmin());
+        auditLogger.success("ATTIVITA_ELIMINATA", "SingolaAttivita", String.valueOf(id));
         return ResponseEntity.noContent().build();
     }
 }

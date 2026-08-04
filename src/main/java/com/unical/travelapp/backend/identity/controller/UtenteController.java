@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.identity.controller;
 
+import com.unical.travelapp.backend.common.audit.AuditLogger;
 import com.unical.travelapp.backend.identity.dto.UtenteDto;
 import com.unical.travelapp.backend.identity.dto.UtenteResponseDto;
 import com.unical.travelapp.backend.identity.dto.UtenteUpdateDto;
@@ -20,16 +21,20 @@ import org.springframework.web.bind.annotation.*;
 public class UtenteController {
 
     private final UtenteService utenteService;
+    private final AuditLogger auditLogger;
 
-    public UtenteController(UtenteService utenteService) {
+    public UtenteController(UtenteService utenteService, AuditLogger auditLogger) {
         this.utenteService = utenteService;
+        this.auditLogger = auditLogger;
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Crea un utente (uso amministrativo). La registrazione self-service passa da /api/utenti/me")
     public ResponseEntity<UtenteResponseDto> creaUtente(@Valid @RequestBody UtenteDto utenteDto) {
-        return ResponseEntity.status(201).body(utenteService.salvaUtenteDatoDTO(utenteDto));
+        UtenteResponseDto creato = utenteService.salvaUtenteDatoDTO(utenteDto);
+        auditLogger.success("UTENTE_CREATO", "Utente", String.valueOf(creato.getId()));
+        return ResponseEntity.status(201).body(creato);
     }
 
     @GetMapping
@@ -50,7 +55,9 @@ public class UtenteController {
     public ResponseEntity<UtenteResponseDto> aggiornaUtente(
             @PathVariable Long id,
             @Valid @RequestBody UtenteUpdateDto utenteUpdateDto) {
-        return ResponseEntity.ok(utenteService.aggiornaUtente(id, utenteUpdateDto));
+        UtenteResponseDto aggiornato = utenteService.aggiornaUtente(id, utenteUpdateDto);
+        auditLogger.success("UTENTE_MODIFICATO", "Utente", String.valueOf(id));
+        return ResponseEntity.ok(aggiornato);
     }
 
     @DeleteMapping("/{id}")
@@ -58,6 +65,7 @@ public class UtenteController {
     @Operation(summary = "Elimina un utente per id")
     public ResponseEntity<Void> eliminaUtente(@PathVariable Long id) {
         utenteService.eliminaUtente(id);
+        auditLogger.success("UTENTE_ELIMINATO", "Utente", String.valueOf(id));
         return ResponseEntity.noContent().build();
     }
 

@@ -5,6 +5,7 @@ import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.catalog.mapper.ItinerarioMapper;
 import com.unical.travelapp.backend.catalog.service.ItinerarioService;
+import com.unical.travelapp.backend.common.audit.AuditLogger;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,9 @@ public class ItinerarioController {
     @Autowired
     private UtenteService utenteService;
 
+    @Autowired
+    private AuditLogger auditLogger;
+
     @GetMapping
     public ResponseEntity<Page<ItinerarioDTO>> getAllItinerari(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(itinerarioService.getAllItinerari(pageable).map(itinerarioMapper::toDTO));
@@ -50,6 +54,7 @@ public class ItinerarioController {
         entity.setOrganizzatore(utenteService.getUtenteSessione());
         entity.setStato("BOZZA");
         Itinerario salvato = itinerarioService.saveItinerario(entity);
+        auditLogger.success("ITINERARIO_CREATO", "Itinerario", String.valueOf(salvato.getId()));
         return ResponseEntity.ok(itinerarioMapper.toDTO(salvato));
     }
 
@@ -57,6 +62,7 @@ public class ItinerarioController {
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     public ResponseEntity<Void> deleteItinerario(@PathVariable Long id) {
         itinerarioService.deleteItinerario(id, utenteService.getUtenteSessione(), utenteService.isAdmin());
+        auditLogger.success("ITINERARIO_ELIMINATO", "Itinerario", String.valueOf(id));
         return ResponseEntity.noContent().build();
     }
 }

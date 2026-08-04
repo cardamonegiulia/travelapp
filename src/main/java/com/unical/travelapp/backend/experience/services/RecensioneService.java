@@ -59,7 +59,7 @@ public class RecensioneService {
     }
 
 
-    public void addNewRecensione(RecensioneRequest dto) {
+    public Long addNewRecensione(RecensioneRequest dto) {
 
         Utente utente = utenteService.getUtenteSessione();
 
@@ -89,7 +89,7 @@ public class RecensioneService {
         recensione.setCommento(dto.getComm());
         recensione.setVoto(dto.getVotazione());
 
-        repo.save(recensione);
+        return repo.save(recensione).getId();
     }
 
 

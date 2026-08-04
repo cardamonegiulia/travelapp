@@ -5,6 +5,7 @@ import com.unical.travelapp.backend.booking.dto.PrenotazioneResponseDto;
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.booking.mapper.PrenotazioneMapper;
 import com.unical.travelapp.backend.booking.service.PrenotazioneService;
+import com.unical.travelapp.backend.common.audit.AuditLogger;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,10 +21,12 @@ import org.springframework.web.bind.annotation.*;
 public class PrenotazioneController {
     private final PrenotazioneService prenotazioneService;
     private final PrenotazioneMapper prenotazioneMapper;
+    private final AuditLogger auditLogger;
 
     @PostMapping
     public ResponseEntity<PrenotazioneResponseDto> creaPrenotazione(@Valid @RequestBody CreaPrenotazioneRequest request) {
         Prenotazione prenotazione = prenotazioneService.createPrenotazione(request);
+        auditLogger.success("PRENOTAZIONE_CREATA", "Prenotazione", String.valueOf(prenotazione.getId()));
         PrenotazioneResponseDto responseDto = prenotazioneMapper.toResponseDto(prenotazione);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
@@ -45,6 +48,7 @@ public class PrenotazioneController {
     @PostMapping("/{id}/paga")
     public ResponseEntity<PrenotazioneResponseDto> pagaPrenotazione(@PathVariable Long id) {
         Prenotazione prenotazione = prenotazioneService.pagaPrenotazione(id);
+        auditLogger.success("PRENOTAZIONE_PAGATA", "Prenotazione", String.valueOf(id));
         PrenotazioneResponseDto responseDto = prenotazioneMapper.toResponseDto(prenotazione);
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
@@ -52,6 +56,7 @@ public class PrenotazioneController {
     @PostMapping("/{id}/annulla")
     public ResponseEntity<PrenotazioneResponseDto> annullaPrenotazione(@PathVariable Long id) {
         Prenotazione prenotazione = prenotazioneService.annullaPrenotazione(id);
+        auditLogger.success("PRENOTAZIONE_ANNULLATA", "Prenotazione", String.valueOf(id));
         PrenotazioneResponseDto responseDto = prenotazioneMapper.toResponseDto(prenotazione);
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }

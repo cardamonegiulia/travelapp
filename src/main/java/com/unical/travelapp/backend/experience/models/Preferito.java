@@ -6,6 +6,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
+import com.unical.travelapp.backend.common.audit.Auditable;
 import com.unical.travelapp.backend.identity.entity.Utente;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,11 +22,13 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 @Entity
 @Table(name = "preferiti")
-public class Preferito {
+public class Preferito extends Auditable {
 
     @Id
     @Column(name = "preferito_id")

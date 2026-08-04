@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.booking.entity;
 
+import com.unical.travelapp.backend.common.audit.Auditable;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
@@ -8,6 +9,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,12 +21,13 @@ import java.time.LocalDateTime;
 //All arg il contrario costurttore con tutti i campi
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
 @Table(name = "prenotazioni")
-public class Prenotazione {
+public class Prenotazione extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

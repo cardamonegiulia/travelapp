@@ -2,18 +2,21 @@ package com.unical.travelapp.backend.experience.models;
 
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
+import com.unical.travelapp.backend.common.audit.Auditable;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Data
+@EqualsAndHashCode(callSuper = false)
 @Table(name = "recensioni")
-public class Recensione {
+public class Recensione extends Auditable {
 
     @Id
     @Column(name = "recensione_id")

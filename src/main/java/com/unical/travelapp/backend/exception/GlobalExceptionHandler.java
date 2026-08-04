@@ -2,6 +2,7 @@ package com.unical.travelapp.backend.exception;
 
 import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
 import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
+import com.unical.travelapp.backend.common.audit.AuditLogger;
 import com.unical.travelapp.backend.config.CorrelationIdFilter;
 import com.unical.travelapp.backend.experience.exeption.ItinerarioNonTrovato;
 import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
@@ -42,6 +43,12 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    private final AuditLogger auditLogger;
+
+    public GlobalExceptionHandler(AuditLogger auditLogger) {
+        this.auditLogger = auditLogger;
+    }
 
     // 409 - Utente già esistente (email o keycloakId duplicati)
     @ExceptionHandler(UtenteGiaEsistenteException.class)
@@ -148,6 +155,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ProblemDetail> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
         log.warn("Accesso negato su {} {}", request.getMethod(), request.getRequestURI());
+        auditLogger.failure("ACCESSO_NEGATO", "endpoint", request.getMethod() + " " + request.getRequestURI(), ex.getMessage());
         return respond(HttpStatus.FORBIDDEN, "Accesso negato",
                 "Non hai i permessi necessari per eseguire questa operazione", "accesso-negato", request);
     }
@@ -155,6 +163,7 @@ public class GlobalExceptionHandler {
     // 401 - Autenticazione mancante o non valida
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ProblemDetail> handleAuthentication(AuthenticationException ex, HttpServletRequest request) {
+        auditLogger.failure("AUTENTICAZIONE_FALLITA", "endpoint", request.getMethod() + " " + request.getRequestURI(), ex.getMessage());
         return respond(HttpStatus.UNAUTHORIZED, "Autenticazione richiesta",
                 "È necessario un token valido per accedere a questa risorsa", "non-autenticato", request);
     }

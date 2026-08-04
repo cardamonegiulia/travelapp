@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.experience.controllers;
 
+import com.unical.travelapp.backend.common.audit.AuditLogger;
 import com.unical.travelapp.backend.experience.models.DTO.RecensioneRequest;
 import com.unical.travelapp.backend.experience.models.DTO.RecensioneResponse;
 import com.unical.travelapp.backend.experience.services.RecensioneService;
@@ -21,6 +22,9 @@ public class RecensioneController {
 
     @Autowired
     private RecensioneService service;
+
+    @Autowired
+    private AuditLogger auditLogger;
 
     @GetMapping("/{id}")
     @Operation(summary = "Restituisce una recensione tramite il suo ID")
@@ -58,7 +62,8 @@ public class RecensioneController {
                     "Se viene passata la prenotazione, verifica che appartenga all'utente e che non sia gia' stata recensita"
     )
     public ResponseEntity<?> addNewRecensione(@Valid @RequestBody RecensioneRequest dto) {
-        service.addNewRecensione(dto);
+        Long id = service.addNewRecensione(dto);
+        auditLogger.success("RECENSIONE_CREATA", "Recensione", String.valueOf(id));
         return ResponseEntity.status(HttpStatus.CREATED).body("Recensione aggiunta con successo!");
     }
 
@@ -70,6 +75,7 @@ public class RecensioneController {
     )
     public ResponseEntity<?> removeRecensione(@PathVariable Long id) {
         service.deleteRecensione(id);
+        auditLogger.success("RECENSIONE_ELIMINATA", "Recensione", String.valueOf(id));
         return ResponseEntity.ok().build();
     }
 }

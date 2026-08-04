@@ -1,8 +1,10 @@
 package com.unical.travelapp.backend.exception;
 
+import com.unical.travelapp.backend.common.audit.AuditLogger;
 import com.unical.travelapp.backend.config.CorrelationIdFilter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -19,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // tabella/colonna/constraint).
 class GlobalExceptionHandlerTest {
 
-    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    private final GlobalExceptionHandler handler = new GlobalExceptionHandler(Mockito.mock(AuditLogger.class));
 
     private MockHttpServletRequest request() {
         MockHttpServletRequest req = new MockHttpServletRequest();

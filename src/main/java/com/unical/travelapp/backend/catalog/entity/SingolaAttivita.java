@@ -1,7 +1,9 @@
 package com.unical.travelapp.backend.catalog.entity;
 
+import com.unical.travelapp.backend.common.audit.Auditable;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
 import java.util.List;
 import com.unical.travelapp.backend.identity.entity.Utente;
@@ -9,7 +11,8 @@ import com.unical.travelapp.backend.identity.entity.Utente;
 @Entity
 @Table(name = "singole_attivita")
 @Data
-public class SingolaAttivita {
+@EqualsAndHashCode(callSuper = false)
+public class SingolaAttivita extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

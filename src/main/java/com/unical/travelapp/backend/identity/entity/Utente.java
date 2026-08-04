@@ -1,15 +1,18 @@
 package com.unical.travelapp.backend.identity.entity;
+import com.unical.travelapp.backend.common.audit.Auditable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import com.unical.travelapp.backend.identity.entity.Ruolo;
 @Entity
 @Table(name = "utenti")
 @Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Utente {
+public class Utente extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
