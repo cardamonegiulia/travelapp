@@ -22,15 +22,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -166,6 +174,64 @@ public class GlobalExceptionHandler {
         auditLogger.failure("AUTENTICAZIONE_FALLITA", "endpoint", request.getMethod() + " " + request.getRequestURI(), ex.getMessage());
         return respond(HttpStatus.UNAUTHORIZED, "Autenticazione richiesta",
                 "È necessario un token valido per accedere a questa risorsa", "non-autenticato", request);
+    }
+
+    // --- Errori del client rilevati dal framework -------------------------------------
+    // Senza questi handler l'@ExceptionHandler(Exception.class) qui sotto li assorbirebbe
+    // tutti, restituendo 500 per quelli che sono a tutti gli effetti errori 4xx del
+    // chiamante. Oltre a essere una risposta sbagliata, ogni errore banale finirebbe nei
+    // log come stack trace di livello ERROR: rumore che un chiamante puo' generare a
+    // volonta' e che rende inutilizzabile qualsiasi allarme sui 5xx.
+
+    // 405 - Verbo HTTP non ammesso sulla rotta
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ProblemDetail> handleMetodoNonAmmesso(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        return respond(HttpStatus.METHOD_NOT_ALLOWED, "Metodo non consentito",
+                "Il metodo HTTP usato non e' ammesso su questa risorsa", "metodo-non-consentito", request);
+    }
+
+    // 415 - Content-Type della richiesta non supportato
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ProblemDetail> handleTipoNonSupportato(HttpMediaTypeNotSupportedException ex, HttpServletRequest request) {
+        return respond(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Formato non supportato",
+                "Il formato della richiesta non e' supportato: usare application/json", "formato-non-supportato", request);
+    }
+
+    // 406 - Nessuna rappresentazione compatibile con l'header Accept
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    public ResponseEntity<ProblemDetail> handleTipoNonAccettabile(HttpMediaTypeNotAcceptableException ex, HttpServletRequest request) {
+        return respond(HttpStatus.NOT_ACCEPTABLE, "Formato non accettabile",
+                "Nessuna rappresentazione disponibile per i formati richiesti", "formato-non-accettabile", request);
+    }
+
+    // 404 - Nessun handler mappato sulla rotta richiesta
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ProblemDetail> handleRottaNonMappata(NoResourceFoundException ex, HttpServletRequest request) {
+        return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata",
+                "La risorsa richiesta non esiste", "risorsa-non-trovata", request);
+    }
+
+    // 413 - Upload oltre il limite configurato (spring.servlet.multipart.max-*-size)
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ProblemDetail> handleUploadTroppoGrande(MaxUploadSizeExceededException ex, HttpServletRequest request) {
+        log.warn("Upload oltre il limite consentito su {} {}", request.getMethod(), request.getRequestURI());
+        return respond(HttpStatus.PAYLOAD_TOO_LARGE, "Contenuto troppo grande",
+                "Il contenuto inviato supera la dimensione massima consentita", "contenuto-troppo-grande", request);
+    }
+
+    // 400 - Parametro di richiesta assente o non convertibile nel tipo atteso
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
+    public ResponseEntity<ProblemDetail> handleParametroNonValido(Exception ex, HttpServletRequest request) {
+        return respond(HttpStatus.BAD_REQUEST, "Richiesta non valida",
+                "Uno o piu' parametri della richiesta sono assenti o non validi", "parametro-non-valido", request);
+    }
+
+    // 400 - Ordinamento su un campo inesistente (?sort=campoQualsiasi): e' un errore del
+    // chiamante, e il messaggio di Spring Data conterrebbe nomi di entita' e proprieta'
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ProblemDetail> handleOrdinamentoNonValido(PropertyReferenceException ex, HttpServletRequest request) {
+        return respond(HttpStatus.BAD_REQUEST, "Richiesta non valida",
+                "Il criterio di ordinamento richiesto non e' valido", "ordinamento-non-valido", request);
     }
 
     // 500 - Fallback generico per qualsiasi altra eccezione non gestita: nessun dettaglio grezzo,
