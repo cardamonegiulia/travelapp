@@ -95,12 +95,20 @@ public abstract class SecurityIntegrationTestBase {
 
     // --- helper di seeding -------------------------------------------------
 
+    /**
+     * Crea un utente locale collegato a un subject Keycloak.
+     *
+     * <p>Nome ed email sono volutamente scollegati dal valore del subject: cosi' i test
+     * che verificano "il keycloakId non finisce nelle risposte" non passano ne' falliscono
+     * per caso, per via di una stringa che compare in due campi diversi.
+     */
     protected Utente utente(String keycloakSub, Ruolo ruolo) {
+        String etichetta = Integer.toHexString(keycloakSub.hashCode() & 0xFFFFFF);
         Utente utente = new Utente();
         utente.setKeycloakId(keycloakSub);
-        utente.setNome("Nome" + keycloakSub.hashCode());
-        utente.setCognome("Cognome");
-        utente.setEmail(keycloakSub + "@example.test");
+        utente.setNome("Nome" + etichetta);
+        utente.setCognome("Cognome" + etichetta);
+        utente.setEmail("persona-" + etichetta + "@example.test");
         utente.setRuolo(ruolo);
         utente.setTema(Tema.CHIARO);
         return utenteRepository.save(utente);
