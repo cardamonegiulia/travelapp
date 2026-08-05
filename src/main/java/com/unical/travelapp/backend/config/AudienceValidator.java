@@ -5,6 +5,8 @@ import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.Jwt;
 
+import java.util.List;
+
 public class AudienceValidator implements OAuth2TokenValidator<Jwt> {
 
     private static final OAuth2Error INVALID_AUDIENCE =
@@ -18,7 +20,13 @@ public class AudienceValidator implements OAuth2TokenValidator<Jwt> {
 
     @Override
     public OAuth2TokenValidatorResult validate(Jwt jwt) {
-        if (jwt.getAudience().contains(expectedAudience)) {
+        // Un token senza claim "aud" ha audience null (non lista vuota): senza questo
+        // controllo il validator solleverebbe NullPointerException, che non e' una
+        // AuthenticationException e quindi sfugge alla gestione del filtro di
+        // autenticazione, trasformando un token da rifiutare in un errore interno.
+        // Il validator deve sempre fallire in chiusura.
+        List<String> audience = jwt.getAudience();
+        if (audience != null && audience.contains(expectedAudience)) {
             return OAuth2TokenValidatorResult.success();
         }
         return OAuth2TokenValidatorResult.failure(INVALID_AUDIENCE);
