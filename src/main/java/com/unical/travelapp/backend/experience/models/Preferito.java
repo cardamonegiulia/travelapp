@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.experience.models;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.OnDelete;
@@ -50,6 +51,8 @@ public class Preferito extends Auditable {
             inverseJoinColumns = @JoinColumn(name = "itinerario_id")
     )
     @Schema(description = "lista degli itinerari presenti nei preferiti")
-    private List<Itinerario> itinerario;
+    // inizializzata: su un Preferito appena creato la collection non deve essere null,
+    // altrimenti il primo add() dell'utente solleva NullPointerException
+    private List<Itinerario> itinerario = new ArrayList<>();
 
 }

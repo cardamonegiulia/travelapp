@@ -8,7 +8,9 @@ spring:
       # il datasource (Testcontainers Postgres oppure H2 in modalita' PostgreSQL) e le
       # property dello schema sono impostati a runtime da TestDatabase
       ddl-auto: update
-    open-in-view: false
+    # open-in-view NON viene impostato: in produzione vale il default di Spring Boot
+    # (attivo), e disattivarlo qui farebbe fallire i test su un comportamento che
+    # nell'applicazione reale non si verifica.
   security:
     oauth2:
       resourceserver:
