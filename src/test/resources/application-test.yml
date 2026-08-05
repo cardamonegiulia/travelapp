@@ -1,0 +1,39 @@
+# Profilo "test": nessuna dipendenza da Keycloak reale ne' da credenziali vere.
+# L'issuer e la jwk-set-uri sono stub non raggiungibili di proposito: NimbusJwtDecoder
+# risolve la JWK set in modo lazy, quindi il contesto parte senza contattare l'IdP e
+# nessun test dipende da un realm configurato.
+spring:
+  jpa:
+    hibernate:
+      # il datasource (Testcontainers Postgres oppure H2 in modalita' PostgreSQL) e le
+      # property dello schema sono impostati a runtime da TestDatabase
+      ddl-auto: update
+    open-in-view: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://idp.test.local/realms/travelapp
+          jwk-set-uri: https://idp.test.local/realms/travelapp/protocol/openid-connect/certs
+
+app:
+  security:
+    expected-audience: travelapp-backend
+    resource-client-id: travelapp-backend
+    require-https: false
+    cors:
+      allowed-origins: https://app.travelapp.test,http://localhost:3000
+  ratelimit:
+    # capienza alta di default: il rate limiting non deve interferire con i test
+    # funzionali. Le classi che lo collaudano abbassano il valore con @TestPropertySource
+    # (property diversa => contesto Spring diverso => bucket puliti).
+    authenticated:
+      capacity: 5000
+    anonymous:
+      capacity: 5000
+
+logging:
+  level:
+    org.hibernate.SQL: warn
+    org.testcontainers: warn
+    com.zaxxer.hikari: warn
