@@ -35,3 +35,6 @@ build/
 ### Postman: gli environment contengono i segreti reali, non vanno versionati
 postman/environments/
 *.postman_environment.json
+
+### Log applicativi e di audit prodotti a runtime (anche dai test)
+logs/
