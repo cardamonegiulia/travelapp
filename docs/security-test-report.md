@@ -6,11 +6,11 @@ Branch `dev/experience` · Data: **2026-08-05**
 |---|---|
 | Comando eseguito | `mvnw.cmd -B clean test` |
 | Esito | **BUILD SUCCESS** |
-| Test eseguiti | **407** |
+| Test eseguiti | **413** |
 | Failures | **0** |
 | Errors | **0** |
 | Skipped | **0** |
-| Classi di test | 43 (di cui 25 nuove, in `security/fase*`) |
+| Classi di test | 44 (di cui 26 nuove, in `security/fase*` e `security/trasversali`) |
 | Durata | 46 s |
 | Test esclusi | nessuno. Nessun `@Disabled`, nessun `@Ignore`, nessun test taggato `keycloak-live` |
 
@@ -348,15 +348,33 @@ resta usabile valorizzandole in un environment locale, che `.gitignore` ora escl
 
 ---
 
-### F-06 — `POST /api/preferiti` fallisce con 500 al primo preferito — **FUNZIONALE** — NON corretta
+### F-06 — `POST /api/preferiti` fallisce con 500 al primo preferito — **FUNZIONALE** — CORRETTA
 
-`Preferito.itinerario` è una `List` non inizializzata; `PreferitoService.addPreferito`
-chiama `prefe.getItinerario().add(itin)` su un `Preferito` appena creato → `NullPointerException`
-→ 500. La funzionalità "preferiti" è quindi inutilizzabile per ogni nuovo utente.
+`Preferito.itinerario` era una `List` non inizializzata; `PreferitoService.addPreferito`
+chiamava `prefe.getItinerario().add(itin)` su un `Preferito` appena creato →
+`NullPointerException` → 500. La funzionalità "preferiti" era quindi **inutilizzabile per
+ogni nuovo utente**: la lista non veniva mai creata, quindi nemmeno lettura e rimozione
+potevano funzionare.
 
-Non è un problema di sicurezza (nessun leak, nessun bypass) e la regola di ingaggio limita
-le modifiche di produzione ai bug di sicurezza: **segnalato, non corretto**. Correzione
-suggerita: inizializzare il campo (`= new ArrayList<>()`).
+Non è un problema di sicurezza (nessun leak, nessun bypass): inizialmente era stato solo
+segnalato, in ossequio alla regola che limita le modifiche di produzione ai bug di
+sicurezza. **Corretto successivamente su richiesta esplicita** (commit `1c2771a`).
+
+**Correzione** (`experience/models/Preferito.java`): campo inizializzato a
+`new ArrayList<>()`. Scelta l'entità invece del service perché una collection JPA non deve
+mai essere `null`: così sono coperti tutti e tre i punti che la dereferenziano
+(`addPreferito`, `removePreferito`, `getPreferiti`) e non solo il call site in errore.
+
+**Regressione**: `PreferitiFlussoTest` (6 metodi) — primo inserimento, secondo inserimento
+sulla lista esistente, lettura, rimozione, separazione fra utenti diversi, nessuna lista
+fantasma quando l'itinerario non esiste. Verificato che tornino rossi con
+`NullPointerException` annullando la correzione.
+
+**Nota sul profilo di test.** Nel farlo è emerso che `application-test.yml` impostava
+`spring.jpa.open-in-view=false`, mentre in produzione vale il default di Spring Boot
+(attivo). I test giravano quindi su una configurazione inesistente e `GET /api/preferiti`
+falliva per `LazyInitializationException` che nell'applicazione reale non si verifica.
+La riga è stata rimossa: il profilo di test ora rispecchia la produzione.
 
 ---
 
@@ -493,3 +511,5 @@ grep -c "$(echo "$TOKEN" | cut -c1-25)" logs/audit.log   # atteso: 0
 | `7485b23` | `test(security)`: fasi 4 e 5 — errori e audit |
 | `e78e538` | **`fix(security)`**: rimossi i segreti dalla collection Postman (F-05) |
 | `8d78674` | `test(security)`: fase 6 e test trasversali |
+| `1f6df9b` | `docs(security)`: inventario e report |
+| `1c2771a` | **`fix(experience)`**: lista dei preferiti inizializzata (F-06) |
