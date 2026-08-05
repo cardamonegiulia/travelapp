@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Postman: gli environment contengono i segreti reali, non vanno versionati
+postman/environments/
+*.postman_environment.json
