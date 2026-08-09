@@ -7,8 +7,14 @@ import com.unical.travelapp.backend.config.CorrelationIdFilter;
 import com.unical.travelapp.backend.experience.exeption.ItinerarioNonTrovato;
 import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
+import com.unical.travelapp.backend.identity.exception.RegistrazioneNonDisponibileException;
 import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
 import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
+// Jackson 3 (tools.jackson): e' quello che Spring Boot 4 usa per (de)serializzare le
+// richieste HTTP. Sul classpath c'e' anche Jackson 2 (com.fasterxml) tirato dentro da altre
+// dipendenze: le sue eccezioni non verrebbero mai lanciate qui.
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.exc.InvalidFormatException;
 import com.unical.travelapp.backend.booking.exception.AttivitaExtraNonValidaException;
 import com.unical.travelapp.backend.booking.exception.DisponibilitaNonTrovataException;
 import com.unical.travelapp.backend.booking.exception.PagamentoNonTrovatoException;
@@ -41,8 +47,11 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 // Risposte di errore in formato RFC 7807 (ProblemDetail): niente stack trace, niente
 // messaggi di eccezione grezzi o dettagli infrastrutturali (nomi tabella/colonna/constraint)
@@ -68,6 +77,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UtenteNonTrovatoException.class)
     public ResponseEntity<ProblemDetail> handleUtenteNonTrovato(UtenteNonTrovatoException ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
+    }
+
+    // 503 - Registrazione non completabile per un problema dell'IdP (Keycloak irraggiungibile,
+    // service account non autorizzato, ruolo realm mancante). Copre anche
+    // RuoloRealmNonConfiguratoException, che ne e' sottoclasse.
+    // Il messaggio dell'eccezione resta nei log: nel body finirebbero dettagli sulla
+    // configurazione del realm, utili solo a chi sta sondando il servizio.
+    @ExceptionHandler(RegistrazioneNonDisponibileException.class)
+    public ResponseEntity<ProblemDetail> handleRegistrazioneNonDisponibile(RegistrazioneNonDisponibileException ex, HttpServletRequest request) {
+        log.error("Registrazione non disponibile su {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return respond(HttpStatus.SERVICE_UNAVAILABLE, "Servizio non disponibile",
+                "Registrazione temporaneamente non disponibile, riprovare più tardi", "servizio-non-disponibile", request);
     }
 
     // 400 - Validazioni fallite (@NotBlank, @Email, @Size sul DTO)
@@ -129,6 +150,30 @@ public class GlobalExceptionHandler {
     // 400 - JSON malformato o con campi non previsti dal DTO (es. FAIL_ON_UNKNOWN_PROPERTIES)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ProblemDetail> handleMessaggioNonLeggibile(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        // Caso particolare: valore non ammesso per un campo enum (es. "ruolo":"ADMIN" in
+        // registrazione). Elencare i valori validi aiuta il chiamante e non espone nulla che
+        // non sia gia' nel contratto OpenAPI. Il valore rifiutato NON viene mai rimandato
+        // indietro: e' testo arbitrario del chiamante e non deve finire in una risposta.
+        if (ex.getCause() instanceof InvalidFormatException causa
+                && causa.getTargetType() != null && causa.getTargetType().isEnum()) {
+
+            ProblemDetail pd = buildProblemDetail(HttpStatus.BAD_REQUEST, "Dati non validi",
+                    "Uno o più campi della richiesta non superano la validazione", "validazione-fallita", request);
+
+            String campo = causa.getPath().stream()
+                    .map(JacksonException.Reference::getPropertyName)
+                    .filter(Objects::nonNull)
+                    .reduce((primo, ultimo) -> ultimo)
+                    .orElse(null);
+            if (campo != null) {
+                String valoriAmmessi = Arrays.stream(causa.getTargetType().getEnumConstants())
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(", "));
+                pd.setProperty("errori", Map.of(campo, "Valore non ammesso: i valori validi sono " + valoriAmmessi));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
+        }
+
         return respond(HttpStatus.BAD_REQUEST, "Richiesta non valida",
                 "Payload JSON non valido o con campi non previsti", "payload-non-valido", request);
     }

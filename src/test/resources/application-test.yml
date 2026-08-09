@@ -19,6 +19,16 @@ spring:
           jwk-set-uri: https://idp.test.local/realms/travelapp/protocol/openid-connect/certs
 
 app:
+  keycloak:
+    admin:
+      # stub non raggiungibile di proposito: nei test il KeycloakAdminClient e' sostituito da
+      # un mock, e un indirizzo valido rischierebbe di far passare un test che in realta' sta
+      # contattando qualcosa.
+      # Il client secret NON e' impostato qui: resta la stringa vuota ereditata da
+      # application.properties. Nessun segreto, nemmeno finto, in un file versionato.
+      base-url: https://idp.test.local
+      realm: travelapp
+      client-id: travelapp-registration
   security:
     expected-audience: travelapp-backend
     resource-client-id: travelapp-backend

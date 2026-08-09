@@ -50,10 +50,12 @@ CORS: origini da `app.security.cors.allowed-origins`, metodi
 ## 3. Mappa endpoint → autorizzazione → controllo di ownership
 
 `*` = qualunque utente autenticato. Tutte le rotte stanno sotto `/api/**`, quindi
-l'anonimo riceve sempre 401.
+l'anonimo riceve sempre 401 — con l'unica eccezione della registrazione self-service,
+esplicitamente `permitAll` e limitata al metodo POST.
 
 | Metodo | Rotta | Autorizzazione | Ownership | Status per risorsa altrui |
 |---|---|---|---|---|
+| POST | `/api/auth/registrazione` | **anonimo** (`permitAll`) | ruolo scelto dal richiedente, solo VIAGGIATORE/ORGANIZZATORE | n/d |
 | POST | `/api/utenti` | `hasRole('ADMIN')` | — | 403 se non admin |
 | GET | `/api/utenti` | `hasRole('ADMIN')` | — | 403 se non admin |
 | GET | `/api/utenti/{id}` | ADMIN **o** `isSelf(#id)` | permission evaluator | **403** |

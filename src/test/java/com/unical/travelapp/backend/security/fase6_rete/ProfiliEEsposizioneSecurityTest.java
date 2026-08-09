@@ -140,7 +140,13 @@ class ProfiliEEsposizioneSecurityTest extends SecurityIntegrationTestBase {
         if (risultato.getResponse().getStatus() == 200) {
             String corpo = risultato.getResponse().getContentAsString().toLowerCase();
             assertThat(corpo)
-                    .doesNotContain("password")
+                    // "password" compare come NOME di proprieta' nello schema della
+                    // registrazione ("password":{"type":"string",...}): e' il contratto
+                    // dell'API, non una credenziale. Quello che non deve mai comparire e' un
+                    // VALORE associato alla chiave - un default, un esempio, un segreto di
+                    // configurazione - cioe' "password" seguito da una stringa.
+                    .doesNotContain("\"password\":\"")
+                    .doesNotContain("\"password\": \"")
                     .doesNotContain("client_secret")
                     .doesNotContain("clientsecret")
                     .doesNotContain("db_password");

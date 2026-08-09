@@ -35,9 +35,14 @@ class NessunSegretoCommittatoTest {
             //    La chiave deve stare a inizio riga (eventualmente con un prefisso puntato
             //    come spring.datasource.password): cosi' "String token = metodo(...)" in
             //    codice Java non viene scambiato per una credenziale.
+            //    Il ';' e' fra i caratteri esclusi per lo stesso motivo: una riga che termina
+            //    con ';' e' un'istruzione Java (es. "this.clientSecret = clientSecret;"), e un
+            //    valore Java non quotato e' sempre un identificatore, mai una credenziale
+            //    letterale. Le credenziali scritte fra virgolette nel codice restano
+            //    intercettate dallo schema 1, che di virgolette ne pretende.
             Pattern.compile("(?i)^\\s*[\\w.\\-]*"
                     + "(password|passwd|secret|client[-_]?secret|api[-_]?key|token)"
-                    + "\\s*[:=]\\s*(?!\\$\\{)(?!\\{\\{)([^\\s\"'<>${}()]{8,})\\s*$"),
+                    + "\\s*[:=]\\s*(?!\\$\\{)(?!\\{\\{)([^\\s\"'<>${}();]{8,})\\s*$"),
             // token JWT letterale
             Pattern.compile("eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\."),
             // chiave privata PEM
@@ -127,7 +132,18 @@ class NessunSegretoCommittatoTest {
         List<String> nonSegreti = List.of(
                 "spring.datasource.password=${DB_PASSWORD}",
                 "\"value\": \"{{client_secret}}\"",
-                "String token = idp().token(ISSUER, audience);");
+                "String token = idp().token(ISSUER, audience);",
+                // assegnazione Java di un valore iniettato: il segreto sta nell'ambiente,
+                // non nel sorgente
+                "        this.clientSecret = clientSecret;",
+                "    private final String clientSecret;");
+
+        // ...ma un segreto scritto fra virgolette nel codice Java deve continuare a essere
+        // segnalato: l'esclusione sopra vale solo per i valori non quotati
+        assertThat(SCHEMI_SOSPETTI).anySatisfy(schema ->
+                assertThat(schema.matcher("String clientSecret = \"7f3Ka9dQm2Zx8Lp0\";").find())
+                        .as("un segreto letterale in codice Java deve restare rilevabile")
+                        .isTrue());
 
         for (String innocuo : nonSegreti) {
             assertThat(SCHEMI_SOSPETTI).allSatisfy(schema ->

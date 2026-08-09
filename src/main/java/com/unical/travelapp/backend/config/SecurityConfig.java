@@ -3,6 +3,7 @@ package com.unical.travelapp.backend.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -82,6 +83,11 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         // actuator (se mai abilitato) riservato agli admin
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
+                        // registrazione self-service: unica rotta pubblica sotto /api, e solo in POST
+                        // (il matcher e' vincolato al metodo apposta: un GET sulla stessa rotta ricade
+                        // sulla regola generale /api/** e resta protetto). Il rate limit anonimo per IP
+                        // di RateLimitFilter si applica anche qui.
+                        .requestMatchers(HttpMethod.POST, "/api/auth/registrazione").permitAll()
                         // API: autenticazione minima richiesta, i ruoli fini sono su @PreAuthorize
                         .requestMatchers("/api/**").authenticated()
                         // deny-by-default: qualunque rotta non mappata sopra viene negata

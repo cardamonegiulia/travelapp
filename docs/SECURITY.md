@@ -81,6 +81,7 @@ aggiungendo `@PreAuthorize` non avrebbe funzionato senza il fix.
 
 | Endpoint | Metodo | Autorizzazione |
 |---|---|---|
+| `/api/auth/registrazione` | POST | **pubblico** (unica rotta anonima sotto `/api`) |
 | `/api/utenti` | POST | `ADMIN` |
 | `/api/utenti` | GET | `ADMIN` |
 | `/api/utenti/{id}` | GET/PUT/DELETE | `ADMIN` oppure proprietario (`self`) |

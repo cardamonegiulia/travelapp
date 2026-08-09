@@ -75,6 +75,30 @@
       "clientRole" : false,
       "containerId" : "7f461d84-f4a3-46e6-8a98-2417da2b426a",
       "attributes" : { }
+    }, {
+      "id" : "3f7a1c40-1d61-4a2e-9a10-2c0b5f0a1001",
+      "name" : "VIAGGIATORE",
+      "description" : "Utente che prenota itinerari e attività",
+      "composite" : false,
+      "clientRole" : false,
+      "containerId" : "7f461d84-f4a3-46e6-8a98-2417da2b426a",
+      "attributes" : { }
+    }, {
+      "id" : "3f7a1c40-1d61-4a2e-9a10-2c0b5f0a1002",
+      "name" : "ORGANIZZATORE",
+      "description" : "Utente che pubblica e gestisce itinerari e attività",
+      "composite" : false,
+      "clientRole" : false,
+      "containerId" : "7f461d84-f4a3-46e6-8a98-2417da2b426a",
+      "attributes" : { }
+    }, {
+      "id" : "3f7a1c40-1d61-4a2e-9a10-2c0b5f0a1003",
+      "name" : "ADMIN",
+      "description" : "Amministratore della piattaforma. NON assegnabile dalla registrazione self-service: va assegnato a mano dalla console",
+      "composite" : false,
+      "clientRole" : false,
+      "containerId" : "7f461d84-f4a3-46e6-8a98-2417da2b426a",
+      "attributes" : { }
     } ],
     "client" : {
       "realm-management" : [ {
@@ -392,6 +416,23 @@
     "realmRoles" : [ "default-roles-travelapp" ],
     "notBefore" : 0,
     "groups" : [ ]
+  }, {
+    "id" : "5c2e9d10-77b4-4c9a-8f01-9d3e2b7a2001",
+    "username" : "service-account-travelapp-registration",
+    "emailVerified" : false,
+    "createdTimestamp" : 1780833401785,
+    "enabled" : true,
+    "totp" : false,
+    "serviceAccountClientId" : "travelapp-registration",
+    "credentials" : [ ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-travelapp" ],
+    "clientRoles" : {
+      "realm-management" : [ "manage-users", "view-realm" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
   } ],
   "scopeMappings" : [ {
     "clientScope" : "offline_access",
@@ -404,6 +445,39 @@
     } ]
   },
   "clients" : [ {
+    "id" : "7d4b1e90-3a55-4f18-9c62-0e8b4a6c3001",
+    "clientId" : "travelapp-registration",
+    "name" : "TravelApp - service account di registrazione",
+    "description" : "Usato SOLO dal backend per creare utenti e assegnare ruoli realm durante la registrazione self-service. Client separato da travelapp-backend: privilegi diversi, rotazione e revoca indipendenti. Il secret va letto dalla console (Credentials) e passato al backend come KEYCLOAK_ADMIN_CLIENT_SECRET.",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "alwaysDisplayInConsole" : false,
+    "clientAuthenticatorType" : "client-secret",
+    "secret" : "**********",
+    "redirectUris" : [ ],
+    "webOrigins" : [ ],
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "consentRequired" : false,
+    "standardFlowEnabled" : false,
+    "implicitFlowEnabled" : false,
+    "directAccessGrantsEnabled" : false,
+    "serviceAccountsEnabled" : true,
+    "publicClient" : false,
+    "frontchannelLogout" : false,
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "oidc.ciba.grant.enabled" : "false",
+      "backchannel.logout.session.required" : "true",
+      "oauth2.device.authorization.grant.enabled" : "false",
+      "backchannel.logout.revoke.offline.tokens" : "false"
+    },
+    "authenticationFlowBindingOverrides" : { },
+    "fullScopeAllowed" : true,
+    "nodeReRegistrationTimeout" : -1,
+    "defaultClientScopes" : [ "web-origins", "acr", "roles", "profile", "basic", "email" ],
+    "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
+  }, {
     "id" : "9f2baabf-8d8a-49a0-8b6c-8f7d4325d389",
     "clientId" : "account",
     "name" : "${client_account}",

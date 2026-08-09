@@ -30,7 +30,8 @@ public class UtenteController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Crea un utente (uso amministrativo). La registrazione self-service passa da /api/utenti/me")
+    @Operation(summary = "Crea il record locale di un utente già esistente su Keycloak (uso amministrativo). "
+            + "La registrazione self-service passa da POST /api/auth/registrazione")
     public ResponseEntity<UtenteResponseDto> creaUtente(@Valid @RequestBody UtenteDto utenteDto) {
         UtenteResponseDto creato = utenteService.salvaUtenteDatoDTO(utenteDto);
         auditLogger.success("UTENTE_CREATO", "Utente", String.valueOf(creato.getId()));
