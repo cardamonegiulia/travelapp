@@ -7,6 +7,9 @@ import com.unical.travelapp.backend.catalog.mapper.ItinerarioMapper;
 import com.unical.travelapp.backend.catalog.service.ItinerarioService;
 import com.unical.travelapp.backend.common.audit.AuditLogger;
 import com.unical.travelapp.backend.identity.service.UtenteService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,6 +23,8 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/itinerari")
+@Tag(name = "Itinerari", description = "Gestione degli itinerari di viaggio")
+@SecurityRequirement(name = "bearerAuth")
 public class ItinerarioController {
 
     @Autowired
@@ -35,11 +40,21 @@ public class ItinerarioController {
     private AuditLogger auditLogger;
 
     @GetMapping
-    public ResponseEntity<Page<ItinerarioDTO>> getAllItinerari(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(itinerarioService.getAllItinerari(pageable).map(itinerarioMapper::toDTO));
+    @Operation(
+            summary = "Restituisce tutti gli itinerari paginati",
+            description = "Accessibile da qualsiasi utente autenticato. Default 20 itinerari per pagina."
+    )
+    public ResponseEntity<Page<ItinerarioDTO>> getAllItinerari(
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(itinerarioService.getAllItinerari(pageable)
+                .map(itinerarioMapper::toDTO));
     }
 
     @GetMapping("/{id}")
+    @Operation(
+            summary = "Restituisce un itinerario per id",
+            description = "Accessibile da qualsiasi utente autenticato. Restituisce 404 se non trovato."
+    )
     public ResponseEntity<ItinerarioDTO> getItinerarioById(@PathVariable Long id) {
         Optional<Itinerario> itinerario = itinerarioService.getItinerarioById(id);
         return itinerario.map(it -> ResponseEntity.ok(itinerarioMapper.toDTO(it)))
@@ -48,9 +63,13 @@ public class ItinerarioController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
-    public ResponseEntity<ItinerarioDTO> createItinerario(@Valid @RequestBody ItinerarioRequestDTO itinerarioRequest) {
+    @Operation(
+            summary = "Crea un nuovo itinerario",
+            description = "Accessibile solo da ORGANIZZATORE o ADMIN. L'organizzatore viene impostato automaticamente dal server tramite il token JWT. Lo stato iniziale è sempre BOZZA."
+    )
+    public ResponseEntity<ItinerarioDTO> createItinerario(
+            @Valid @RequestBody ItinerarioRequestDTO itinerarioRequest) {
         Itinerario entity = itinerarioMapper.fromRequest(itinerarioRequest);
-        // organizzatore e stato sono gestiti dal server, mai dal client
         entity.setOrganizzatore(utenteService.getUtenteSessione());
         entity.setStato("BOZZA");
         Itinerario salvato = itinerarioService.saveItinerario(entity);
@@ -60,6 +79,10 @@ public class ItinerarioController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
+    @Operation(
+            summary = "Elimina un itinerario per id",
+            description = "Accessibile da ORGANIZZATORE (solo i propri itinerari) o ADMIN. L'eliminazione è permanente."
+    )
     public ResponseEntity<Void> deleteItinerario(@PathVariable Long id) {
         itinerarioService.deleteItinerario(id, utenteService.getUtenteSessione(), utenteService.isAdmin());
         auditLogger.success("ITINERARIO_ELIMINATO", "Itinerario", String.valueOf(id));
