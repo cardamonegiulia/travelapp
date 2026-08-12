@@ -45,6 +45,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -324,5 +325,19 @@ public class GlobalExceptionHandler {
         problemDetail.setInstance(URI.create(request.getRequestURI()));
         problemDetail.setProperty("traceId", MDC.get(CorrelationIdFilter.MDC_KEY));
         return problemDetail;
+    }
+    // 409 - Conflitto di concorrenza sulla disponibilità dei posti
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ProblemDetail> handleOptimisticLock(
+            ObjectOptimisticLockingFailureException ex,
+            HttpServletRequest request) {
+
+        return respond(
+                HttpStatus.CONFLICT,
+                "Conflitto sulla disponibilità",
+                "La disponibilità è stata modificata da un'altra prenotazione. Riprova.",
+                "conflitto-disponibilita",
+                request
+        );
     }
 }

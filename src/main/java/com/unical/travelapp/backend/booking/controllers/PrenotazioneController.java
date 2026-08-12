@@ -45,13 +45,6 @@ public class PrenotazioneController {
         return ResponseEntity.status(HttpStatus.OK).body(prenotazioni.map(prenotazioneMapper::toResponseDto));
     }
 
-    @PostMapping("/{id}/paga")
-    public ResponseEntity<PrenotazioneResponseDto> pagaPrenotazione(@PathVariable Long id) {
-        Prenotazione prenotazione = prenotazioneService.pagaPrenotazione(id);
-        auditLogger.success("PRENOTAZIONE_PAGATA", "Prenotazione", String.valueOf(id));
-        PrenotazioneResponseDto responseDto = prenotazioneMapper.toResponseDto(prenotazione);
-        return ResponseEntity.status(HttpStatus.OK).body(responseDto);
-    }
 
     @PostMapping("/{id}/annulla")
     public ResponseEntity<PrenotazioneResponseDto> annullaPrenotazione(@PathVariable Long id) {

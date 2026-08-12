@@ -23,8 +23,11 @@ public class Pagamento extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private Long version;
+
     @OneToOne
-    @JoinColumn(nullable = false)
+    @JoinColumn(nullable = false, unique = true)
     private Prenotazione prenotazione;
 
     @Column(nullable = false, precision = 10, scale = 2)

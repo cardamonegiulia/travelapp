@@ -258,38 +258,6 @@ public class PrenotazioneService {
         return prenotazioneRepo.findByViaggiatoreId(utenteId, pageable);
     }
 
-    // la firma è Prenotazione perchè dopo il pagamento il frontend vuole vedere la prenotazione aggiornata
-    // ma si poteva anche usare Pagamento ma non credo sia coerente per il motivo sopra riportato
-    @Transactional
-    public Prenotazione pagaPrenotazione(Long prenotazioneId){
-        // ownership verificata qui: 404 se la prenotazione non esiste o non e' dell'utente corrente
-        Prenotazione prenotazione = getPrenotazioneById(prenotazioneId);
-
-        Optional<Pagamento> pagamento = pagamentoRepo.findByPrenotazioneId(prenotazioneId);
-
-        if(pagamento.isEmpty()){
-            throw new PagamentoNonTrovatoException("Pagamento non trovato: " + prenotazioneId);
-        }
-
-        Pagamento pay = pagamento.get();
-
-        if(prenotazione.getStato().equals(StatoPrenotazione.CANCELLATA)){
-            throw new StatoPrenotazioneNonValidoException("Non puoi pagare una prenotazione cancellata: " + prenotazioneId);
-        }
-
-        if(pay.getStato().equals(StatoPagamento.COMPLETATO)){
-            throw new StatoPrenotazioneNonValidoException("Pagamento già completato: " + prenotazioneId);
-        }
-
-        pay.setStato(StatoPagamento.COMPLETATO);
-        pay.setDataPagamento(LocalDateTime.now());
-
-        prenotazione.setStato(StatoPrenotazione.CONFERMATA);
-
-        pagamentoRepo.save(pay);
-        return prenotazioneRepo.save(prenotazione);
-    }
-
     // qui gestisco l'annullamento di una prenotazione, da capire se posso compattarla
     @Transactional
     public Prenotazione annullaPrenotazione(Long prenotazioneId) {
