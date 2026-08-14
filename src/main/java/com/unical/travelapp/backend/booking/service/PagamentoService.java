@@ -105,4 +105,32 @@ public class PagamentoService {
         return pagamentoRepository
                 .findByPrenotazioneViaggiatoreId(utenteId, pageable);
     }
+
+    @Transactional
+    public Pagamento gestisciPagamentoAnnullamento(Long prenotazioneId) {
+
+        Pagamento pagamento = pagamentoRepository
+                .findByPrenotazioneId(prenotazioneId)
+                .orElseThrow(() ->
+                        new PagamentoNonTrovatoException(
+                                "Pagamento non trovato: " + prenotazioneId
+                        )
+                );
+
+        if (pagamento.getStato() == StatoPagamento.COMPLETATO) {
+
+            pagamento.setStato(StatoPagamento.RIMBORSATO);
+
+        } else if (pagamento.getStato() == StatoPagamento.IN_ATTESA) {
+
+            pagamento.setStato(StatoPagamento.FALLITO);
+
+        } else {
+            throw new StatoPagamentoNonValidoException(
+                    "Il pagamento non può essere modificato dallo stato "
+                            + pagamento.getStato()
+            );
+        }
+        return pagamentoRepository.save(pagamento);
+    }
 }

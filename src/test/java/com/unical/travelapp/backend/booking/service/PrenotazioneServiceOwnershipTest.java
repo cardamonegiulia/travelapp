@@ -38,10 +38,11 @@ class PrenotazioneServiceOwnershipTest {
     @Mock private DisponibilitaItinerarioRepository disponibilitaItinerarioRepository;
     @Mock private SessioneSingolaAttivitaRepository sessioneSingolaAttivitaRepository;
     @Mock private UtenteService utenteService;
+    @Mock private PagamentoService pagamentoService;
 
     private PrenotazioneService service() {
         return new PrenotazioneService(prenotazioneRepo, extraPrenotazioneRepo, pagamentoRepo, attivitaRepo,
-                utenteRepository, disponibilitaItinerarioRepository, sessioneSingolaAttivitaRepository, utenteService);
+                utenteRepository, disponibilitaItinerarioRepository, sessioneSingolaAttivitaRepository, utenteService, pagamentoService);
     }
 
     private Utente utente(Long id) {

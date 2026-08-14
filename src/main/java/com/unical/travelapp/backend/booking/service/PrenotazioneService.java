@@ -31,8 +31,6 @@ import java.util.Optional;
 @AllArgsConstructor
 @Service
 public class PrenotazioneService {
-    // qui mettero dentro i repository per parlare con il DB
-
     private final PrenotazioneRepository prenotazioneRepo;
     private final ExtraPrenotazioneRepository extraPrenotazioneRepo;
     private final PagamentoRepository pagamentoRepo;
@@ -41,18 +39,16 @@ public class PrenotazioneService {
     private final DisponibilitaItinerarioRepository disponibilitaItinerarioRepository;
     private final SessioneSingolaAttivitaRepository sessioneSingolaAttivitaRepository;
     private final UtenteService utenteService;
-
+    private final PagamentoService pagamentoService;
 
     // cretePrenotazione era diventata troppo grande quindi ora creo diversi piccoli metodi
     // cosi da avere una logica pulita e leggibile da usare poi dentro createPrenotazione.
-
     private Utente recuperaUtente(Long id) {
         Optional<Utente> utente = utenteRepository.findById(id);
 
         if (utente.isEmpty()) {
             throw new UtenteNonTrovatoException("Utente non trovato");
         }
-
         return utente.get();
     }
 
@@ -110,6 +106,7 @@ public class PrenotazioneService {
 
         disp.setPostiDisponibili(disp.getPostiDisponibili() - numeroPartecipanti);
     }
+
     // Lo compatto appena capisco e cerco poi di evitare i duplicati come con scala posto. Sorry guys.
     private BigDecimal calcolaPrezzoItinerario(DisponibilitaItinerario disp, Integer numeroPartecipanti) {
         BigDecimal prezzoBase = disp.getItinerario().getPrezzoBase();
@@ -276,25 +273,8 @@ public class PrenotazioneService {
             SessioneSingolaAttivita sessione = prenotazione.getSessioneSingolaAttivita();
             sessione.setPostiDisponibili(sessione.getPostiDisponibili() + prenotazione.getNumeroPartecipanti());
         }
-
-        Optional<Pagamento> pagamento = pagamentoRepo.findByPrenotazioneId(prenotazioneId);
-
-        if(pagamento.isEmpty()) {
-            throw new PagamentoNonTrovatoException("Pagamento non trovato: " + prenotazioneId);
-        }
-
-        Pagamento pay = pagamento.get();
-
-        if(pay.getStato().equals(StatoPagamento.COMPLETATO)) {
-            pay.setStato(StatoPagamento.RIMBORSATO);
-        } else if(pay.getStato().equals(StatoPagamento.IN_ATTESA)) {
-            pay.setStato(StatoPagamento.FALLITO);
-        }
-
-        pagamentoRepo.save(pay);
-
+        pagamentoService.gestisciPagamentoAnnullamento(prenotazioneId);
         prenotazione.setStato(StatoPrenotazione.CANCELLATA);
-
         return prenotazioneRepo.save(prenotazione);
     }
 }

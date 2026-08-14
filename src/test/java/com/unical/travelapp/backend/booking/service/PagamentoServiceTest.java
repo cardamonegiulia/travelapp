@@ -187,4 +187,57 @@ class PagamentoServiceTest {
                 () -> pagamentoService.pagaPrenotazione(10L)
         );
     }
+
+    @Test
+    void pagamentoCompletatoDiventaRimborsatoConAnnullamento() {
+
+        Prenotazione prenotazione =
+                prenotazione(StatoPrenotazione.CONFERMATA);
+
+        Pagamento pagamento =
+                pagamento(prenotazione, StatoPagamento.COMPLETATO);
+
+        when(pagamentoRepository.findByPrenotazioneId(10L))
+                .thenReturn(Optional.of(pagamento));
+
+        when(pagamentoRepository.save(pagamento))
+                .thenReturn(pagamento);
+
+        Pagamento risultato =
+                pagamentoService.gestisciPagamentoAnnullamento(10L);
+
+        assertEquals(
+                StatoPagamento.RIMBORSATO,
+                risultato.getStato()
+        );
+
+        verify(pagamentoRepository).save(pagamento);
+    }
+
+    @Test
+    void pagamentoInAttesaDiventaFallitoConAnnullamento() {
+
+        Prenotazione prenotazione =
+                prenotazione(StatoPrenotazione.IN_ATTESA);
+
+        Pagamento pagamento =
+                pagamento(prenotazione, StatoPagamento.IN_ATTESA);
+
+        when(pagamentoRepository.findByPrenotazioneId(10L))
+                .thenReturn(Optional.of(pagamento));
+
+        when(pagamentoRepository.save(pagamento))
+                .thenReturn(pagamento);
+
+        Pagamento risultato =
+                pagamentoService.gestisciPagamentoAnnullamento(10L);
+
+        assertEquals(
+                StatoPagamento.FALLITO,
+                risultato.getStato()
+        );
+
+        verify(pagamentoRepository).save(pagamento);
+    }
+
 }
