@@ -16,6 +16,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -41,10 +42,10 @@ public class SingolaAttivitaController {
     public ResponseEntity<Page<SingolaAttivitaDTO>> getAllAttivita(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(attivitaService.getAllAttivita(pageable).map(attivitaMapper::toDTO));
     }
-
     @GetMapping("/{id}")
     public ResponseEntity<SingolaAttivitaDTO> getAttivitaById(@PathVariable Long id) {
-        SingolaAttivita attivita = attivitaService.getAttivitaById(id);
+        SingolaAttivita attivita = attivitaService.getAttivitaById(id)
+                .orElseThrow(() -> new SingolaAttivitaNonTrovataException("Attività non trovata: " + id));
         return ResponseEntity.ok(attivitaMapper.toDTO(attivita));
     }
 

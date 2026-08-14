@@ -15,6 +15,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
 
 import java.util.Optional;
 
@@ -38,10 +39,10 @@ public class ItinerarioController {
     public ResponseEntity<Page<ItinerarioDTO>> getAllItinerari(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(itinerarioService.getAllItinerari(pageable).map(itinerarioMapper::toDTO));
     }
-
     @GetMapping("/{id}")
     public ResponseEntity<ItinerarioDTO> getItinerarioById(@PathVariable Long id) {
-        Itinerario itinerario = itinerarioService.getItinerarioById(id);
+        Itinerario itinerario = itinerarioService.getItinerarioById(id)
+                .orElseThrow(() -> new ItinerarioNonTrovatoException("Itinerario non trovato: " + id));
         return ResponseEntity.ok(itinerarioMapper.toDTO(itinerario));
     }
 
