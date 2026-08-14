@@ -1,5 +1,7 @@
 package com.unical.travelapp.backend.identity.keycloak;
 
+import com.unical.travelapp.backend.identity.exception.IdentityProviderNonDisponibileException;
+import com.unical.travelapp.backend.identity.exception.PasswordNonConformeException;
 import com.unical.travelapp.backend.identity.exception.RegistrazioneNonDisponibileException;
 import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
 import org.slf4j.Logger;
@@ -63,18 +65,25 @@ public class KeycloakAdminClient {
     public record NuovoUtenteKeycloak(String username, String email, String nome, String cognome, String password) {
     }
 
+    /** I campi del profilo che esistono in entrambe le fonti e vanno tenuti allineati. */
+    public record ProfiloKeycloak(String email, String nome, String cognome) {
+    }
+
     /**
      * Access token del service account (grant {@code client_credentials}).
      *
-     * <p>Deliberatamente non messo in cache: la registrazione e' un'operazione rara, e un
+     * <p>Deliberatamente non messo in cache: le operazioni amministrative sono rare, e un
      * token in cache introdurrebbe il caso "token valido secondo noi ma rifiutato da Keycloak"
      * dopo un riavvio del realm, con una gestione del refresh da mantenere.
+     *
+     * <p>Solleva la superclasse {@link IdentityProviderNonDisponibileException} e non la
+     * variante della registrazione: questo passo e' comune a tutte le operazioni sull'IdP.
      */
     public String ottieniTokenAmministrativo() {
         if (!StringUtils.hasText(clientSecret)) {
-            log.error("Registrazione non disponibile: 'app.keycloak.admin.client-secret' non è configurato "
-                    + "(variabile d'ambiente KEYCLOAK_ADMIN_CLIENT_SECRET)");
-            throw new RegistrazioneNonDisponibileException("client secret del service account non configurato");
+            log.error("Operazioni amministrative su Keycloak non disponibili: 'app.keycloak.admin.client-secret' "
+                    + "non è configurato (variabile d'ambiente KEYCLOAK_ADMIN_CLIENT_SECRET)");
+            throw new IdentityProviderNonDisponibileException("client secret del service account non configurato");
         }
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
@@ -93,13 +102,13 @@ public class KeycloakAdminClient {
                     log.error("Autenticazione del service account '{}' fallita (HTTP {}): verificare client-id, "
                                     + "client secret e che 'Service accounts roles' sia abilitato sul client",
                             clientId, stato);
-                    return new RegistrazioneNonDisponibileException("service account Keycloak non autenticato");
+                    return new IdentityProviderNonDisponibileException("service account Keycloak non autenticato");
                 });
 
         Object accessToken = risposta == null ? null : risposta.get("access_token");
         if (accessToken == null) {
             log.error("Risposta del token endpoint senza campo access_token per il client '{}'", clientId);
-            throw new RegistrazioneNonDisponibileException("risposta del token endpoint priva di access_token");
+            throw new IdentityProviderNonDisponibileException("risposta del token endpoint priva di access_token");
         }
         return accessToken.toString();
     }
@@ -158,7 +167,13 @@ public class KeycloakAdminClient {
                 "firstName", nuovo.nome(),
                 "lastName", nuovo.cognome(),
                 "enabled", true,
-                "emailVerified", true,
+                // L'indirizzo non e' verificato: nessuno ha ancora dimostrato di poterlo
+                // leggere. Dichiararlo verificato perche' e' arrivato in un form significa
+                // permettere a chiunque di registrarsi con l'email di un altro, e di
+                // ricevere da quel momento le comunicazioni destinate a quella persona.
+                // Con "verifyEmail" attivo sul realm, Keycloak invia la mail di verifica al
+                // primo tentativo di login e non rilascia token finche' non e' confermata.
+                "emailVerified", false,
                 "credentials", List.of(credenziale));
 
         URI location;
@@ -204,6 +219,83 @@ public class KeycloakAdminClient {
         return keycloakId;
     }
 
+    /**
+     * Allinea su Keycloak i campi del profilo modificati in locale.
+     *
+     * <p>Vengono inviati solo email, nome e cognome: Keycloak applica i campi presenti nella
+     * rappresentazione e lascia intatti gli altri, quindi {@code enabled}, credenziali e ruoli
+     * non vengono toccati da qui.
+     *
+     * <p>Lo {@code username} non viene modificato di proposito, nemmeno quando cambia l'email.
+     * Per gli account nati dalla registrazione self-service i due valori coincidono, ma per
+     * quelli creati in console possono essere diversi, e riscrivere lo username significa
+     * cambiare l'identificativo con cui una persona fa login. Con
+     * {@code loginWithEmailAllowed} attivo sul realm, l'accesso con la nuova email funziona
+     * comunque.
+     *
+     * @throws UtenteGiaEsistenteException se l'email e' gia' di un altro utente del realm
+     * @throws IdentityProviderNonDisponibileException se Keycloak non risponde o rifiuta
+     */
+    public void aggiornaProfilo(String token, String keycloakId, ProfiloKeycloak profilo) {
+        try {
+            restClient.put()
+                    .uri("/admin/realms/{realm}/users/{id}", realm, keycloakId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(corpoProfilo(profilo))
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException e) {
+            int stato = e.getStatusCode().value();
+            if (stato == 409) {
+                throw new UtenteGiaEsistenteException("Esiste già un utente registrato con questa email");
+            }
+            if (stato == 404) {
+                log.error("Utente Keycloak {} non trovato: il record locale punta a un'identita' che non esiste "
+                        + "piu' sull'IdP, il profilo non e' allineabile", keycloakId);
+            } else if (stato == 403) {
+                log.error("Il service account '{}' non è autorizzato ad aggiornare utenti nel realm '{}': "
+                        + "assegnargli il ruolo client 'manage-users' di realm-management", clientId, realm);
+            } else {
+                log.error("Aggiornamento del profilo Keycloak {} fallito (HTTP {})", keycloakId, stato);
+            }
+            throw new IdentityProviderNonDisponibileException("aggiornamento del profilo su Keycloak fallito");
+        } catch (ResourceAccessException e) {
+            log.error("Keycloak non raggiungibile durante l'aggiornamento del profilo {}: {}",
+                    keycloakId, e.getMessage());
+            throw new IdentityProviderNonDisponibileException("Keycloak non raggiungibile", e);
+        }
+    }
+
+    /**
+     * Ripristina su Keycloak il profilo precedente senza propagare errori: compensa un
+     * aggiornamento riuscito sull'IdP ma non salvato in locale. Come per la registrazione,
+     * l'errore originale e' quello che deve arrivare al chiamante, non quello della pulizia.
+     */
+    public void aggiornaProfiloSenzaPropagareErrori(String token, String keycloakId, ProfiloKeycloak profilo) {
+        try {
+            restClient.put()
+                    .uri("/admin/realms/{realm}/users/{id}", realm, keycloakId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(corpoProfilo(profilo))
+                    .retrieve()
+                    .toBodilessEntity();
+            log.warn("Aggiornamento non salvato in locale: profilo Keycloak {} riportato ai valori precedenti",
+                    keycloakId);
+        } catch (RuntimeException e) {
+            log.error("Compensazione fallita: il profilo Keycloak {} resta disallineato dal record locale "
+                    + "e va corretto a mano dalla console admin", keycloakId, e);
+        }
+    }
+
+    private Map<String, Object> corpoProfilo(ProfiloKeycloak profilo) {
+        return Map.of(
+                "email", profilo.email(),
+                "firstName", profilo.nome(),
+                "lastName", profilo.cognome());
+    }
+
     /** Assegna un ruolo realm all'utente appena creato. */
     public void assegnaRuoloRealm(String token, String keycloakId, RuoloRealm ruolo) {
         List<Map<String, String>> corpo = List.of(Map.of("id", ruolo.id(), "name", ruolo.nome()));
@@ -221,6 +313,114 @@ public class KeycloakAdminClient {
                             ruolo.nome(), keycloakId, stato);
                     return new RegistrazioneNonDisponibileException("assegnazione del ruolo realm fallita");
                 });
+    }
+
+    /**
+     * Sostituisce la password dell'utente.
+     *
+     * <p>La credenziale non e' temporanea: una password temporanea farebbe scattare l'azione
+     * richiesta UPDATE_PASSWORD al login successivo, cioe' chiederebbe all'utente di
+     * cambiare di nuovo quella che ha appena scelto.
+     *
+     * @throws PasswordNonConformeException se il realm rifiuta la password per policy: e' un
+     *         400, non un guasto del servizio
+     * @throws IdentityProviderNonDisponibileException per qualunque altro errore dell'IdP
+     */
+    public void impostaPassword(String token, String keycloakId, String nuovaPassword) {
+        Map<String, Object> credenziale = Map.of(
+                "type", "password",
+                "value", nuovaPassword,
+                "temporary", false);
+
+        try {
+            restClient.put()
+                    .uri("/admin/realms/{realm}/users/{id}/reset-password", realm, keycloakId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(credenziale)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException e) {
+            int stato = e.getStatusCode().value();
+            if (stato == 400) {
+                // l'unica parte della richiesta che dipende dall'utente e' la password:
+                // un 400 qui e' la policy del realm che la respinge
+                log.info("Password rifiutata dalla policy del realm per l'utente {}", keycloakId);
+                throw new PasswordNonConformeException("La password non rispetta i requisiti richiesti");
+            }
+            if (stato == 403) {
+                log.error("Il service account '{}' non è autorizzato a cambiare le password nel realm '{}': "
+                        + "assegnargli il ruolo client 'manage-users' di realm-management", clientId, realm);
+            } else {
+                log.error("Cambio password dell'utente Keycloak {} fallito (HTTP {})", keycloakId, stato);
+            }
+            throw new IdentityProviderNonDisponibileException("cambio password su Keycloak fallito");
+        } catch (ResourceAccessException e) {
+            log.error("Keycloak non raggiungibile durante il cambio password dell'utente {}: {}",
+                    keycloakId, e.getMessage());
+            throw new IdentityProviderNonDisponibileException("Keycloak non raggiungibile", e);
+        }
+    }
+
+    /**
+     * Chiude tutte le sessioni attive dell'utente, senza propagare errori.
+     *
+     * <p>Va chiamata dopo un cambio password: senza, chi avesse gia' rubato un token o una
+     * sessione manterrebbe l'accesso: proprio la ragione per cui la vittima sta cambiando la
+     * password. Non blocca l'operazione se fallisce, perche' la password nuova e' comunque
+     * gia' attiva e il rischio residuo e' limitato alla durata dei token in circolazione.
+     */
+    public void terminaSessioniSenzaPropagareErrori(String token, String keycloakId) {
+        try {
+            restClient.post()
+                    .uri("/admin/realms/{realm}/users/{id}/logout", realm, keycloakId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RuntimeException e) {
+            log.error("Sessioni dell'utente Keycloak {} non terminate dopo il cambio password: "
+                    + "i token gia' emessi restano validi fino alla scadenza", keycloakId, e);
+        }
+    }
+
+    /**
+     * Cancella un utente Keycloak propagando gli errori: e' la cancellazione "vera", quella
+     * chiesta da un amministratore, e deve fallire in modo visibile.
+     *
+     * <p>Un utente gia' assente su Keycloak (404) non e' un errore: l'operazione e'
+     * idempotente e il chiamante puo' comunque rimuovere il record locale. E' il caso di un
+     * account cancellato a mano dalla console, che altrimenti resterebbe impossibile da
+     * ripulire in locale.
+     *
+     * @throws IdentityProviderNonDisponibileException se Keycloak non risponde o rifiuta la
+     *         cancellazione: il record locale non va rimosso, o si tornerebbe alla divergenza
+     *         che questa chiamata serve a evitare
+     */
+    public void eliminaUtente(String token, String keycloakId) {
+        try {
+            restClient.delete()
+                    .uri("/admin/realms/{realm}/users/{id}", realm, keycloakId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException e) {
+            int stato = e.getStatusCode().value();
+            if (stato == 404) {
+                log.warn("Utente Keycloak {} gia' assente: si procede con la sola cancellazione locale", keycloakId);
+                return;
+            }
+            if (stato == 403) {
+                log.error("Il service account '{}' non è autorizzato a cancellare utenti nel realm '{}': "
+                        + "assegnargli il ruolo client 'manage-users' di realm-management", clientId, realm);
+            } else {
+                log.error("Cancellazione dell'utente Keycloak {} fallita (HTTP {})", keycloakId, stato);
+            }
+            throw new IdentityProviderNonDisponibileException("cancellazione dell'utente su Keycloak fallita");
+        } catch (ResourceAccessException e) {
+            log.error("Keycloak non raggiungibile durante la cancellazione dell'utente {}: {}",
+                    keycloakId, e.getMessage());
+            throw new IdentityProviderNonDisponibileException("Keycloak non raggiungibile", e);
+        }
     }
 
     /**
@@ -243,7 +443,7 @@ public class KeycloakAdminClient {
     }
 
     private <T> T esegui(java.util.function.Supplier<T> chiamata,
-                         java.util.function.Function<Integer, RegistrazioneNonDisponibileException> suErroreHttp) {
+                         java.util.function.Function<Integer, ? extends IdentityProviderNonDisponibileException> suErroreHttp) {
         try {
             return chiamata.get();
         } catch (RestClientResponseException e) {

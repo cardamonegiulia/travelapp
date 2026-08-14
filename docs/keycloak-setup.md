@@ -90,6 +90,52 @@ nessun segreto reale è versionato.
 Istruzioni operative e prove passo-passo: `docs/registrazione-test-postman.md`.
 Scelte di progetto e motivazioni: `docs/registrazione-implementazione.md`.
 
+## 6. Password, verifica email e brute force (da applicare a mano sull'istanza esistente)
+
+`keycloak-import/travelapp-realm.json` è stato aggiornato, ma **il file di import non tocca
+un realm già esistente**: `--import-realm` importa solo se il realm non c'è. Su un'istanza
+già avviata queste impostazioni vanno replicate dalla console, altrimenti restano attive solo
+dopo un `docker compose down -v` (che cancella anche utenti e sessioni).
+
+Realm settings → scheda indicata:
+
+| Scheda | Impostazione | Valore | Perché |
+|---|---|---|---|
+| Authentication → Policies → Password policy | `Minimum Length` | `12` | le regole del backend valgono solo in registrazione: una password cambiata altrove le aggirerebbe |
+| " | `Digits` | `1` | allineata a `PasswordSicura` |
+| " | `Not Username`, `Not Email` | — | difesa aggiuntiva, non esprimibile lato DTO |
+| Security defenses → Brute force detection | `Enabled` | on | il rate limit del backend **non** copre il login: quello avviene su Keycloak e non passa dall'applicazione |
+| " | `Max login failures` | `10` | il default 30 è troppo permissivo per una password |
+| " | `Permanent lockout` | off | il blocco permanente trasforma un attacco in un disservizio per la vittima |
+| Login | `Verify email` | on | senza, chiunque può registrarsi con l'indirizzo di un altro |
+| Login | `Forgot password` | on | unica strada di recupero che non passi da un amministratore |
+| Email | host/porta SMTP | `travelapp-mailpit` : `1025` | vedi sotto |
+
+**L'SMTP non è opzionale una volta acceso `Verify email`.** Keycloak manda la mail di
+verifica al primo login: senza un server SMTP raggiungibile l'utente resta bloccato su una
+schermata che gli chiede di controllare una casella dove non arriverà mai nulla. Per lo
+sviluppo `docker-compose.yml` include **Mailpit**, che cattura le mail invece di spedirle:
+si leggono su <http://localhost:8025>. In produzione va sostituito con un SMTP vero.
+
+Effetto collaterale voluto sulla registrazione: da ora `POST /api/auth/registrazione` crea
+l'utente con `emailVerified: false`. L'account esiste, ma il primo login passa dalla verifica
+dell'indirizzo. È il punto: prima l'applicazione dichiarava verificato un indirizzo che
+nessuno aveva mai provato di saper leggere.
+
+## 7. Cambio password: cosa deve fare il client
+
+`POST /api/utenti/me/password` non chiede la password attuale — verificarla lato server
+richiederebbe di riattivare il password grant, cioè il flusso che il §5 ha eliminato. Al suo
+posto pretende un'**autenticazione recente**: il token deve portare un claim `auth_time` non
+più vecchio di `app.security.max-auth-age-seconds` (5 minuti di default).
+
+Il client che riceve `401` con `WWW-Authenticate: Bearer error="insufficient_user_authentication"`
+deve rifare il login sull'authorization endpoint con `max_age=300`, **non** limitarsi a
+rinnovare il token col refresh: il refresh non aggiorna `auth_time`, quindi riproverebbe
+all'infinito. Dopo il cambio, Keycloak chiude tutte le sessioni dell'utente: serve un nuovo
+login, ed è voluto — altrimenti chi avesse rubato un token manterrebbe l'accesso proprio
+mentre la vittima cerca di toglierglielo.
+
 ## Riepilogo proprietà applicative coinvolte
 
 | Property | Default | Env var override |
@@ -104,6 +150,7 @@ Scelte di progetto e motivazioni: `docs/registrazione-implementazione.md`.
 | `app.keycloak.admin.client-secret` | *(nessuno: senza, la registrazione risponde 503)* | `KEYCLOAK_ADMIN_CLIENT_SECRET` |
 | `app.keycloak.admin.connect-timeout-ms` | `5000` | `KEYCLOAK_ADMIN_CONNECT_TIMEOUT_MS` |
 | `app.keycloak.admin.read-timeout-ms` | `10000` | `KEYCLOAK_ADMIN_READ_TIMEOUT_MS` |
+| `app.security.max-auth-age-seconds` | `300` | `SECURITY_MAX_AUTH_AGE_SECONDS` |
 
 In produzione, `issuer-uri` deve essere sempre HTTPS (oggi `sslRequired: "external"` nel
 realm consente HTTP per richieste "interne": da rivedere in Fase 6 per un deploy reale).

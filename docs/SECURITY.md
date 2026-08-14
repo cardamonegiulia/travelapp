@@ -86,6 +86,7 @@ aggiungendo `@PreAuthorize` non avrebbe funzionato senza il fix.
 | `/api/utenti` | GET | `ADMIN` |
 | `/api/utenti/{id}` | GET/PUT/DELETE | `ADMIN` oppure proprietario (`self`) |
 | `/api/utenti/me` | POST | autenticato (qualunque ruolo) |
+| `/api/utenti/me/password` | POST | autenticato **con autenticazione recente** (`auth_time` entro `app.security.max-auth-age-seconds`); 401 + `WWW-Authenticate` altrimenti |
 | `/api/itinerari` | GET | autenticato |
 | `/api/itinerari/{id}` | GET | autenticato |
 | `/api/itinerari` | POST | `ORGANIZZATORE` o `ADMIN` |

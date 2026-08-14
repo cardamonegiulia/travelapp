@@ -48,6 +48,18 @@ public final class TestJwt {
         return costruisci(builder -> builder.claim("preferred_username", subject), subject);
     }
 
+    /**
+     * Token con il claim {@code email}, come quello che Keycloak emette davvero: lo scope
+     * "email" e' fra i default scope del client {@code travelapp-backend}. Serve ai test del
+     * provisioning just-in-time, che senza email non puo' creare il record locale.
+     */
+    public static JwtRequestPostProcessor conEmail(String subject, String email, String... ruoli) {
+        return costruisci(builder -> builder
+                .claim("preferred_username", email)
+                .claim("email", email)
+                .claim("realm_access", Map.of("roles", List.of(ruoli))), subject);
+    }
+
     /** Stesso subject ma username/email diversi: l'ownership non deve cambiare comportamento. */
     public static JwtRequestPostProcessor conUsernameDiverso(String subject, String username, String... ruoli) {
         return costruisci(builder -> builder

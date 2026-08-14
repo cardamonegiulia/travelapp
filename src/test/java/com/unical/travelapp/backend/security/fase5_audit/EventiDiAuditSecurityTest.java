@@ -5,12 +5,14 @@ import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.identity.entity.Ruolo;
 import com.unical.travelapp.backend.identity.entity.Utente;
+import com.unical.travelapp.backend.identity.keycloak.KeycloakAdminClient;
 import com.unical.travelapp.backend.security.support.CatturaLog;
 import com.unical.travelapp.backend.security.support.SecurityIntegrationTestBase;
 import com.unical.travelapp.backend.security.support.TestJwt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.Instant;
 import java.util.List;
@@ -30,6 +32,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * rilevabile.
  */
 class EventiDiAuditSecurityTest extends SecurityIntegrationTestBase {
+
+    /**
+     * Da quando l'aggiornamento del profilo viene propagato all'IdP, una PUT su
+     * {@code /api/utenti} passa anche da qui. Non e' l'oggetto di questi test: si sostituisce
+     * con un mock perche' il profilo "test" punta di proposito a un Keycloak irraggiungibile.
+     */
+    @MockitoBean
+    private KeycloakAdminClient keycloakAdminClient;
 
     private Utente organizzatore;
     private Utente utenteA;

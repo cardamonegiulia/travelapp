@@ -30,12 +30,12 @@
   "registrationAllowed" : false,
   "registrationEmailAsUsername" : false,
   "rememberMe" : false,
-  "verifyEmail" : false,
+  "verifyEmail" : true,
   "loginWithEmailAllowed" : true,
   "duplicateEmailsAllowed" : false,
-  "resetPasswordAllowed" : false,
+  "resetPasswordAllowed" : true,
   "editUsernameAllowed" : false,
-  "bruteForceProtected" : false,
+  "bruteForceProtected" : true,
   "permanentLockout" : false,
   "maxTemporaryLockouts" : 0,
   "maxFailureWaitSeconds" : 900,
@@ -43,7 +43,8 @@
   "waitIncrementSeconds" : 60,
   "quickLoginCheckMilliSeconds" : 1000,
   "maxDeltaTimeSeconds" : 43200,
-  "failureFactor" : 30,
+  "failureFactor" : 10,
+  "passwordPolicy" : "length(12) and digits(1) and notUsername and notEmail",
   "roles" : {
     "realm" : [ {
       "id" : "20b20d39-8a33-4f7b-ae96-647687027626",
@@ -1221,7 +1222,15 @@
     "xXSSProtection" : "1; mode=block",
     "strictTransportSecurity" : "max-age=31536000; includeSubDomains"
   },
-  "smtpServer" : { },
+  "smtpServer" : {
+    "host" : "travelapp-mailpit",
+    "port" : "1025",
+    "from" : "no-reply@travelapp.test",
+    "fromDisplayName" : "TravelApp",
+    "ssl" : "false",
+    "starttls" : "false",
+    "auth" : ""
+  },
   "eventsEnabled" : false,
   "eventsListeners" : [ "jboss-logging" ],
   "enabledEventTypes" : [ ],

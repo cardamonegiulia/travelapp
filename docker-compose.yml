@@ -24,3 +24,17 @@ services:
     command: start-dev --import-realm
     volumes:
       - ./keycloak-import:/opt/keycloak/data/import
+    depends_on:
+      - mailpit
+
+  # Server SMTP di sviluppo: cattura le mail invece di spedirle e le mostra su
+  # http://localhost:8025. Serve perche' il realm ha "verifyEmail" e "resetPasswordAllowed"
+  # attivi: senza un SMTP raggiungibile Keycloak non riesce a mandare la mail di verifica e
+  # un utente appena registrato non riuscirebbe piu' a completare il login.
+  # NON e' un sostituto di un SMTP vero in produzione: qui le mail non escono dalla macchina.
+  mailpit:
+    image: axllent/mailpit:v1.20
+    container_name: travelapp-mailpit
+    ports:
+      - "8025:8025"   # interfaccia web: qui si leggono le mail di verifica e di reset
+      - "1025:1025"   # SMTP, quello che usa Keycloak (host "travelapp-mailpit")

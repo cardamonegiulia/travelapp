@@ -7,7 +7,10 @@ import com.unical.travelapp.backend.config.CorrelationIdFilter;
 import com.unical.travelapp.backend.experience.exeption.ItinerarioNonTrovato;
 import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
+import com.unical.travelapp.backend.identity.exception.IdentityProviderNonDisponibileException;
+import com.unical.travelapp.backend.identity.exception.PasswordNonConformeException;
 import com.unical.travelapp.backend.identity.exception.RegistrazioneNonDisponibileException;
+import com.unical.travelapp.backend.identity.exception.RiautenticazioneRichiestaException;
 import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
 import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
 // Jackson 3 (tools.jackson): e' quello che Spring Boot 4 usa per (de)serializzare le
@@ -29,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -89,6 +93,45 @@ public class GlobalExceptionHandler {
         log.error("Registrazione non disponibile su {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
         return respond(HttpStatus.SERVICE_UNAVAILABLE, "Servizio non disponibile",
                 "Registrazione temporaneamente non disponibile, riprovare più tardi", "servizio-non-disponibile", request);
+    }
+
+    // 503 - Un'altra operazione che scrive su Keycloak (cancellazione, aggiornamento del
+    // profilo) non e' andata a buon fine. Handler distinto da quello della registrazione,
+    // piu' specifico, che continua a vincere sulle proprie eccezioni.
+    @ExceptionHandler(IdentityProviderNonDisponibileException.class)
+    public ResponseEntity<ProblemDetail> handleIdentityProviderNonDisponibile(IdentityProviderNonDisponibileException ex, HttpServletRequest request) {
+        log.error("Operazione sull'identity provider fallita su {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return respond(HttpStatus.SERVICE_UNAVAILABLE, "Servizio non disponibile",
+                "Operazione temporaneamente non disponibile, riprovare più tardi", "servizio-non-disponibile", request);
+    }
+
+    // 400 - Password rifiutata dalla policy del realm Keycloak
+    @ExceptionHandler(PasswordNonConformeException.class)
+    public ResponseEntity<ProblemDetail> handlePasswordNonConforme(PasswordNonConformeException ex, HttpServletRequest request) {
+        return respond(HttpStatus.BAD_REQUEST, "Dati non validi", ex.getMessage(), "password-non-conforme", request);
+    }
+
+    // 401 - Token valido ma autenticazione troppo vecchia per un'operazione sensibile.
+    // L'header WWW-Authenticate segue RFC 9470: dice al client che deve rifare il login
+    // (con max_age), non che il token e' scaduto. Senza, un interceptor che tratta ogni 401
+    // come "rinnova col refresh token" entrerebbe in un ciclo, perche' il refresh non
+    // aggiorna auth_time.
+    @ExceptionHandler(RiautenticazioneRichiestaException.class)
+    public ResponseEntity<ProblemDetail> handleRiautenticazioneRichiesta(RiautenticazioneRichiestaException ex, HttpServletRequest request) {
+        auditLogger.failure("RIAUTENTICAZIONE_RICHIESTA", "endpoint",
+                request.getMethod() + " " + request.getRequestURI(), ex.getMessage());
+
+        ProblemDetail pd = buildProblemDetail(HttpStatus.UNAUTHORIZED, "Riautenticazione richiesta",
+                "L'operazione richiede un'autenticazione recente: ripetere il login",
+                "riautenticazione-richiesta", request);
+        pd.setProperty("maxAge", ex.getEtaMassimaSecondi());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header(HttpHeaders.WWW_AUTHENTICATE,
+                        "Bearer error=\"insufficient_user_authentication\", "
+                                + "error_description=\"A recent authentication is required\", "
+                                + "max_age=\"" + ex.getEtaMassimaSecondi() + "\"")
+                .body(pd);
     }
 
     // 400 - Validazioni fallite (@NotBlank, @Email, @Size sul DTO)
