@@ -2,15 +2,19 @@ package com.unical.travelapp.backend.catalog.service;
 
 import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
 import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
+import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
 import com.unical.travelapp.backend.catalog.repository.SingolaAttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRepository;
-import com.unical.travelapp.backend.catalog.exception.RisorsaNonTrovataException;
+import com.unical.travelapp.backend.identity.entity.Utente;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SingolaAttivitaService {
@@ -21,13 +25,12 @@ public class SingolaAttivitaService {
     @Autowired
     private SessioneSingolaAttivitaRepository sessioneRepository;
 
-    public List<SingolaAttivita> getAllAttivita() {
-        return singolaAttivitaRepository.findAll();
+    public Page<SingolaAttivita> getAllAttivita(Pageable pageable) {
+        return singolaAttivitaRepository.findAll(pageable);
     }
 
-    public SingolaAttivita getAttivitaById(Long id) {
-        return singolaAttivitaRepository.findById(id)
-                .orElseThrow(() -> new RisorsaNonTrovataException("Attività con ID " + id + " non trovata nel catalogo"));
+    public Optional<SingolaAttivita> getAttivitaById(Long id) {
+        return singolaAttivitaRepository.findById(id);
     }
 
     @Transactional
@@ -61,11 +64,19 @@ public class SingolaAttivitaService {
         return attivitaSalvata;
     }
 
+    // ownership nella query: l'organizzatore puo' cancellare solo le proprie attivita', l'admin qualsiasi
     @Transactional
-    public void deleteAttivita(Long id) {
-        if (!singolaAttivitaRepository.existsById(id)) {
-            throw new RisorsaNonTrovataException("Impossibile eliminare: Attività con ID " + id + " non esiste");
+    public void deleteAttivita(Long id, Utente richiedente, boolean isAdmin) {
+        if (isAdmin) {
+            if (!singolaAttivitaRepository.existsById(id)) {
+                throw new SingolaAttivitaNonTrovataException("Attività non trovata: " + id);
+            }
+            singolaAttivitaRepository.deleteById(id);
+            return;
         }
-        singolaAttivitaRepository.deleteById(id);
+
+        SingolaAttivita attivita = singolaAttivitaRepository.findByIdAndOrganizzatore_Id(id, richiedente.getId())
+                .orElseThrow(() -> new SingolaAttivitaNonTrovataException("Attività non trovata: " + id));
+        singolaAttivitaRepository.delete(attivita);
     }
 }

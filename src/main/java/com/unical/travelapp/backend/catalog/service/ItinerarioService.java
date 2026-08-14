@@ -1,13 +1,16 @@
 package com.unical.travelapp.backend.catalog.service;
 
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
+import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
 import com.unical.travelapp.backend.catalog.repository.ItinerarioRepository;
-import com.unical.travelapp.backend.catalog.exception.RisorsaNonTrovataException;
+import com.unical.travelapp.backend.identity.entity.Utente;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ItinerarioService {
@@ -16,13 +19,13 @@ public class ItinerarioService {
     private ItinerarioRepository itinerarioRepository;
 
 
-    public List<Itinerario> getAllItinerari() {
-        return itinerarioRepository.findAll();
+    public Page<Itinerario> getAllItinerari(Pageable pageable) {
+        return itinerarioRepository.findAll(pageable);
     }
 
-    public Itinerario getItinerarioById(Long id) {
-        return itinerarioRepository.findById(id)
-                .orElseThrow(() -> new RisorsaNonTrovataException("Itinerario con ID " + id + " non trovato nel catalogo"));
+
+    public Optional<Itinerario> getItinerarioById(Long id) {
+        return itinerarioRepository.findById(id);
     }
 
     @Transactional //importante x l'integrità dei dati
@@ -33,12 +36,21 @@ public class ItinerarioService {
         return itinerarioRepository.save(itinerario);
     }
 
+
+    // ownership nella query: l'organizzatore puo' cancellare solo i propri itinerari, l'admin qualsiasi
     @Transactional
-    public void deleteItinerario(Long id) {
-        if (!itinerarioRepository.existsById(id)) {
-            throw new RisorsaNonTrovataException("Impossibile eliminare: Itinerario con ID " + id + " non esiste");
+    public void deleteItinerario(Long id, Utente richiedente, boolean isAdmin) {
+        if (isAdmin) {
+            if (!itinerarioRepository.existsById(id)) {
+                throw new ItinerarioNonTrovatoException("Itinerario non trovato: " + id);
+            }
+            itinerarioRepository.deleteById(id);
+            return;
         }
-        itinerarioRepository.deleteById(id);
+
+        Itinerario itinerario = itinerarioRepository.findByIdAndOrganizzatore_Id(id, richiedente.getId())
+                .orElseThrow(() -> new ItinerarioNonTrovatoException("Itinerario non trovato: " + id));
+        itinerarioRepository.delete(itinerario);
     }
 
 }

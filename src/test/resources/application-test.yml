@@ -1,0 +1,51 @@
+# Profilo "test": nessuna dipendenza da Keycloak reale ne' da credenziali vere.
+# L'issuer e la jwk-set-uri sono stub non raggiungibili di proposito: NimbusJwtDecoder
+# risolve la JWK set in modo lazy, quindi il contesto parte senza contattare l'IdP e
+# nessun test dipende da un realm configurato.
+spring:
+  jpa:
+    hibernate:
+      # il datasource (Testcontainers Postgres oppure H2 in modalita' PostgreSQL) e le
+      # property dello schema sono impostati a runtime da TestDatabase
+      ddl-auto: update
+    # open-in-view NON viene impostato: in produzione vale il default di Spring Boot
+    # (attivo), e disattivarlo qui farebbe fallire i test su un comportamento che
+    # nell'applicazione reale non si verifica.
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://idp.test.local/realms/travelapp
+          jwk-set-uri: https://idp.test.local/realms/travelapp/protocol/openid-connect/certs
+
+app:
+  keycloak:
+    admin:
+      # stub non raggiungibile di proposito: nei test il KeycloakAdminClient e' sostituito da
+      # un mock, e un indirizzo valido rischierebbe di far passare un test che in realta' sta
+      # contattando qualcosa.
+      # Il client secret NON e' impostato qui: resta la stringa vuota ereditata da
+      # application.properties. Nessun segreto, nemmeno finto, in un file versionato.
+      base-url: https://idp.test.local
+      realm: travelapp
+      client-id: travelapp-registration
+  security:
+    expected-audience: travelapp-backend
+    resource-client-id: travelapp-backend
+    require-https: false
+    cors:
+      allowed-origins: https://app.travelapp.test,http://localhost:3000
+  ratelimit:
+    # capienza alta di default: il rate limiting non deve interferire con i test
+    # funzionali. Le classi che lo collaudano abbassano il valore con @TestPropertySource
+    # (property diversa => contesto Spring diverso => bucket puliti).
+    authenticated:
+      capacity: 5000
+    anonymous:
+      capacity: 5000
+
+logging:
+  level:
+    org.hibernate.SQL: warn
+    org.testcontainers: warn
+    com.zaxxer.hikari: warn
