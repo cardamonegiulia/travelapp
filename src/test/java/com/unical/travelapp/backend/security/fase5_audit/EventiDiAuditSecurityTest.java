@@ -110,8 +110,9 @@ class EventiDiAuditSecurityTest extends SecurityIntegrationTestBase {
         var prenotazione = prenotazione(utenteA, disponibilita);
 
         try (CatturaLog audit = CatturaLog.audit()) {
-            mockMvc.perform(post("/api/prenotazioni/" + prenotazione.getId() + "/paga")
-                    .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))).andExpect(status().isOk());
+            mockMvc.perform(post("/api/pagamenti/prenotazioni/" + prenotazione.getId() + "/paga")
+                            .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
+                    .andExpect(status().isOk());
             mockMvc.perform(post("/api/prenotazioni/" + prenotazione.getId() + "/annulla")
                     .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))).andExpect(status().isOk());
 

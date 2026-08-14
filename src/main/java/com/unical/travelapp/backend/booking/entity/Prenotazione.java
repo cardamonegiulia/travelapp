@@ -32,6 +32,9 @@ public class Prenotazione extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private Long version;
+
     @ManyToOne
     @JoinColumn(nullable = false)
     private Utente viaggiatore;

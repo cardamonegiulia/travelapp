@@ -123,7 +123,7 @@ public class PagamentoService {
 
         } else if (pagamento.getStato() == StatoPagamento.IN_ATTESA) {
 
-            pagamento.setStato(StatoPagamento.FALLITO);
+            pagamento.setStato(StatoPagamento.ANNULATO);
 
         } else {
             throw new StatoPagamentoNonValidoException(
@@ -133,4 +133,5 @@ public class PagamentoService {
         }
         return pagamentoRepository.save(pagamento);
     }
+
 }

@@ -4,5 +4,6 @@ public enum StatoPagamento {
     IN_ATTESA,
     COMPLETATO,
     FALLITO,
-    RIMBORSATO
+    RIMBORSATO,
+    ANNULATO
 }

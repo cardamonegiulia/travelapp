@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "extra_prenotazioni")
+@Table(name = "extra_prenotazioni", uniqueConstraints = @UniqueConstraint(columnNames = {"prenotazione_id", "attivita_id"}))
 public class ExtraPrenotazione {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

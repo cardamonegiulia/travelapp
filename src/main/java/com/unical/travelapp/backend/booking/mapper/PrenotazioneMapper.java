@@ -3,20 +3,11 @@ package com.unical.travelapp.backend.booking.mapper;
 import com.unical.travelapp.backend.booking.dto.PrenotazioneResponseDto;
 import com.unical.travelapp.backend.booking.entity.Pagamento;
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
-import com.unical.travelapp.backend.booking.repositories.PagamentoRepository;
-import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
-@AllArgsConstructor
 public class PrenotazioneMapper {
-    private final PagamentoRepository pagamentoRepository;
-
-    public PrenotazioneResponseDto toResponseDto(Prenotazione prenotazione) {
-        Pagamento pagamento = pagamentoRepository
-                .findByPrenotazioneId(prenotazione.getId())
-                .orElse(null);
-
+    public PrenotazioneResponseDto toResponseDto(Prenotazione prenotazione, Pagamento pagamento) {
         String tipoPrenotazione;
         String titolo;
         String luogo;

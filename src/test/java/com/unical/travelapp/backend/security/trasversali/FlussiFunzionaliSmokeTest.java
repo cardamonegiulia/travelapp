@@ -93,7 +93,8 @@ class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
                 .getPostiDisponibili()).isEqualTo(8);
 
         // 2. pagamento
-        mockMvc.perform(post("/api/prenotazioni/" + idPrenotazione + "/paga")
+        // 2. pagamento
+        mockMvc.perform(post("/api/pagamenti/prenotazioni/" + idPrenotazione + "/paga")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.statoPrenotazione").value("CONFERMATA"))

@@ -33,7 +33,7 @@ public class Pagamento extends Auditable {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal importo;
 
-    @Column(nullable = false)
+    @Column
     private LocalDateTime dataPagamento;
 
     @Column(nullable = false)

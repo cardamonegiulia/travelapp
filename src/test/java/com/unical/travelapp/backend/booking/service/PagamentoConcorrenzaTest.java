@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+
+
 @SpringBootTest
 @ActiveProfiles("test")
 class PagamentoConcorrenzaTest {

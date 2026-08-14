@@ -26,7 +26,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Service
@@ -67,6 +69,19 @@ public class PrenotazioneService {
 
         if(req.getSessioneSingolaAttivitaId() != null && req.getAttivitaExtraIds() != null && !req.getAttivitaExtraIds().isEmpty()){
             throw new RichiestaPrenotazioneNonValidaException("Non ci sono attività extra per le singole attività");
+        }
+
+        if (req.getAttivitaExtraIds() != null) {
+            long distinti = req.getAttivitaExtraIds()
+                    .stream()
+                    .distinct()
+                    .count();
+
+            if (distinti != req.getAttivitaExtraIds().size()) {
+                throw new RichiestaPrenotazioneNonValidaException(
+                        "Non puoi inserire due volte la stessa attività extra"
+                );
+            }
         }
     }
 
@@ -189,7 +204,6 @@ public class PrenotazioneService {
         Pagamento pay = Pagamento.builder()
                 .prenotazione(prenotazione)
                 .importo(prezzoTotale)
-                .dataPagamento(LocalDateTime.now())
                 .stato(StatoPagamento.IN_ATTESA)
                 .build();
         pagamentoRepo.save(pay);
@@ -276,5 +290,24 @@ public class PrenotazioneService {
         pagamentoService.gestisciPagamentoAnnullamento(prenotazioneId);
         prenotazione.setStato(StatoPrenotazione.CANCELLATA);
         return prenotazioneRepo.save(prenotazione);
+    }
+
+    public Pagamento getPagamentoPrenotazione(Long prenotazioneId) {
+        return pagamentoRepo
+                .findByPrenotazioneId(prenotazioneId)
+                .orElse(null);
+    }
+
+    public Map<Long, Pagamento> getPagamentiPerPrenotazioni(List<Long> prenotazioneIds) {
+        if (prenotazioneIds == null || prenotazioneIds.isEmpty()) {
+            return Map.of();
+        }
+        return pagamentoRepo
+                .findByPrenotazioneIdIn(prenotazioneIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        pagamento -> pagamento.getPrenotazione().getId(),
+                        pagamento -> pagamento
+                ));
     }
 }

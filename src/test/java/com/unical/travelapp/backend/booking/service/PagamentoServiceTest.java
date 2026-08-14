@@ -23,6 +23,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(MockitoExtension.class)
 class PagamentoServiceTest {
@@ -233,11 +235,61 @@ class PagamentoServiceTest {
                 pagamentoService.gestisciPagamentoAnnullamento(10L);
 
         assertEquals(
-                StatoPagamento.FALLITO,
+                StatoPagamento.ANNULATO,
                 risultato.getStato()
         );
 
         verify(pagamentoRepository).save(pagamento);
+    }
+
+    @Test
+    void pagamentoInAttesaNonHaDataPagamento() {
+        Prenotazione prenotazione =
+                prenotazione(StatoPrenotazione.IN_ATTESA);
+
+        Pagamento pagamento =
+                Pagamento.builder()
+                        .id(20L)
+                        .prenotazione(prenotazione)
+                        .importo(new BigDecimal("100.00"))
+                        .stato(StatoPagamento.IN_ATTESA)
+                        .build();
+
+        assertEquals(StatoPagamento.IN_ATTESA, pagamento.getStato());
+        assertNull(pagamento.getDataPagamento());
+    }
+
+    @Test
+    void pagamentoCompletatoImpostaLaDataPagamento() {
+        Prenotazione prenotazione =
+                prenotazione(StatoPrenotazione.IN_ATTESA);
+
+        Pagamento pagamento =
+                Pagamento.builder()
+                        .id(20L)
+                        .prenotazione(prenotazione)
+                        .importo(new BigDecimal("100.00"))
+                        .stato(StatoPagamento.IN_ATTESA)
+                        .build();
+
+        when(utenteService.isAdmin()).thenReturn(false);
+        when(utenteService.getUtenteSessione()).thenReturn(utente());
+
+        when(prenotazioneRepository
+                .findByIdAndViaggiatoreId(10L, 1L))
+                .thenReturn(Optional.of(prenotazione));
+
+        when(pagamentoRepository.findByPrenotazioneId(10L))
+                .thenReturn(Optional.of(pagamento));
+
+        when(pagamentoRepository.save(pagamento))
+                .thenReturn(pagamento);
+
+        Pagamento risultato =
+                pagamentoService.pagaPrenotazione(10L);
+
+        assertEquals(StatoPagamento.COMPLETATO, risultato.getStato());
+        assertNotNull(risultato.getDataPagamento());
     }
 
 }
