@@ -46,6 +46,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -305,6 +306,25 @@ public class GlobalExceptionHandler {
         log.warn("Upload oltre il limite consentito su {} {}", request.getMethod(), request.getRequestURI());
         return respond(HttpStatus.PAYLOAD_TOO_LARGE, "Contenuto troppo grande",
                 "Il contenuto inviato supera la dimensione massima consentita", "contenuto-troppo-grande", request);
+    }
+
+    // 400 - Vincoli violati sui parametri del metodo di controller (@Min, @Size, ... su
+    // @RequestParam/@PathVariable). E' l'equivalente di handleValidazione per cio' che non
+    // arriva nel corpo: senza questo handler finirebbe nell'Exception generico, cioe' un 500
+    // per un errore del chiamante.
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ProblemDetail> handleValidazioneParametri(HandlerMethodValidationException ex, HttpServletRequest request) {
+        Map<String, String> errori = new HashMap<>();
+        ex.getParameterValidationResults().forEach(risultato -> {
+            String parametro = risultato.getMethodParameter().getParameterName();
+            risultato.getResolvableErrors().forEach(errore ->
+                    errori.put(parametro == null ? "parametro" : parametro, errore.getDefaultMessage()));
+        });
+
+        ProblemDetail pd = buildProblemDetail(HttpStatus.BAD_REQUEST, "Dati non validi",
+                "Uno o più parametri della richiesta non superano la validazione", "validazione-fallita", request);
+        pd.setProperty("errori", errori);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
     }
 
     // 400 - Parametro di richiesta assente o non convertibile nel tipo atteso

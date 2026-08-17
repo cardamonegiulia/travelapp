@@ -191,6 +191,32 @@ Restano da fare a mano, in questo ordine, su un realm appena creato:
 > per esistente. Se dopo un reset dell'ambiente il token endpoint risponde
 > `unauthorized_client`, è questo, e si ricrea in due minuti.
 
+### Le chiavi del realm non stanno nel file (e quelle vecchie sono da considerare bruciate)
+
+Il file **non** contiene il blocco `components → org.keycloak.keys.KeyProvider`: Keycloak
+genera chiavi nuove quando all'import non le trova, ed è il comportamento voluto. Le chiavi
+sono materiale crittografico, diverso in ogni ambiente; il file descrive la configurazione.
+`ConfigurazioneRealmTest.ilFileDiImportNonContieneChiaviDelRealm` impedisce che rientrino
+riesportando il realm dalla console.
+
+**Perché è importante.** Fino alla loro rimozione il file conteneva in chiaro la chiave
+privata RSA con cui il realm firma i token, più i segreti HMAC e AES. Con quella chiave
+chiunque legga il repository può firmarsi da sé un access token con il `sub` di un utente
+qualsiasi e `realm_access.roles: ["ADMIN"]`: la firma verifica contro la chiave pubblica che
+Keycloak espone sul JWKS, quindi il backend lo accetta come un token qualunque. Nessun
+controllo applicativo può accorgersene — per il resource server quel token è valido — e
+nemmeno il vincolo di autenticazione recente sul cambio password regge, perché anche
+`auth_time` lo scrive chi forgia il token.
+
+**Cosa fare, una volta sola.** Le chiavi restano nella storia di git, quindi vanno sostituite
+ovunque siano state usate:
+
+- **In sviluppo**: `docker compose down -v` e riavvio. Il realm riparte con chiavi nuove (e
+  vuoto: vale la lista qui sopra, `travelapp-test` compreso).
+- **Su un realm che non si può ricreare**: Realm settings → Keys → Providers → *Add provider*
+  `rsa-generated` con priorità più alta di quello esistente, poi rimuovere il vecchio. I token
+  già emessi con la chiave vecchia restano validi fino a scadenza (5 minuti).
+
 Nota su `admin-cli`: è un client built-in di ogni realm Keycloak, pubblico e con il password
 grant acceso. Finché resta così, il password grant è comunque disponibile sul realm, e la
 separazione dei flussi ottenuta sui client applicativi è meno netta di quanto sembri. Non è

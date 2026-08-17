@@ -226,6 +226,25 @@ class ConfigurazioneRealmTest {
                 .isTrue();
     }
 
+    /**
+     * Il file di import descrive la <b>configurazione</b> del realm, non il suo materiale
+     * crittografico: le chiavi sono diverse in ogni ambiente e Keycloak le genera da solo
+     * quando non le trova.
+     *
+     * <p>Per un periodo ci sono finite dentro davvero, in chiaro. Chi legge il repository
+     * puo' firmarsi da se' un access token con il {@code sub} di chiunque e il ruolo ADMIN:
+     * la firma verifica contro la chiave pubblica pubblicata sul JWKS, quindi il backend lo
+     * accetta come un token qualsiasi e nessun controllo applicativo se ne accorge. E'
+     * l'aggiramento completo dell'autorizzazione, e non lascia traccia.
+     */
+    @Test
+    void ilFileDiImportNonContieneChiaviDelRealm() {
+        assertThat(realm.path("components").fieldNames())
+                .toIterable()
+                .as("le chiavi del realm non vanno versionate: Keycloak le rigenera all'import")
+                .doesNotContain("org.keycloak.keys.KeyProvider");
+    }
+
     @Test
     void ilClientDiTestNonEntraNelRealmRicreatoDaZero() {
         assertThat(realm.path("clients").findValuesAsText("clientId"))

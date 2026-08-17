@@ -42,6 +42,10 @@ aggiungendo `@PreAuthorize` non avrebbe funzionato senza il fix.
 - Paginazione obbligatoria su tutte le collection esposte, con tetto massimo lato server
   (`spring.data.web.pageable.max-page-size=100`): un client non può forzare `size=10000`.
 - Limiti multipart e timeout su transazioni/query.
+- Tetto sul lavoro generato da una singola richiesta: `POST /api/attivita/con-sessioni` crea
+  una sessione per ogni giorno dell'intervallo richiesto, quindi l'intervallo è limitato a
+  366 giorni e i giorni della settimana sono validati (1-7, al massimo 7). Senza, una sola
+  chiamata chiedeva milioni di insert in un'unica transazione.
 
 ### Gestione degli errori (Fase 4)
 - Risposte di errore in formato RFC 7807 (`ProblemDetail`): `type`, `title`, `status`,
