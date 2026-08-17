@@ -27,6 +27,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -143,8 +144,13 @@ public class UtenteService {
             return utenteMapper.toResponseDto(utenteRepository.save(utente));
         }
 
+        // Solo qui si sa se l'indirizzo e' cambiato davvero, ed e' cio' che decide se la
+        // verifica email va rifatta: un indirizzo nuovo non eredita la prova che il vecchio
+        // fosse leggibile da chi possiede l'account.
+        boolean emailCambiata = !Objects.equals(aggiornato.email(), precedente.email());
+
         String token = keycloakAdminClient.ottieniTokenAmministrativo();
-        keycloakAdminClient.aggiornaProfilo(token, utente.getKeycloakId(), aggiornato);
+        keycloakAdminClient.aggiornaProfilo(token, utente.getKeycloakId(), aggiornato, emailCambiata);
         try {
             return utenteMapper.toResponseDto(utenteRepository.save(utente));
         } catch (RuntimeException e) {

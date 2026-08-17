@@ -438,6 +438,9 @@
   "scopeMappings" : [ {
     "clientScope" : "offline_access",
     "roles" : [ "offline_access" ]
+  }, {
+    "client" : "travelapp-android",
+    "roles" : [ "VIAGGIATORE", "ORGANIZZATORE", "ADMIN" ]
   } ],
   "clientScopeMappings" : {
     "account" : [ {
@@ -681,8 +684,8 @@
   }, {
     "id" : "75c893b3-f963-49da-8e42-f3c1fb6452b0",
     "clientId" : "travelapp-backend",
-    "name" : "",
-    "description" : "",
+    "name" : "TravelApp - resource server",
+    "description" : "Resource server: riceve i token e li valida, non ne emette per nessuno. Standard flow e direct access grants sono spenti di proposito - il login passa da travelapp-android. E' anche l'audience attesa dal backend (app.security.expected-audience), per questo i client che emettono token devono avere il mapper aud-travelapp-backend.",
     "rootUrl" : "",
     "adminUrl" : "",
     "baseUrl" : "",
@@ -691,14 +694,14 @@
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "**********",
-    "redirectUris" : [ "/*" ],
-    "webOrigins" : [ "/*" ],
+    "redirectUris" : [ ],
+    "webOrigins" : [ ],
     "notBefore" : 0,
     "bearerOnly" : false,
     "consentRequired" : false,
-    "standardFlowEnabled" : true,
+    "standardFlowEnabled" : false,
     "implicitFlowEnabled" : false,
-    "directAccessGrantsEnabled" : true,
+    "directAccessGrantsEnabled" : false,
     "serviceAccountsEnabled" : false,
     "publicClient" : false,
     "frontchannelLogout" : true,
@@ -714,6 +717,51 @@
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : true,
     "nodeReRegistrationTimeout" : -1,
+    "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "email" ],
+    "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
+  }, {
+    "clientId" : "travelapp-android",
+    "name" : "TravelApp - app Android",
+    "description" : "Client pubblico dell'app Android: Authorization Code + PKCE (S256). Un'app distribuita agli utenti non puo' custodire un secret, quindi la sicurezza dello scambio code -> token viene da PKCE. Non ha privilegi amministrativi: emette solo token per l'utente finale.",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "alwaysDisplayInConsole" : false,
+    "clientAuthenticatorType" : "client-secret",
+    "redirectUris" : [ "com.example.travelapp:/oauth2redirect" ],
+    "webOrigins" : [ ],
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "consentRequired" : false,
+    "standardFlowEnabled" : true,
+    "implicitFlowEnabled" : false,
+    "directAccessGrantsEnabled" : false,
+    "serviceAccountsEnabled" : false,
+    "publicClient" : true,
+    "frontchannelLogout" : true,
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "pkce.code.challenge.method" : "S256",
+      "post.logout.redirect.uris" : "com.example.travelapp:/logout",
+      "oidc.ciba.grant.enabled" : "false",
+      "backchannel.logout.session.required" : "true",
+      "oauth2.device.authorization.grant.enabled" : "false",
+      "backchannel.logout.revoke.offline.tokens" : "false"
+    },
+    "authenticationFlowBindingOverrides" : { },
+    "fullScopeAllowed" : false,
+    "nodeReRegistrationTimeout" : -1,
+    "protocolMappers" : [ {
+      "name" : "aud-travelapp-backend",
+      "protocol" : "openid-connect",
+      "protocolMapper" : "oidc-audience-mapper",
+      "consentRequired" : false,
+      "config" : {
+        "included.client.audience" : "travelapp-backend",
+        "id.token.claim" : "false",
+        "access.token.claim" : "true",
+        "introspection.token.claim" : "true"
+      }
+    } ],
     "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "email" ],
     "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
   } ],

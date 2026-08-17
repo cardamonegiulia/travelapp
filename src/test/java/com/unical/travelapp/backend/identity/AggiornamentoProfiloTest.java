@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -60,11 +61,30 @@ class AggiornamentoProfiloTest extends SecurityIntegrationTestBase {
                 .andExpect(jsonPath("$.email").value("nuova@example.test"));
 
         ArgumentCaptor<ProfiloKeycloak> profilo = ArgumentCaptor.forClass(ProfiloKeycloak.class);
-        verify(keycloakAdminClient).aggiornaProfilo(eq(TOKEN_ADMIN), eq(SUB_UTENTE_A), profilo.capture());
+        verify(keycloakAdminClient).aggiornaProfilo(eq(TOKEN_ADMIN), eq(SUB_UTENTE_A), profilo.capture(), eq(true));
         assertThat(profilo.getValue().email()).isEqualTo("nuova@example.test");
 
         assertThat(utenteRepository.findById(utente.getId()).orElseThrow().getEmail())
                 .isEqualTo("nuova@example.test");
+    }
+
+    /**
+     * L'ultimo parametro di {@code aggiornaProfilo} e' cio' che fa azzerare
+     * {@code emailVerified} su Keycloak. Deve valere {@code true} solo quando l'indirizzo
+     * cambia davvero: altrimenti ogni ritocco al nome costringerebbe a riconfermare la
+     * casella, e gli utenti imparerebbero a ignorare le mail di verifica.
+     */
+    @Test
+    void laVerificaEmailVieneChiestaSoloQuandoLIndirizzoCambia() throws Exception {
+        Utente utente = utente(SUB_UTENTE_A, Ruolo.VIAGGIATORE);
+
+        mockMvc.perform(put("/api/utenti/" + utente.getId())
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Ada\"}"))
+                .andExpect(status().isOk());
+
+        verify(keycloakAdminClient).aggiornaProfilo(anyString(), anyString(), any(), eq(false));
     }
 
     @Test
@@ -78,7 +98,7 @@ class AggiornamentoProfiloTest extends SecurityIntegrationTestBase {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<ProfiloKeycloak> profilo = ArgumentCaptor.forClass(ProfiloKeycloak.class);
-        verify(keycloakAdminClient).aggiornaProfilo(eq(TOKEN_ADMIN), eq(SUB_UTENTE_A), profilo.capture());
+        verify(keycloakAdminClient).aggiornaProfilo(eq(TOKEN_ADMIN), eq(SUB_UTENTE_A), profilo.capture(), eq(false));
         assertThat(profilo.getValue().nome()).isEqualTo("Ada");
         assertThat(profilo.getValue().cognome()).isEqualTo("Lovelace");
         assertThat(profilo.getValue().email())
@@ -126,7 +146,7 @@ class AggiornamentoProfiloTest extends SecurityIntegrationTestBase {
                 .andExpect(jsonPath("$.email").value("nuova.email@example.test"));
 
         ArgumentCaptor<ProfiloKeycloak> profilo = ArgumentCaptor.forClass(ProfiloKeycloak.class);
-        verify(keycloakAdminClient).aggiornaProfilo(anyString(), anyString(), profilo.capture());
+        verify(keycloakAdminClient).aggiornaProfilo(anyString(), anyString(), profilo.capture(), eq(true));
         assertThat(profilo.getValue().email()).isEqualTo("nuova.email@example.test");
     }
 
@@ -136,7 +156,7 @@ class AggiornamentoProfiloTest extends SecurityIntegrationTestBase {
         String emailIniziale = utente.getEmail();
 
         doThrow(new IdentityProviderNonDisponibileException("Keycloak non raggiungibile"))
-                .when(keycloakAdminClient).aggiornaProfilo(anyString(), anyString(), any());
+                .when(keycloakAdminClient).aggiornaProfilo(anyString(), anyString(), any(), anyBoolean());
 
         MvcResult risultato = mockMvc.perform(put("/api/utenti/" + utente.getId())
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
@@ -163,7 +183,7 @@ class AggiornamentoProfiloTest extends SecurityIntegrationTestBase {
                         .content("{\"email\":\"" + altro.getEmail() + "\"}"))
                 .andExpect(status().isConflict());
 
-        verify(keycloakAdminClient, never()).aggiornaProfilo(anyString(), anyString(), any());
+        verify(keycloakAdminClient, never()).aggiornaProfilo(anyString(), anyString(), any(), anyBoolean());
     }
 
     @Test

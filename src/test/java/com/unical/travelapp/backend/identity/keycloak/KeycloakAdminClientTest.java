@@ -95,6 +95,17 @@ class KeycloakAdminClientTest {
                 .hasMessageNotContaining("Keycloak");
     }
 
+    @Test
+    void unaPasswordRifiutataDallaPolicyNonEUnGuastoDelServizio() {
+        keycloak.expect(requestTo(UTENTI)).andRespond(withStatus(HttpStatus.BAD_REQUEST));
+
+        assertThatThrownBy(() -> client.creaUtente(TOKEN_ADMIN, nuovoUtente()))
+                .as("diventava un 503: chi si registra riprovava con la stessa password "
+                        + "all'infinito senza sapere che il problema era quella")
+                .isInstanceOf(PasswordNonConformeException.class)
+                .hasMessageNotContaining("Keycloak");
+    }
+
     // --- aggiornamento del profilo -----------------------------------------
 
     @Test
@@ -113,7 +124,7 @@ class KeycloakAdminClientTest {
                 .andRespond(withStatus(HttpStatus.NO_CONTENT));
 
         client.aggiornaProfilo(TOKEN_ADMIN, KEYCLOAK_ID,
-                new ProfiloKeycloak("nuova@example.test", "Ada", "Lovelace"));
+                new ProfiloKeycloak("nuova@example.test", "Ada", "Lovelace"), true);
         keycloak.verify();
     }
 
@@ -123,8 +134,38 @@ class KeycloakAdminClientTest {
                 .andRespond(withStatus(HttpStatus.CONFLICT));
 
         assertThatThrownBy(() -> client.aggiornaProfilo(TOKEN_ADMIN, KEYCLOAK_ID,
-                new ProfiloKeycloak("presa@example.test", "Ada", "Lovelace")))
+                new ProfiloKeycloak("presa@example.test", "Ada", "Lovelace"), true))
                 .isInstanceOf(UtenteGiaEsistenteException.class);
+    }
+
+    @Test
+    void unIndirizzoNuovoNonEreditaLaVerificaDelVecchio() {
+        keycloak.expect(requestTo(UTENTI + "/" + KEYCLOAK_ID))
+                .andExpect(method(HttpMethod.PUT))
+                // senza questo campo chiunque, dopo essersi verificato su una casella propria,
+                // potrebbe spostare l'account sull'indirizzo di un'altra persona e risultare
+                // verificato su di esso
+                .andExpect(jsonPath("$.emailVerified").value(false))
+                .andRespond(withStatus(HttpStatus.NO_CONTENT));
+
+        client.aggiornaProfilo(TOKEN_ADMIN, KEYCLOAK_ID,
+                new ProfiloKeycloak("nuova@example.test", "Ada", "Lovelace"), true);
+        keycloak.verify();
+    }
+
+    @Test
+    void cambiareSoloNomeECognomeNonFaRiverificareLEmail() {
+        keycloak.expect(requestTo(UTENTI + "/" + KEYCLOAK_ID))
+                .andExpect(method(HttpMethod.PUT))
+                // Keycloak applica i campi presenti e lascia intatti gli altri: assente
+                // significa "non toccare", mentre un true esplicito dichiarerebbe verificato un
+                // indirizzo che magari non lo e' mai stato
+                .andExpect(jsonPath("$.emailVerified").doesNotExist())
+                .andRespond(withStatus(HttpStatus.NO_CONTENT));
+
+        client.aggiornaProfilo(TOKEN_ADMIN, KEYCLOAK_ID,
+                new ProfiloKeycloak("stessa@example.test", "Ada", "Lovelace"), false);
+        keycloak.verify();
     }
 
     // --- cancellazione -----------------------------------------------------

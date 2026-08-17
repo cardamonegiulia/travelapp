@@ -11,9 +11,20 @@ Dalla Fase 1c il backend valida il claim `aud` del JWT (proprietà
 lato Keycloak, tutte le richieste falliranno con 401 `invalid_token`**, perché di default
 i client Keycloak non includono automaticamente il proprio `client_id` in `aud`.
 
-Passi (console admin Keycloak → realm `travelapp`):
+**Il mapper va sul client che *emette* i token, non sul backend.** È l'errore più facile da
+fare: uno scope dedicato si applica solo ai token rilasciati per quel client, quindi un
+mapper su `travelapp-backend` — che non emette più nulla (§5, e `login-android-setup.md`) —
+non entra mai in gioco. Oggi i client che emettono token sono:
 
-1. Clients → `travelapp-backend` → Client scopes → `travelapp-backend-dedicated` → Add mapper → By configuration
+| Client | Mapper audience | Dove |
+|---|---|---|
+| `travelapp-android` | già nel file di import | `keycloak-import/travelapp-realm.json` |
+| `travelapp-test` (solo sviluppo) | **da creare a mano** | console, procedura qui sotto |
+
+Su un realm creato da zero non c'è quindi nulla da fare per `travelapp-android`. Per
+`travelapp-test`, o per un client nuovo, i passi sono (console admin → realm `travelapp`):
+
+1. Clients → *il client che emette i token* → Client scopes → `<client-id>-dedicated` → Add mapper → By configuration
 2. Scegli **Audience**
 3. Configura:
    - Name: `aud-travelapp-backend`
@@ -22,8 +33,11 @@ Passi (console admin Keycloak → realm `travelapp`):
    - Add to access token: **on**
 4. Salva
 
-Verifica: decodifica un access token ottenuto per questo client su jwt.io e controlla che
+Verifica: decodifica un access token ottenuto da quel client su jwt.io e controlla che
 `aud` contenga `"travelapp-backend"`.
+
+Il senso del claim `aud` è "per chi è questo token": impedisce che un token ottenuto per un
+servizio venga rigirato a un altro servizio dello stesso realm.
 
 ## 2. Ruolo ADMIN (Fase 1a)
 
@@ -122,6 +136,17 @@ l'utente con `emailVerified: false`. L'account esiste, ma il primo login passa d
 dell'indirizzo. È il punto: prima l'applicazione dichiarava verificato un indirizzo che
 nessuno aveva mai provato di saper leggere.
 
+Lo stesso vale al **cambio** email: `PUT /api/utenti/{id}` con un indirizzo diverso manda a
+Keycloak anche `emailVerified: false`, quindi la verifica riparte. Un indirizzo nuovo non
+eredita la prova ottenuta su quello vecchio — altrimenti basterebbe verificarsi su una
+casella propria e poi spostare l'account sull'email di un'altra persona. Quando l'email non
+cambia il campo non viene inviato affatto, e lo stato su Keycloak resta intatto.
+
+**La policy password del realm è più severa dei vincoli del backend** (`@PasswordSicura` non
+può esprimere `notUsername` e `notEmail`): una password può superare la validazione locale e
+venire respinta da Keycloak. In quel caso registrazione e cambio password rispondono `400`
+`password-non-conforme`, non `503`.
+
 ## 7. Cambio password: cosa deve fare il client
 
 `POST /api/utenti/me/password` non chiede la password attuale — verificarla lato server
@@ -135,6 +160,42 @@ rinnovare il token col refresh: il refresh non aggiorna `auth_time`, quindi ripr
 all'infinito. Dopo il cambio, Keycloak chiude tutte le sessioni dell'utente: serve un nuovo
 login, ed è voluto — altrimenti chi avesse rubato un token manterrebbe l'accesso proprio
 mentre la vittima cerca di toglierglielo.
+
+## 8. Cosa c'è nel file di import, e cosa resta da fare a mano
+
+`keycloak-import/travelapp-realm.json` ricrea il realm su una macchina nuova, in CI o dopo un
+`docker compose down -v`. Contiene i tre client applicativi, ognuno con un solo mestiere:
+
+| Client | Mestiere | Emette token per | Flussi |
+|---|---|---|---|
+| `travelapp-backend` | resource server: riceve i token e li valida | nessuno | tutti spenti |
+| `travelapp-android` | fa fare il login all'utente | l'utente finale | solo Standard flow, PKCE `S256` |
+| `travelapp-registration` | service account per l'Admin API | sé stesso | solo service account |
+
+Sono presidiati da `ConfigurazioneRealmTest`: se qualcuno riaccende un flusso o toglie il
+mapper audience, il test diventa rosso. Le modifiche fatte in console **non** aggiornano il
+file, quindi è il file a restare la fonte di verità.
+
+Restano da fare a mano, in questo ordine, su un realm appena creato:
+
+1. **Ruolo `ADMIN` assegnato a un utente** (§2). L'import crea il ruolo, non lo assegna.
+2. **`KEYCLOAK_ADMIN_CLIENT_SECRET`**: il secret di `travelapp-registration` è mascherato nel
+   file (`**********`), quindi Keycloak ne genera uno nuovo. Va letto da Clients →
+   `travelapp-registration` → Credentials e passato al backend (§5).
+3. **`travelapp-test`**, solo in sviluppo (§1 e `login-android-setup.md` passo 5).
+
+> **Il punto 3 è quello che sorprende.** `travelapp-test` è deliberatamente fuori dall'import
+> — un client con il password grant acceso non deve poter seguire il realm in produzione per
+> distrazione. Il rovescio della medaglia è che **`docker compose down -v` lo cancella**, e
+> con lui il modo di ottenere un token da curl o Postman: le due guide di collaudo lo danno
+> per esistente. Se dopo un reset dell'ambiente il token endpoint risponde
+> `unauthorized_client`, è questo, e si ricrea in due minuti.
+
+Nota su `admin-cli`: è un client built-in di ogni realm Keycloak, pubblico e con il password
+grant acceso. Finché resta così, il password grant è comunque disponibile sul realm, e la
+separazione dei flussi ottenuta sui client applicativi è meno netta di quanto sembri. Non è
+stato toccato perché disabilitare un built-in è una decisione a sé, che va presa sapendo
+quali strumenti amministrativi smettono di funzionare.
 
 ## Riepilogo proprietà applicative coinvolte
 

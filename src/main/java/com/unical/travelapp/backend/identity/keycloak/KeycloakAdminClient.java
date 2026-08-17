@@ -19,6 +19,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -152,6 +153,8 @@ public class KeycloakAdminClient {
      * Crea l'utente e ne restituisce l'id Keycloak (il {@code sub} dei token futuri).
      *
      * @throws UtenteGiaEsistenteException se username o email risultano gia' presenti nel realm
+     * @throws PasswordNonConformeException se il realm rifiuta la password per policy: come in
+     *         {@link #impostaPassword}, e' un errore del chiamante e non un guasto del servizio
      */
     public String creaUtente(String token, NuovoUtenteKeycloak nuovo) {
         Map<String, Object> credenziale = Map.of(
@@ -194,6 +197,17 @@ public class KeycloakAdminClient {
                 // quale email ha inviato, e il corpo puo' rivelare quale campo ha fatto conflitto
                 throw new UtenteGiaEsistenteException("Esiste già un utente registrato con questa email");
             }
+            if (stato == 400) {
+                // Delle cose che l'utente ha scritto, la password e' l'unica che il realm
+                // valuta per conto suo: formato dell'email, nome e cognome li ha gia' validati
+                // il DTO prima di arrivare qui. Un 400 in creazione e' quindi la policy del
+                // realm che respinge la password, lo stesso significato che ha in
+                // impostaPassword. Senza questo ramo diventava un 503 "servizio non
+                // disponibile": chi si registra rileggeva la stessa password all'infinito
+                // senza sapere che il problema era quella.
+                log.info("Registrazione rifiutata dalla policy password del realm '{}'", realm);
+                throw new PasswordNonConformeException("La password non rispetta i requisiti richiesti");
+            }
             if (stato == 403) {
                 log.error("Il service account '{}' non è autorizzato a creare utenti nel realm '{}': "
                         + "assegnargli il ruolo client 'manage-users' di realm-management", clientId, realm);
@@ -226,6 +240,15 @@ public class KeycloakAdminClient {
      * rappresentazione e lascia intatti gli altri, quindi {@code enabled}, credenziali e ruoli
      * non vengono toccati da qui.
      *
+     * <p>Quando l'email cambia viene aggiunto {@code emailVerified: false}, ed e' la ragione
+     * per cui il metodo vuole saperlo. La verifica dimostra che chi possiede l'account sa
+     * leggere <b>quell'</b> indirizzo: portarsela dietro sul nuovo significherebbe permettere a
+     * chiunque, dopo essersi verificato su una casella propria, di spostare l'account
+     * sull'indirizzo di un'altra persona e risultare verificato su di esso. Con
+     * {@code verifyEmail} attivo sul realm, Keycloak chiede la nuova conferma al login
+     * successivo. Quando l'email non cambia il campo non viene inviato affatto: una
+     * rappresentazione che non lo contiene lascia intatto il valore su Keycloak.
+     *
      * <p>Lo {@code username} non viene modificato di proposito, nemmeno quando cambia l'email.
      * Per gli account nati dalla registrazione self-service i due valori coincidono, ma per
      * quelli creati in console possono essere diversi, e riscrivere lo username significa
@@ -236,13 +259,13 @@ public class KeycloakAdminClient {
      * @throws UtenteGiaEsistenteException se l'email e' gia' di un altro utente del realm
      * @throws IdentityProviderNonDisponibileException se Keycloak non risponde o rifiuta
      */
-    public void aggiornaProfilo(String token, String keycloakId, ProfiloKeycloak profilo) {
+    public void aggiornaProfilo(String token, String keycloakId, ProfiloKeycloak profilo, boolean emailCambiata) {
         try {
             restClient.put()
                     .uri("/admin/realms/{realm}/users/{id}", realm, keycloakId)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(corpoProfilo(profilo))
+                    .body(corpoProfilo(profilo, emailCambiata))
                     .retrieve()
                     .toBodilessEntity();
         } catch (RestClientResponseException e) {
@@ -271,6 +294,13 @@ public class KeycloakAdminClient {
      * Ripristina su Keycloak il profilo precedente senza propagare errori: compensa un
      * aggiornamento riuscito sull'IdP ma non salvato in locale. Come per la registrazione,
      * l'errore originale e' quello che deve arrivare al chiamante, non quello della pulizia.
+     *
+     * <p>Ripristina l'indirizzo, non il suo stato di verifica: {@code emailVerified} resta a
+     * {@code false}, quindi l'utente dovra' riconfermare la casella da cui era partito. E'
+     * voluto — qui non si sa se quell'indirizzo fosse verificato (potrebbe non esserlo mai
+     * stato), e leggerlo prima di ogni aggiornamento costerebbe una chiamata in piu' su ogni
+     * modifica di profilo per un caso che si presenta solo se la scrittura locale fallisce.
+     * Chiedere una verifica di troppo e' il lato giusto in cui sbagliare.
      */
     public void aggiornaProfiloSenzaPropagareErrori(String token, String keycloakId, ProfiloKeycloak profilo) {
         try {
@@ -278,7 +308,7 @@ public class KeycloakAdminClient {
                     .uri("/admin/realms/{realm}/users/{id}", realm, keycloakId)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(corpoProfilo(profilo))
+                    .body(corpoProfilo(profilo, false))
                     .retrieve()
                     .toBodilessEntity();
             log.warn("Aggiornamento non salvato in locale: profilo Keycloak {} riportato ai valori precedenti",
@@ -289,11 +319,15 @@ public class KeycloakAdminClient {
         }
     }
 
-    private Map<String, Object> corpoProfilo(ProfiloKeycloak profilo) {
-        return Map.of(
-                "email", profilo.email(),
-                "firstName", profilo.nome(),
-                "lastName", profilo.cognome());
+    private Map<String, Object> corpoProfilo(ProfiloKeycloak profilo, boolean azzeraVerificaEmail) {
+        Map<String, Object> corpo = new LinkedHashMap<>();
+        corpo.put("email", profilo.email());
+        corpo.put("firstName", profilo.nome());
+        corpo.put("lastName", profilo.cognome());
+        if (azzeraVerificaEmail) {
+            corpo.put("emailVerified", false);
+        }
+        return corpo;
     }
 
     /** Assegna un ruolo realm all'utente appena creato. */
