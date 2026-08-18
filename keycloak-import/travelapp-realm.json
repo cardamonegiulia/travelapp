@@ -448,7 +448,7 @@
     "id" : "7d4b1e90-3a55-4f18-9c62-0e8b4a6c3001",
     "clientId" : "travelapp-registration",
     "name" : "TravelApp - service account di registrazione",
-    "description" : "Usato SOLO dal backend per creare utenti e assegnare ruoli realm durante la registrazione self-service. Client separato da travelapp-backend: privilegi diversi, rotazione e revoca indipendenti. Il secret va letto dalla console (Credentials) e passato al backend come KEYCLOAK_ADMIN_CLIENT_SECRET.",
+    "description" : "Client per registrazione utenti",
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "alwaysDisplayInConsole" : false,
