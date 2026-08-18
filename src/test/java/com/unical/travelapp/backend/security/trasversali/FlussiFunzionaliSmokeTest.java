@@ -37,12 +37,46 @@ class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
     @Test
     void unNuovoUtenteSiRegistraTramiteSincronizzazione() throws Exception {
         mockMvc.perform(post("/api/utenti/me")
-                        .with(TestJwt.conRuoliRealm("sub-nuovo-viaggiatore", "VIAGGIATORE")))
+                        .with(TestJwt.conEmail("sub-nuovo-viaggiatore", "nuovo@example.test", "VIAGGIATORE")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.ruolo").value("VIAGGIATORE"));
 
         assertThat(utenteRepository.findByKeycloakId("sub-nuovo-viaggiatore")).isPresent();
+    }
+
+    @Test
+    void laSincronizzazioneAssegnaIlRuoloDelTokenNonUnDefaultFisso() throws Exception {
+        // un ORGANIZZATORE creato fuori dal flusso self-service deve risultare ORGANIZZATORE
+        // anche in locale: altrimenti il frontend, che legge UtenteResponseDto.ruolo, mostra
+        // un ruolo diverso da quello che il backend applica nei @PreAuthorize
+        mockMvc.perform(post("/api/utenti/me")
+                        .with(TestJwt.conEmail("sub-nuovo-organizzatore", "org@example.test", "ORGANIZZATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ruolo").value("ORGANIZZATORE"));
+
+        assertThat(utenteRepository.findByKeycloakId("sub-nuovo-organizzatore").orElseThrow().getRuolo())
+                .isEqualTo(Ruolo.ORGANIZZATORE);
+    }
+
+    @Test
+    void laSincronizzazioneRifiutaUnTokenSenzaEmailInveceDiSalvarneUnaVuota() throws Exception {
+        // l'email e' chiave unica: salvarla vuota bruciava il valore per tutti gli utenti
+        // successivi, che fallivano sul vincolo di unicita' con un errore incomprensibile
+        mockMvc.perform(post("/api/utenti/me")
+                        .with(TestJwt.conRuoliRealm("sub-senza-email", "VIAGGIATORE")))
+                .andExpect(status().isBadRequest());
+
+        assertThat(utenteRepository.findByKeycloakId("sub-senza-email")).isEmpty();
+    }
+
+    @Test
+    void laSincronizzazioneNonRubaLEmailDiUnUtenteGiaEsistente() throws Exception {
+        mockMvc.perform(post("/api/utenti/me")
+                        .with(TestJwt.conEmail("sub-altro-subject", organizzatore.getEmail(), "VIAGGIATORE")))
+                .andExpect(status().isConflict());
+
+        assertThat(utenteRepository.findByKeycloakId("sub-altro-subject")).isEmpty();
     }
 
     @Test

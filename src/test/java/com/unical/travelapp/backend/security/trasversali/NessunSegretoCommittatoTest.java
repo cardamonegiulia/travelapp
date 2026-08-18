@@ -46,7 +46,20 @@ class NessunSegretoCommittatoTest {
             // token JWT letterale
             Pattern.compile("eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\."),
             // chiave privata PEM
-            Pattern.compile("-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----")
+            Pattern.compile("-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----"),
+            // 3) segreto in un array JSON: "secret" : [ "valore" ]. E' la forma che usano gli
+            //    export di Keycloak per ogni valore di configurazione, e sfuggiva agli schemi
+            //    1 e 2 perche' dopo i due punti trovano una parentesi quadra invece di una
+            //    virgoletta. E' cosi' che le chiavi del realm sono restate versionate.
+            Pattern.compile("(?i)\"(password|passwd|secret|client[-_]?secret|api[-_]?key|token"
+                    + "|private[-_]?key)\"\\s*:\\s*\\[\\s*\"(?!\\$\\{)([^\"\\s]{8,})\""),
+            // 4) chiave privata RSA in base64 senza intestazione PEM: e' come Keycloak
+            //    esporta le chiavi del realm, quindi lo schema sul PEM non la vede. I due
+            //    frammenti sono la firma ASN.1 di una RSAPrivateKey (PKCS#1) e dell'involucro
+            //    PKCS#8: comparire in un file versionato non ha usi legittimi.
+            //    Il secondo e' spezzato in due pezzi perche' e' un letterale, e scritto per
+            //    esteso lo scanner segnalerebbe questa riga stessa.
+            Pattern.compile("MII[A-Za-z0-9+/]{2,12}IBAAKCAQ|QIBADANBgkqhkiG9w0" + "BAQEFAASC")
     );
 
     /** Valori che compaiono nei file ma non sono segreti reali. */
@@ -117,9 +130,12 @@ class NessunSegretoCommittatoTest {
                 "client_secret=teYdBrYper9ym5i2PxsJ3lqBWp7lPlG1",
                 "spring.datasource.password=SuperSegreta123",
                 "\"api_key\": \"abcdef1234567890\"",
-                // composto a runtime: scritto per esteso farebbe scattare lo scanner su
+                // composti a runtime: scritti per esteso farebbero scattare lo scanner su
                 // questo stesso file
-                "-----BEGIN " + "RSA PRIVATE KEY-----");
+                "-----BEGIN " + "RSA PRIVATE KEY-----",
+                // le due forme usate dagli export di Keycloak, che prima passavano indenni
+                "\"secret\" : [ \"" + "9dxvmxzcHUM5ACEwotHp" + "\" ]",
+                "\"privateKey\" : [ \"MIIEow" + "IBAAKCAQ" + "EAoV4NTe\" ]");
 
         for (String esempio : esempiDiSegreto) {
             assertThat(SCHEMI_SOSPETTI).anySatisfy(schema ->

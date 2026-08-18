@@ -2,6 +2,7 @@ package com.unical.travelapp.backend.identity;
 
 import com.unical.travelapp.backend.identity.entity.Ruolo;
 import com.unical.travelapp.backend.identity.entity.Utente;
+import com.unical.travelapp.backend.identity.exception.PasswordNonConformeException;
 import com.unical.travelapp.backend.identity.exception.RegistrazioneNonDisponibileException;
 import com.unical.travelapp.backend.identity.keycloak.KeycloakAdminClient;
 import com.unical.travelapp.backend.identity.keycloak.KeycloakAdminClient.NuovoUtenteKeycloak;
@@ -251,6 +252,31 @@ class RegistrazioneTest extends SecurityIntegrationTestBase {
         verify(keycloakAdminClient, times(1)).eliminaUtenteSenzaPropagareErrori(TOKEN_ADMIN, KEYCLOAK_ID);
         assertThat(utenteRepository.count())
                 .as("nessun record locale se il ruolo non e' stato assegnato")
+                .isZero();
+    }
+
+    /**
+     * La policy password vive sul realm ({@code length(12) and digits(1) and notUsername and
+     * notEmail}) ed e' piu' severa del vincolo {@code @PasswordSicura} sul DTO: una password
+     * puo' superare la validazione locale e venire respinta da Keycloak. Diventava un 503, che
+     * dice "riprova piu' tardi" a chi invece deve cambiare quello che ha scritto.
+     */
+    @Test
+    void unaPasswordRifiutataDalRealmEUnErroreDelChiamanteNonUnGuasto() throws Exception {
+        doThrow(new PasswordNonConformeException("La password non rispetta i requisiti richiesti"))
+                .when(keycloakAdminClient).creaUtente(anyString(), any());
+
+        MvcResult risultato = mockMvc.perform(post("/api/auth/registrazione")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload("mario.rossi@example.test", "VIAGGIATORE")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.type").value("urn:travelapp:problem:password-non-conforme"))
+                .andReturn();
+
+        NessunLeak.verifica(risultato);
+        verify(keycloakAdminClient, never()).assegnaRuoloRealm(anyString(), anyString(), any());
+        assertThat(utenteRepository.count())
+                .as("l'utente non e' stato creato su Keycloak: non deve esistere nemmeno in locale")
                 .isZero();
     }
 

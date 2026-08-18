@@ -39,3 +39,4 @@ postman/environments/
 ### Log applicativi e di audit prodotti a runtime (anche dai test)
 logs/
 docs/
+CLAUDE.md
