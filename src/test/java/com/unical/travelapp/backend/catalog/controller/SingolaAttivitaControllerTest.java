@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -38,6 +37,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -108,6 +108,7 @@ class SingolaAttivitaControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L));
     }
+
     @Test
     @DisplayName("POST /api/attivita/con-sessioni - Crea attività con date e sessioni ricorrenti")
     void testCreateAttivitaConSessioni() throws Exception {
@@ -143,6 +144,42 @@ class SingolaAttivitaControllerTest {
                         .content(validPayload))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(5L));
+    }
+
+    @Test
+    @DisplayName("PUT /api/attivita/{id} - Aggiornamento attività riuscito (200 OK)")
+    void testUpdateAttivitaSuccess() throws Exception {
+        SingolaAttivita updatedEntity = new SingolaAttivita();
+        updatedEntity.setId(1L);
+
+        SingolaAttivitaDTO responseDTO = new SingolaAttivitaDTO();
+        responseDTO.setId(1L);
+        responseDTO.setTitolo("Snorkeling Aggiornato");
+
+        when(attivitaMapper.fromRequest(any(SingolaAttivitaRequestDTO.class))).thenReturn(updatedEntity);
+        when(utenteService.getUtenteSessione()).thenReturn(new Utente());
+        when(utenteService.isAdmin()).thenReturn(false);
+        when(attivitaService.updateAttivita(eq(1L), any(SingolaAttivita.class), any(Utente.class), eq(false)))
+                .thenReturn(updatedEntity);
+        when(attivitaMapper.toDTO(updatedEntity)).thenReturn(responseDTO);
+        doNothing().when(auditLogger).success(anyString(), anyString(), anyString());
+
+        String validPayload = """
+            {
+                "titolo": "Snorkeling Aggiornato",
+                "descrizione": "Nuova descrizione con guida esperta",
+                "luogo": "Capo Vaticano",
+                "prezzo": 55.00,
+                "durataMinuti": 150,
+                "maxPartecipanti": 12
+            }
+            """;
+
+        mockMvc.perform(put("/api/attivita/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L));
     }
 
     @Test
