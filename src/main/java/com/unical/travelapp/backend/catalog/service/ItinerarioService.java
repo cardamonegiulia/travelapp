@@ -18,17 +18,15 @@ public class ItinerarioService {
     @Autowired
     private ItinerarioRepository itinerarioRepository;
 
-
     public Page<Itinerario> getAllItinerari(Pageable pageable) {
         return itinerarioRepository.findAll(pageable);
     }
-
 
     public Optional<Itinerario> getItinerarioById(Long id) {
         return itinerarioRepository.findById(id);
     }
 
-    @Transactional //importante x l'integrità dei dati
+    @Transactional
     public Itinerario saveItinerario(Itinerario itinerario) {
         if (itinerario.getTappe() != null) {
             itinerario.getTappe().forEach(tappa -> tappa.setItinerario(itinerario));
@@ -36,6 +34,28 @@ public class ItinerarioService {
         return itinerarioRepository.save(itinerario);
     }
 
+    // ownership nella query: l'organizzatore puo' modificare solo i propri itinerari, l'admin qualsiasi
+    @Transactional
+    public Itinerario updateItinerario(Long id, Itinerario datiAggiornati, Utente richiedente, boolean isAdmin) {
+        Itinerario esistente;
+
+        if (isAdmin) {
+            esistente = itinerarioRepository.findById(id)
+                    .orElseThrow(() -> new ItinerarioNonTrovatoException("Itinerario non trovato: " + id));
+        } else {
+            esistente = itinerarioRepository.findByIdAndOrganizzatore_Id(id, richiedente.getId())
+                    .orElseThrow(() -> new ItinerarioNonTrovatoException("Itinerario non trovato: " + id));
+        }
+
+        esistente.setTitolo(datiAggiornati.getTitolo());
+        esistente.setDescrizione(datiAggiornati.getDescrizione());
+        esistente.setDestinazionePrincipale(datiAggiornati.getDestinazionePrincipale());
+        esistente.setPrezzoBase(datiAggiornati.getPrezzoBase());
+        esistente.setDurataGiorni(datiAggiornati.getDurataGiorni());
+        esistente.setMaxPartecipanti(datiAggiornati.getMaxPartecipanti());
+
+        return itinerarioRepository.save(esistente);
+    }
 
     // ownership nella query: l'organizzatore puo' cancellare solo i propri itinerari, l'admin qualsiasi
     @Transactional
@@ -52,5 +72,4 @@ public class ItinerarioService {
                 .orElseThrow(() -> new ItinerarioNonTrovatoException("Itinerario non trovato: " + id));
         itinerarioRepository.delete(itinerario);
     }
-
 }

@@ -17,8 +17,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
 
-import java.util.Optional;
-
 @RestController
 @RequestMapping("/api/itinerari")
 public class ItinerarioController {
@@ -39,6 +37,7 @@ public class ItinerarioController {
     public ResponseEntity<Page<ItinerarioDTO>> getAllItinerari(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(itinerarioService.getAllItinerari(pageable).map(itinerarioMapper::toDTO));
     }
+
     @GetMapping("/{id}")
     public ResponseEntity<ItinerarioDTO> getItinerarioById(@PathVariable Long id) {
         Itinerario itinerario = itinerarioService.getItinerarioById(id)
@@ -56,6 +55,18 @@ public class ItinerarioController {
         Itinerario salvato = itinerarioService.saveItinerario(entity);
         auditLogger.success("ITINERARIO_CREATO", "Itinerario", String.valueOf(salvato.getId()));
         return ResponseEntity.ok(itinerarioMapper.toDTO(salvato));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
+    public ResponseEntity<ItinerarioDTO> updateItinerario(
+            @PathVariable Long id,
+            @Valid @RequestBody ItinerarioRequestDTO itinerarioRequest) {
+        Itinerario entity = itinerarioMapper.fromRequest(itinerarioRequest);
+        Itinerario aggiornato = itinerarioService.updateItinerario(
+                id, entity, utenteService.getUtenteSessione(), utenteService.isAdmin());
+        auditLogger.success("ITINERARIO_MODIFICATO", "Itinerario", String.valueOf(id));
+        return ResponseEntity.ok(itinerarioMapper.toDTO(aggiornato));
     }
 
     @DeleteMapping("/{id}")
