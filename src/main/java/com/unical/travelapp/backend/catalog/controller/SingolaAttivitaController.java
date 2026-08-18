@@ -20,7 +20,6 @@ import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataE
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/attivita")
@@ -42,6 +41,7 @@ public class SingolaAttivitaController {
     public ResponseEntity<Page<SingolaAttivitaDTO>> getAllAttivita(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(attivitaService.getAllAttivita(pageable).map(attivitaMapper::toDTO));
     }
+
     @GetMapping("/{id}")
     public ResponseEntity<SingolaAttivitaDTO> getAttivitaById(@PathVariable Long id) {
         SingolaAttivita attivita = attivitaService.getAttivitaById(id)
@@ -63,6 +63,18 @@ public class SingolaAttivitaController {
         SingolaAttivita salvata = attivitaService.saveAttivitaConSessioni(entity, inizio, fine, giorni);
         auditLogger.success("ATTIVITA_CREATA", "SingolaAttivita", String.valueOf(salvata.getId()));
         return ResponseEntity.ok(attivitaMapper.toDTO(salvata));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
+    public ResponseEntity<SingolaAttivitaDTO> updateAttivita(
+            @PathVariable Long id,
+            @Valid @RequestBody SingolaAttivitaRequestDTO attivitaRequest) {
+        SingolaAttivita entity = attivitaMapper.fromRequest(attivitaRequest);
+        SingolaAttivita aggiornata = attivitaService.updateAttivita(
+                id, entity, utenteService.getUtenteSessione(), utenteService.isAdmin());
+        auditLogger.success("ATTIVITA_MODIFICATA", "SingolaAttivita", String.valueOf(id));
+        return ResponseEntity.ok(attivitaMapper.toDTO(aggiornata));
     }
 
     @DeleteMapping("/{id}")
