@@ -15,20 +15,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -36,6 +35,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -77,8 +77,8 @@ class ItinerarioControllerTest {
         itinerarioDTO.setId(1L);
         itinerarioDTO.setTitolo("Tour Amalfi");
 
-        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(0, 20);
-        org.springframework.data.domain.Page<Itinerario> page = new PageImpl<>(List.of(itinerario), pageRequest, 1);
+        PageRequest pageRequest = PageRequest.of(0, 20);
+        Page<Itinerario> page = new PageImpl<>(List.of(itinerario), pageRequest, 1);
 
         when(itinerarioService.getAllItinerari(any(Pageable.class))).thenReturn(page);
         when(itinerarioMapper.toDTO(any(Itinerario.class))).thenReturn(itinerarioDTO);
@@ -87,7 +87,8 @@ class ItinerarioControllerTest {
                         .param("page", "0")
                         .param("size", "20")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -138,6 +139,42 @@ class ItinerarioControllerTest {
                         .content(validPayload))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(10L));
+    }
+
+    @Test
+    @DisplayName("PUT /api/itinerari/{id} - Aggiornamento itinerario riuscito (200 OK)")
+    void testUpdateItinerarioSuccess() throws Exception {
+        Itinerario updatedEntity = new Itinerario();
+        updatedEntity.setId(1L);
+
+        ItinerarioDTO responseDTO = new ItinerarioDTO();
+        responseDTO.setId(1L);
+        responseDTO.setTitolo("Tour Aggiornato");
+
+        when(itinerarioMapper.fromRequest(any(ItinerarioRequestDTO.class))).thenReturn(updatedEntity);
+        when(utenteService.getUtenteSessione()).thenReturn(new Utente());
+        when(utenteService.isAdmin()).thenReturn(false);
+        when(itinerarioService.updateItinerario(eq(1L), any(Itinerario.class), any(Utente.class), eq(false)))
+                .thenReturn(updatedEntity);
+        when(itinerarioMapper.toDTO(updatedEntity)).thenReturn(responseDTO);
+        doNothing().when(auditLogger).success(anyString(), anyString(), anyString());
+
+        String validPayload = """
+            {
+                "titolo": "Tour Aggiornato",
+                "descrizione": "Nuova descrizione",
+                "destinazionePrincipale": "Costiera Amalfitana",
+                "durataGiorni": 4,
+                "maxPartecipanti": 20,
+                "prezzoBase": 200.00
+            }
+            """;
+
+        mockMvc.perform(put("/api/itinerari/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L));
     }
 
     @Test
