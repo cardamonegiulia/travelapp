@@ -20,10 +20,10 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/attivita")
@@ -48,9 +48,9 @@ public class SingolaAttivitaController {
 
     @GetMapping("/{id}")
     public ResponseEntity<SingolaAttivitaDTO> getAttivitaById(@PathVariable Long id) {
-        Optional<SingolaAttivita> attivita = attivitaService.getAttivitaById(id);
-        return attivita.map(att -> ResponseEntity.ok(attivitaMapper.toDTO(att)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        SingolaAttivita attivita = attivitaService.getAttivitaById(id)
+                .orElseThrow(() -> new SingolaAttivitaNonTrovataException("Attività non trovata: " + id));
+        return ResponseEntity.ok(attivitaMapper.toDTO(attivita));
     }
 
     /**
@@ -80,6 +80,18 @@ public class SingolaAttivitaController {
         SingolaAttivita salvata = attivitaService.saveAttivitaConSessioni(entity, inizio, fine, giorni);
         auditLogger.success("ATTIVITA_CREATA", "SingolaAttivita", String.valueOf(salvata.getId()));
         return ResponseEntity.ok(attivitaMapper.toDTO(salvata));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
+    public ResponseEntity<SingolaAttivitaDTO> updateAttivita(
+            @PathVariable Long id,
+            @Valid @RequestBody SingolaAttivitaRequestDTO attivitaRequest) {
+        SingolaAttivita entity = attivitaMapper.fromRequest(attivitaRequest);
+        SingolaAttivita aggiornata = attivitaService.updateAttivita(
+                id, entity, utenteService.getUtenteSessione(), utenteService.isAdmin());
+        auditLogger.success("ATTIVITA_MODIFICATA", "SingolaAttivita", String.valueOf(id));
+        return ResponseEntity.ok(attivitaMapper.toDTO(aggiornata));
     }
 
     @DeleteMapping("/{id}")

@@ -47,7 +47,7 @@ public class SingolaAttivitaService {
 
         if (dataFine.isBefore(dataInizio)) {
             throw new IllegalArgumentException("La data di fine non può essere antecedente alla data di inizio");
-        } //se l'organizzatore sbaglia e mette una data fine che viene prima di una data inizio lancia questa eccezione
+        }
 
         // Il ciclo qui sotto scrive una riga per ogni giorno dell'intervallo che ricade nei
         // giorni scelti: senza un tetto, l'ampiezza dell'intervallo la decide il chiamante e
@@ -81,6 +81,29 @@ public class SingolaAttivitaService {
         }
 
         return attivitaSalvata;
+    }
+
+    // ownership nella query: l'organizzatore puo' modificare solo le proprie attivita', l'admin qualsiasi
+    @Transactional
+    public SingolaAttivita updateAttivita(Long id, SingolaAttivita datiAggiornati, Utente richiedente, boolean isAdmin) {
+        SingolaAttivita esistente;
+
+        if (isAdmin) {
+            esistente = singolaAttivitaRepository.findById(id)
+                    .orElseThrow(() -> new SingolaAttivitaNonTrovataException("Attività non trovata: " + id));
+        } else {
+            esistente = singolaAttivitaRepository.findByIdAndOrganizzatore_Id(id, richiedente.getId())
+                    .orElseThrow(() -> new SingolaAttivitaNonTrovataException("Attività non trovata: " + id));
+        }
+
+        esistente.setTitolo(datiAggiornati.getTitolo());
+        esistente.setDescrizione(datiAggiornati.getDescrizione());
+        esistente.setLuogo(datiAggiornati.getLuogo());
+        esistente.setPrezzo(datiAggiornati.getPrezzo());
+        esistente.setDurataMinuti(datiAggiornati.getDurataMinuti());
+        esistente.setMaxPartecipanti(datiAggiornati.getMaxPartecipanti());
+
+        return singolaAttivitaRepository.save(esistente);
     }
 
     // ownership nella query: l'organizzatore puo' cancellare solo le proprie attivita', l'admin qualsiasi

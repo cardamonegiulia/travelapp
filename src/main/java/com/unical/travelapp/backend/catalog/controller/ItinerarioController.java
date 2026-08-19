@@ -15,8 +15,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
+import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
 
 @RestController
 @RequestMapping("/api/itinerari")
@@ -41,9 +40,9 @@ public class ItinerarioController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ItinerarioDTO> getItinerarioById(@PathVariable Long id) {
-        Optional<Itinerario> itinerario = itinerarioService.getItinerarioById(id);
-        return itinerario.map(it -> ResponseEntity.ok(itinerarioMapper.toDTO(it)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        Itinerario itinerario = itinerarioService.getItinerarioById(id)
+                .orElseThrow(() -> new ItinerarioNonTrovatoException("Itinerario non trovato: " + id));
+        return ResponseEntity.ok(itinerarioMapper.toDTO(itinerario));
     }
 
     @PostMapping
@@ -56,6 +55,18 @@ public class ItinerarioController {
         Itinerario salvato = itinerarioService.saveItinerario(entity);
         auditLogger.success("ITINERARIO_CREATO", "Itinerario", String.valueOf(salvato.getId()));
         return ResponseEntity.ok(itinerarioMapper.toDTO(salvato));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
+    public ResponseEntity<ItinerarioDTO> updateItinerario(
+            @PathVariable Long id,
+            @Valid @RequestBody ItinerarioRequestDTO itinerarioRequest) {
+        Itinerario entity = itinerarioMapper.fromRequest(itinerarioRequest);
+        Itinerario aggiornato = itinerarioService.updateItinerario(
+                id, entity, utenteService.getUtenteSessione(), utenteService.isAdmin());
+        auditLogger.success("ITINERARIO_MODIFICATO", "Itinerario", String.valueOf(id));
+        return ResponseEntity.ok(itinerarioMapper.toDTO(aggiornato));
     }
 
     @DeleteMapping("/{id}")
