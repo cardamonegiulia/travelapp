@@ -3,7 +3,6 @@ package com.unical.travelapp.backend.booking.service;
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.booking.exception.PrenotazioneNonTrovataException;
 import com.unical.travelapp.backend.booking.repositories.ExtraPrenotazioneRepository;
-import com.unical.travelapp.backend.booking.repositories.PagamentoRepository;
 import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
 import com.unical.travelapp.backend.catalog.repository.AttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.DisponibilitaItinerarioRepository;
@@ -33,7 +32,6 @@ class PrenotazioneServiceOwnershipTest {
 
     @Mock private PrenotazioneRepository prenotazioneRepo;
     @Mock private ExtraPrenotazioneRepository extraPrenotazioneRepo;
-    @Mock private PagamentoRepository pagamentoRepo;
     @Mock private AttivitaRepository attivitaRepo;
     @Mock private UtenteRepository utenteRepository;
     @Mock private DisponibilitaItinerarioRepository disponibilitaItinerarioRepository;
@@ -42,7 +40,7 @@ class PrenotazioneServiceOwnershipTest {
     @Mock private PagamentoService pagamentoService;
 
     private PrenotazioneService service() {
-        return new PrenotazioneService(prenotazioneRepo, extraPrenotazioneRepo, pagamentoRepo, attivitaRepo,
+        return new PrenotazioneService(prenotazioneRepo, extraPrenotazioneRepo, attivitaRepo,
                 utenteRepository, disponibilitaItinerarioRepository, sessioneSingolaAttivitaRepository, utenteService, pagamentoService);
     }
 

@@ -1,13 +1,16 @@
 package com.unical.travelapp.backend.booking.service;
 
 import com.unical.travelapp.backend.booking.dto.CreaPrenotazioneRequest;
+import com.unical.travelapp.backend.booking.exception.PostiInsufficientiException;
 import com.unical.travelapp.backend.booking.exception.RichiestaPrenotazioneNonValidaException;
 import com.unical.travelapp.backend.booking.repositories.ExtraPrenotazioneRepository;
-import com.unical.travelapp.backend.booking.repositories.PagamentoRepository;
 import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
+import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
+import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
 import com.unical.travelapp.backend.catalog.repository.AttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.DisponibilitaItinerarioRepository;
 import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRepository;
+import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.repository.UtenteRepository;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import org.junit.jupiter.api.Test;
@@ -17,21 +20,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PrenotazioneServiceTest {
-
     @Mock
     private PrenotazioneRepository prenotazioneRepo;
 
     @Mock
     private ExtraPrenotazioneRepository extraPrenotazioneRepo;
-
-    @Mock
-    private PagamentoRepository pagamentoRepo;
 
     @Mock
     private AttivitaRepository attivitaRepo;
@@ -73,7 +75,6 @@ class PrenotazioneServiceTest {
         verifyNoInteractions(
                 prenotazioneRepo,
                 extraPrenotazioneRepo,
-                pagamentoRepo,
                 attivitaRepo,
                 utenteRepository,
                 disponibilitaItinerarioRepository,
@@ -82,4 +83,54 @@ class PrenotazioneServiceTest {
                 pagamentoService
         );
     }
+
+    @Test
+    void rifiutaPrenotazioneItinerarioQuandoIPostiNonBastano() {
+
+        CreaPrenotazioneRequest request = new CreaPrenotazioneRequest();
+        request.setDisponibilitaItinerarioId(10L);
+        request.setNumeroPartecipanti(4);
+
+        Utente utente = new Utente();
+
+        DisponibilitaItinerario disponibilita = new DisponibilitaItinerario();
+        disponibilita.setPostiDisponibili(3);
+
+        when(utenteService.getUtenteSessione()).thenReturn(utente);
+        when(disponibilitaItinerarioRepository.findById(10L))
+                .thenReturn(Optional.of(disponibilita));
+
+        assertThrows(
+                PostiInsufficientiException.class,
+                () -> prenotazioneService.createPrenotazione(request)
+        );
+
+        assertEquals(3, disponibilita.getPostiDisponibili());
+    }
+
+    @Test
+    void rifiutaPrenotazioneSessioneQuandoIPostiNonBastano() {
+
+        CreaPrenotazioneRequest request = new CreaPrenotazioneRequest();
+        request.setSessioneSingolaAttivitaId(20L);
+        request.setNumeroPartecipanti(5);
+
+        Utente utente = new Utente();
+
+        SessioneSingolaAttivita sessione = new SessioneSingolaAttivita();
+        sessione.setPostiDisponibili(2);
+
+        when(utenteService.getUtenteSessione()).thenReturn(utente);
+        when(sessioneSingolaAttivitaRepository.findById(20L))
+                .thenReturn(Optional.of(sessione));
+
+        assertThrows(
+                PostiInsufficientiException.class,
+                () -> prenotazioneService.createPrenotazione(request)
+        );
+
+        assertEquals(2, sessione.getPostiDisponibili());
+    }
+
+
 }

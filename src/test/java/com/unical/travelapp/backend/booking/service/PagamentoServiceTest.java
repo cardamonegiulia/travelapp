@@ -235,7 +235,7 @@ class PagamentoServiceTest {
                 pagamentoService.gestisciPagamentoAnnullamento(10L);
 
         assertEquals(
-                StatoPagamento.ANNULATO,
+                StatoPagamento.ANNULLATO,
                 risultato.getStato()
         );
 

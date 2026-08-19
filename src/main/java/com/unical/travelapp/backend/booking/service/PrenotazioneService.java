@@ -5,7 +5,6 @@ import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException
 import com.unical.travelapp.backend.booking.dto.CreaPrenotazioneRequest;
 import com.unical.travelapp.backend.booking.entity.*;
 import com.unical.travelapp.backend.booking.repositories.ExtraPrenotazioneRepository;
-import com.unical.travelapp.backend.booking.repositories.PagamentoRepository;
 import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
 import com.unical.travelapp.backend.catalog.entity.Attivita;
 import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
@@ -26,16 +25,14 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+
 
 @AllArgsConstructor
 @Service
 public class PrenotazioneService {
     private final PrenotazioneRepository prenotazioneRepo;
     private final ExtraPrenotazioneRepository extraPrenotazioneRepo;
-    private final PagamentoRepository pagamentoRepo;
     private final AttivitaRepository attivitaRepo;
     private final UtenteRepository utenteRepository;
     private final DisponibilitaItinerarioRepository disponibilitaItinerarioRepository;
@@ -105,21 +102,26 @@ public class PrenotazioneService {
         return sessioneSing.get();
     }
 
-    // piu avanti evito la duplicazioni dei due metodi scalaposti.
-    private void controllaEScalaPostiSessione(SessioneSingolaAttivita sessione, Integer numeroPartecipanti){
-        if (sessione.getPostiDisponibili() < numeroPartecipanti){
-            throw new PostiInsufficientiException("Numero posti non disponibili");
+    private int calcolaPostiResidui(
+            Integer postiDisponibili,
+            Integer numeroPartecipanti) {
+
+        if (postiDisponibili < numeroPartecipanti) {
+            throw new PostiInsufficientiException(
+                    "Numero posti non disponibili"
+            );
         }
 
-        sessione.setPostiDisponibili(sessione.getPostiDisponibili() - numeroPartecipanti);
+        return postiDisponibili - numeroPartecipanti;
     }
 
-    private void controllaEScalaPostiItinerario(DisponibilitaItinerario disp, Integer numeroPartecipanti){
-        if (disp.getPostiDisponibili() < numeroPartecipanti){
-            throw new PostiInsufficientiException("Numero posti non disponibili");
-        }
 
-        disp.setPostiDisponibili(disp.getPostiDisponibili() - numeroPartecipanti);
+    private void controllaEScalaPostiSessione(SessioneSingolaAttivita sessione, Integer numeroPartecipanti){
+        sessione.setPostiDisponibili(calcolaPostiResidui(sessione.getPostiDisponibili(),numeroPartecipanti));
+    }
+
+    private void controllaEScalaPostiItinerario(DisponibilitaItinerario disp, Integer numeroPartecipanti) {
+        disp.setPostiDisponibili(calcolaPostiResidui(disp.getPostiDisponibili(), numeroPartecipanti));
     }
 
     // Lo compatto appena capisco e cerco poi di evitare i duplicati come con scala posto. Sorry guys.
@@ -157,16 +159,25 @@ public class PrenotazioneService {
         return att;
     }
 
-    private BigDecimal calcolaPrezzoExtra(List<Long> extraIds, Integer numeroPartecipanti, DisponibilitaItinerario disp) {
-        BigDecimal totale = BigDecimal.ZERO;
+    private List<Attivita> recuperaEValidaAttivitaExtra(
+            List<Long> extraIds,
+            DisponibilitaItinerario disponibilita) {
 
-        if(extraIds == null || extraIds.isEmpty()) return BigDecimal.ZERO;
-
-        for(Long id : extraIds) {
-            Attivita att = recuperaEValidaAttivitaExtra(id, disp);
-            totale = totale.add(att.getPrezzoExtra().multiply(BigDecimal.valueOf(numeroPartecipanti)));
+        if (extraIds == null || extraIds.isEmpty()) {
+            return List.of();
         }
 
+        return extraIds.stream()
+                .map(id -> recuperaEValidaAttivitaExtra(id, disponibilita))
+                .toList();
+    }
+
+
+    private BigDecimal calcolaPrezzoExtra(List<Attivita> attivitaExtra, Integer numeroPartecipanti) {
+        BigDecimal totale = BigDecimal.ZERO;
+        for (Attivita attivita : attivitaExtra) {
+            totale = totale.add(attivita.getPrezzoExtra().multiply(BigDecimal.valueOf(numeroPartecipanti)));
+        }
         return totale;
     }
 
@@ -182,71 +193,108 @@ public class PrenotazioneService {
                 .build();
     }
 
-    private void creaExtraPrenotazione(Prenotazione prenotazione, List<Long> extraIds, DisponibilitaItinerario disp) {
-        if(extraIds == null || extraIds.isEmpty()) return;
+    private void creaExtraPrenotazione(
+            Prenotazione prenotazione,
+            List<Attivita> attivitaExtra) {
 
-        for(Long id : extraIds) {
-            Attivita att = recuperaEValidaAttivitaExtra(id, disp);
+        for (Attivita attivita : attivitaExtra) {
 
             ExtraPrenotazione extra = ExtraPrenotazione.builder()
                     .prenotazione(prenotazione)
-                    .attivita(att)
-                    .prezzoExtra(att.getPrezzoExtra())
+                    .attivita(attivita)
+                    .prezzoExtra(attivita.getPrezzoExtra())
                     .build();
 
             extraPrenotazioneRepo.save(extra);
         }
     }
-    // al momento non sto usando il return quindi ho lascia cosi perche in futuro puo essre utile
-    // o lo levo e faccio un metodo void
-    // void al momento non serve restituirlo
-    private void creaPagamento (Prenotazione prenotazione, BigDecimal prezzoTotale) {
-        Pagamento pay = Pagamento.builder()
-                .prenotazione(prenotazione)
-                .importo(prezzoTotale)
-                .stato(StatoPagamento.IN_ATTESA)
-                .build();
-        pagamentoRepo.save(pay);
-    }
 
     @Transactional
     public Prenotazione createPrenotazione(CreaPrenotazioneRequest req) {
         validaRichiesta(req);
-        // il viaggiatore e' sempre l'utente autenticato, mai un id passato dal client
+
+        // Il viaggiatore viene sempre ricavato dal token.
         Utente viaggiatore = utenteService.getUtenteSessione();
 
         boolean isItinerario = req.getDisponibilitaItinerarioId() != null;
 
         DisponibilitaItinerario disponibilitaItinerario = null;
         SessioneSingolaAttivita sessioneSingolaAttivita = null;
+
         BigDecimal prezzoBase;
-        BigDecimal prezzoExtra;
         BigDecimal prezzoTotale;
 
-        if(isItinerario) {
-            disponibilitaItinerario = recuperaDisponibilita(req.getDisponibilitaItinerarioId());
-            controllaEScalaPostiItinerario(disponibilitaItinerario, req.getNumeroPartecipanti());
-            prezzoBase = calcolaPrezzoItinerario(disponibilitaItinerario, req.getNumeroPartecipanti());
-            prezzoExtra = calcolaPrezzoExtra(req.getAttivitaExtraIds(), req.getNumeroPartecipanti(), disponibilitaItinerario);
+        List<Attivita> attivitaExtra = List.of();
+
+        if (isItinerario) {
+            disponibilitaItinerario =
+                    recuperaDisponibilita(req.getDisponibilitaItinerarioId());
+
+            controllaEScalaPostiItinerario(
+                    disponibilitaItinerario,
+                    req.getNumeroPartecipanti()
+            );
+
+            prezzoBase = calcolaPrezzoItinerario(
+                    disponibilitaItinerario,
+                    req.getNumeroPartecipanti()
+            );
+
+            attivitaExtra = recuperaEValidaAttivitaExtra(
+                    req.getAttivitaExtraIds(),
+                    disponibilitaItinerario
+            );
+
+            BigDecimal prezzoExtra = calcolaPrezzoExtra(
+                    attivitaExtra,
+                    req.getNumeroPartecipanti()
+            );
+
             prezzoTotale = prezzoBase.add(prezzoExtra);
-        }else{
-            sessioneSingolaAttivita = recuperaSingolaAttivita(req.getSessioneSingolaAttivitaId());
-            controllaEScalaPostiSessione(sessioneSingolaAttivita, req.getNumeroPartecipanti());
-            prezzoBase = calcolaPrezzoSessioneSingola(sessioneSingolaAttivita, req.getNumeroPartecipanti());
+
+        } else {
+            sessioneSingolaAttivita =
+                    recuperaSingolaAttivita(req.getSessioneSingolaAttivitaId());
+
+            controllaEScalaPostiSessione(
+                    sessioneSingolaAttivita,
+                    req.getNumeroPartecipanti()
+            );
+
+            prezzoBase = calcolaPrezzoSessioneSingola(
+                    sessioneSingolaAttivita,
+                    req.getNumeroPartecipanti()
+            );
+
             prezzoTotale = prezzoBase;
         }
 
-        Prenotazione prenotazione= creaEntityPrenotazione(viaggiatore,disponibilitaItinerario, sessioneSingolaAttivita, prezzoTotale, req.getNumeroPartecipanti());
-        Prenotazione prenotazioneSave = prenotazioneRepo.save(prenotazione);
+        Prenotazione prenotazione = creaEntityPrenotazione(
+                viaggiatore,
+                disponibilitaItinerario,
+                sessioneSingolaAttivita,
+                prezzoTotale,
+                req.getNumeroPartecipanti()
+        );
 
-        if(isItinerario){
-            creaExtraPrenotazione(prenotazioneSave, req.getAttivitaExtraIds(), disponibilitaItinerario);
+        Prenotazione prenotazioneSave =
+                prenotazioneRepo.save(prenotazione);
+
+        if (isItinerario) {
+            creaExtraPrenotazione(
+                    prenotazioneSave,
+                    attivitaExtra
+            );
         }
-        creaPagamento(prenotazioneSave, prezzoTotale);
+
+        pagamentoService.creaPagamento(
+                prenotazioneSave,
+                prezzoTotale
+        );
+
         return prenotazioneSave;
     }
-
-    // ownership nella query: se la prenotazione esiste ma e' di un altro utente, 404 (non 403)
+    // Ownership nella query: se la prenotazione esiste ma e di un altro utente, 404 (non 403)
     // per non rivelare l'esistenza dell'id a chi non ne ha diritto. L'admin vede tutto.
     public Prenotazione getPrenotazioneById(Long id){
         if (utenteService.isAdmin()) {
@@ -292,22 +340,15 @@ public class PrenotazioneService {
         return prenotazioneRepo.save(prenotazione);
     }
 
-    public Pagamento getPagamentoPrenotazione(Long prenotazioneId) {
-        return pagamentoRepo
-                .findByPrenotazioneId(prenotazioneId)
-                .orElse(null);
+    public Page<Prenotazione> getMiePrenotazioni(Pageable pageable) {
+        Long utenteId = utenteService
+                .getUtenteSessione()
+                .getId();
+
+        return prenotazioneRepo.findByViaggiatoreId(
+                utenteId,
+                pageable
+        );
     }
 
-    public Map<Long, Pagamento> getPagamentiPerPrenotazioni(List<Long> prenotazioneIds) {
-        if (prenotazioneIds == null || prenotazioneIds.isEmpty()) {
-            return Map.of();
-        }
-        return pagamentoRepo
-                .findByPrenotazioneIdIn(prenotazioneIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        pagamento -> pagamento.getPrenotazione().getId(),
-                        pagamento -> pagamento
-                ));
-    }
 }

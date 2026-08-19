@@ -14,7 +14,13 @@ import com.unical.travelapp.backend.identity.service.UtenteService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -25,6 +31,20 @@ public class PagamentoService {
     private final PagamentoRepository pagamentoRepository;
     private final PrenotazioneRepository prenotazioneRepository;
     private final UtenteService utenteService;
+
+    public Pagamento creaPagamento(
+            Prenotazione prenotazione,
+            BigDecimal prezzoTotale) {
+
+        Pagamento pagamento = Pagamento.builder()
+                .prenotazione(prenotazione)
+                .importo(prezzoTotale)
+                .stato(StatoPagamento.IN_ATTESA)
+                .build();
+
+        return pagamentoRepository.save(pagamento);
+    }
+
 
     @Transactional
     public Pagamento pagaPrenotazione(Long prenotazioneId) {
@@ -123,7 +143,7 @@ public class PagamentoService {
 
         } else if (pagamento.getStato() == StatoPagamento.IN_ATTESA) {
 
-            pagamento.setStato(StatoPagamento.ANNULATO);
+            pagamento.setStato(StatoPagamento.ANNULLATO);
 
         } else {
             throw new StatoPagamentoNonValidoException(
@@ -132,6 +152,25 @@ public class PagamentoService {
             );
         }
         return pagamentoRepository.save(pagamento);
+    }
+
+    public Pagamento getPagamentoPrenotazione(Long prenotazioneId) {
+        return pagamentoRepository
+                .findByPrenotazioneId(prenotazioneId)
+                .orElse(null);
+    }
+
+    public Map<Long, Pagamento> getPagamentiPerPrenotazioni(List<Long> prenotazioneIds) {
+        if (prenotazioneIds == null || prenotazioneIds.isEmpty()) {
+            return Map.of();
+        }
+        return pagamentoRepository
+                .findByPrenotazioneIdIn(prenotazioneIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        pagamento -> pagamento.getPrenotazione().getId(),
+                        pagamento -> pagamento
+                ));
     }
 
 }

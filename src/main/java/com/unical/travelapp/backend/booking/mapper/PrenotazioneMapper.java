@@ -3,7 +3,10 @@ package com.unical.travelapp.backend.booking.mapper;
 import com.unical.travelapp.backend.booking.dto.PrenotazioneResponseDto;
 import com.unical.travelapp.backend.booking.entity.Pagamento;
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 @Component
 public class PrenotazioneMapper {
@@ -37,5 +40,14 @@ public class PrenotazioneMapper {
                 .luogo(luogo)
                 .destinazione(luogo)
                 .build();
+    }
+
+    public Page<PrenotazioneResponseDto> toResponseDtoPage(Page<Prenotazione> prenotazioni, Map<Long, Pagamento> pagamenti) {
+        return prenotazioni.map(prenotazione ->
+                toResponseDto(
+                        prenotazione,
+                        pagamenti.get(prenotazione.getId())
+                )
+        );
     }
 }

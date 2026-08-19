@@ -5,5 +5,5 @@ public enum StatoPagamento {
     COMPLETATO,
     FALLITO,
     RIMBORSATO,
-    ANNULATO
+    ANNULLATO
 }
