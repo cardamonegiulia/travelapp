@@ -1,5 +1,10 @@
 package com.example.travelapp.ui.components
 
+import android.content.Context
+import android.graphics.ImageDecoder
+import android.os.Build
+import android.provider.MediaStore
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,6 +14,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,10 +34,20 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,6 +61,9 @@ import com.example.travelapp.ui.theme.NavSelectedBlue
 import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
+import androidx.core.net.toUri
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private val HeaderCardShape = RoundedCornerShape(16.dp)
 private val RowCardShape = RoundedCornerShape(14.dp)
@@ -176,18 +195,20 @@ private fun ProfileRowCard(
 }
 
 /**
- * Intestazione del profilo: avatar, nome, email e bottone di modifica.
+ * Intestazione del profilo: avatar, nome, email e bottone per aggiungere la
+ * foto profilo.
  *
- * [avatarUrl] fa già parte dello stato, ma il modulo non dipende da una
- * libreria di image loading: finché non viene aggiunta (es. Coil) si mostra un
- * placeholder, e basterà sostituire l'avatar con `AsyncImage(model = avatarUrl)`.
+ * [avatarUrl] è l'URI della foto scelta dall'utente: viene decodificato in
+ * locale, così il modulo non dipende da una libreria di image loading. Quando
+ * Coil sarà disponibile basterà sostituire l'avatar con
+ * `AsyncImage(model = avatarUrl)` per supportare anche gli URL remoti.
  */
 @Composable
 fun ProfileHeaderCard(
     name: String,
     email: String,
     avatarUrl: String?,
-    onEditProfile: () -> Unit,
+    onAddProfilePhoto: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -218,17 +239,23 @@ fun ProfileHeaderCard(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = onEditProfile,
+                onClick = onAddProfilePhoto,
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AccentOrange,
                     contentColor = Color.White
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                contentPadding = PaddingValues(horizontal = 28.dp, vertical = 10.dp)
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
             ) {
+                Icon(
+                    imageVector = ProfileIcons.AddAPhoto,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Modifica Profilo",
+                    text = "Aggiungi foto profilo",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -242,21 +269,64 @@ private fun ProfileAvatar(
     avatarUrl: String?,
     modifier: Modifier = Modifier
 ) {
+    val photo = rememberAvatarBitmap(avatarUrl)
+
     Box(
         modifier = modifier
             .size(80.dp)
+            .clip(CircleShape)
             .background(color = BadgeGrey, shape = CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        // TODO: sostituire con AsyncImage(model = avatarUrl) quando Coil sarà disponibile.
-        Icon(
-            imageVector = Icons.Default.Person,
-            contentDescription = "Immagine del profilo",
-            tint = IconGrey,
-            modifier = Modifier.size(44.dp)
-        )
+        if (photo != null) {
+            Image(
+                bitmap = photo,
+                contentDescription = "Foto del profilo",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Immagine del profilo",
+                tint = IconGrey,
+                modifier = Modifier.size(44.dp)
+            )
+        }
     }
 }
+
+/**
+ * Decodifica fuori dal main thread la foto indicata da [avatarUrl], che è
+ * l'URI restituito dal selettore di immagini di sistema. Restituisce `null`
+ * finché la decodifica non è finita, o se l'URI non è leggibile.
+ */
+@Composable
+private fun rememberAvatarBitmap(avatarUrl: String?): ImageBitmap? {
+    val context = LocalContext.current
+    var bitmap by remember(avatarUrl) { mutableStateOf<ImageBitmap?>(null) }
+
+    LaunchedEffect(avatarUrl) {
+        bitmap = avatarUrl?.let { url ->
+            withContext(Dispatchers.IO) { decodeLocalImage(context, url) }
+        }
+    }
+    return bitmap
+}
+
+private fun decodeLocalImage(context: Context, url: String): ImageBitmap? = runCatching {
+    val uri = url.toUri()
+    val resolver = context.contentResolver
+    val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        ImageDecoder.decodeBitmap(ImageDecoder.createSource(resolver, uri)) { decoder, _, _ ->
+            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+        }
+    } else {
+        @Suppress("DEPRECATION")
+        MediaStore.Images.Media.getBitmap(resolver, uri)
+    }
+    bitmap.asImageBitmap()
+}.getOrNull()
 
 /** Bottone di logout a larghezza piena, in fondo alla schermata. */
 @Composable

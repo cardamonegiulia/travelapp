@@ -1,5 +1,8 @@
 package com.example.travelapp.ui.navigation
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -117,13 +120,29 @@ private fun ProfileRoute(
         )
     }
 
+    // Photo picker di sistema: non richiede permessi, l'accesso all'immagine
+    // scelta vale per la sessione corrente.
+    // TODO: caricare la foto sul backend quando l'endpoint sara' disponibile;
+    // per ora resta solo nello stato in memoria.
+    val photoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            state = state.copy(avatarUrl = uri.toString())
+        }
+    }
+
     ProfileScreen(
         state = state,
         onBack = onBack,
         onBookingsClick = { onNavigateTo(AppDestination.Bookings) },
         onFavoritesClick = { onNavigateTo(AppDestination.Favorites) },
+        onAddProfilePhoto = {
+            photoPicker.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        },
         // TODO: agganciare le destinazioni mancanti quando le schermate esisteranno.
-        onEditProfile = {},
         onPaymentsClick = {},
         onReviewsClick = {},
         onToggleDarkMode = { enabled -> state = state.copy(isDarkModeEnabled = enabled) },

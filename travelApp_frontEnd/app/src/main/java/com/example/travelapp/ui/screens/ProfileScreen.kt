@@ -69,7 +69,7 @@ data class ProfileUiState(
 fun ProfileScreen(
     state: ProfileUiState,
     onBack: () -> Unit,
-    onEditProfile: () -> Unit,
+    onAddProfilePhoto: () -> Unit,
     onBookingsClick: () -> Unit,
     onPaymentsClick: () -> Unit,
     onFavoritesClick: () -> Unit,
@@ -129,7 +129,7 @@ fun ProfileScreen(
                 name = state.name,
                 email = state.email,
                 avatarUrl = state.avatarUrl,
-                onEditProfile = onEditProfile
+                onAddProfilePhoto = onAddProfilePhoto
             )
 
             SectionTitle(
@@ -202,7 +202,7 @@ private fun ProfileScreenPreview() {
         ProfileScreen(
             state = state,
             onBack = {},
-            onEditProfile = {},
+            onAddProfilePhoto = {},
             onBookingsClick = {},
             onPaymentsClick = {},
             onFavoritesClick = {},
