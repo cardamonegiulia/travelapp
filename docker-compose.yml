@@ -10,6 +10,12 @@ services:
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://travelapp-keycloak:8080/realms/travelapp
+      # cartella di destinazione degli upload: volume dedicato, separato dal filesystem
+      # dell'applicazione, cosi' i file sopravvivono al riavvio del container e un upload
+      # che riempie il volume non tocca la directory in cui gira l'applicazione
+      APP_STORAGE_IMMAGINI_PATH: /var/travelapp/immagini
+    volumes:
+      - immagini:/var/travelapp/immagini
     depends_on:
       - keycloak
 
@@ -38,3 +44,6 @@ services:
     ports:
       - "8025:8025"   # interfaccia web: qui si leggono le mail di verifica e di reset
       - "1025:1025"   # SMTP, quello che usa Keycloak (host "travelapp-mailpit")
+
+volumes:
+  immagini:

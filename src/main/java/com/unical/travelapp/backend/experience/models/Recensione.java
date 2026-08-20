@@ -7,8 +7,12 @@ import com.unical.travelapp.backend.identity.entity.Utente;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.BatchSize;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.ArrayList;
+import java.util.List;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -48,4 +52,15 @@ public class Recensione extends Auditable {
     @OnDelete(action = OnDeleteAction.CASCADE)
     @Schema(description = "itinerario a cui appartiene recensione")
     private Itinerario itinerario;
+
+    // Relazione unidirezionale: la chiave esterna sta su "immagini", non qui. Cosi'
+    // cancellare una singola immagine non lascia mai riferimenti pendenti su questa tabella.
+    // BatchSize: senza, l'elenco paginato delle recensioni farebbe una query per ogni riga
+    // solo per caricarne le foto (problema N+1); con il batch ne bastano una o due.
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recensione_id")
+    @OrderBy("id ASC")
+    @BatchSize(size = 30)
+    @Schema(description = "foto allegate alla recensione")
+    private List<Immagine> immagini = new ArrayList<>();
 }
