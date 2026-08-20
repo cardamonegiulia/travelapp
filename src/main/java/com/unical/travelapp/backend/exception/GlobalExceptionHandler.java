@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.exception;
 
+import com.unical.travelapp.backend.booking.exception.*;
 import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
 import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
 import com.unical.travelapp.backend.common.audit.AuditLogger;
@@ -18,13 +19,6 @@ import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException
 // dipendenze: le sue eccezioni non verrebbero mai lanciate qui.
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.InvalidFormatException;
-import com.unical.travelapp.backend.booking.exception.AttivitaExtraNonValidaException;
-import com.unical.travelapp.backend.booking.exception.DisponibilitaNonTrovataException;
-import com.unical.travelapp.backend.booking.exception.PagamentoNonTrovatoException;
-import com.unical.travelapp.backend.booking.exception.PostiInsufficientiException;
-import com.unical.travelapp.backend.booking.exception.PrenotazioneNonTrovataException;
-import com.unical.travelapp.backend.booking.exception.RichiestaPrenotazioneNonValidaException;
-import com.unical.travelapp.backend.booking.exception.StatoPrenotazioneNonValidoException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -187,9 +181,21 @@ public class GlobalExceptionHandler {
     }
 
     // 409 - Stato prenotazione/pagamento non valido
-    @ExceptionHandler(StatoPrenotazioneNonValidoException.class)
-    public ResponseEntity<ProblemDetail> handleStatoPrenotazioneNonValido(StatoPrenotazioneNonValidoException ex, HttpServletRequest request) {
-        return respond(HttpStatus.CONFLICT, "Conflitto", ex.getMessage(), "stato-non-valido", request);
+    @ExceptionHandler({
+            StatoPrenotazioneNonValidoException.class,
+            StatoPagamentoNonValidoException.class
+    })
+    public ResponseEntity<ProblemDetail> handleStatoNonValido(
+            RuntimeException ex,
+            HttpServletRequest request) {
+
+        return respond(
+                HttpStatus.CONFLICT,
+                "Conflitto",
+                ex.getMessage(),
+                "stato-non-valido",
+                request
+        );
     }
 
     // 400 - JSON malformato o con campi non previsti dal DTO (es. FAIL_ON_UNKNOWN_PROPERTIES)
@@ -397,9 +403,9 @@ public class GlobalExceptionHandler {
 
         return respond(
                 HttpStatus.CONFLICT,
-                "Conflitto sulla disponibilità",
-                "La disponibilità è stata modificata da un'altra prenotazione. Riprova.",
-                "conflitto-disponibilita",
+                "Conflitto di concorrenza",
+                "La risorsa è stata modificata da un'altra operazione. Riprova.",
+                "conflitto-concorrenza",
                 request
         );
     }
