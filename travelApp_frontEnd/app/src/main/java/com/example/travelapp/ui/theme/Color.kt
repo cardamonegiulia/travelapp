@@ -42,3 +42,9 @@ val IconGrey = Color(0xFF6B6A76)
 // Logout
 val LogoutBackground = Color(0xFFFDEAEA)
 val LogoutRed = Color(0xFFE53935)
+
+// Card viaggio (schermata "Preferiti")
+val OutlineGrey = Color(0xFFE2E0EC)
+val CoverPlaceholderStart = Color(0xFFD9E4FF)
+val CoverPlaceholderEnd = Color(0xFFEFE3FF)
+val CoverPlaceholderIcon = Color(0xFFB4B1C8)
