@@ -1,6 +1,7 @@
 package com.unical.travelapp.backend.experience.controllers;
 
 import com.unical.travelapp.backend.common.audit.AuditLogger;
+import com.unical.travelapp.backend.experience.models.DTO.ImmagineResponse;
 import com.unical.travelapp.backend.experience.models.DTO.RecensioneRequest;
 import com.unical.travelapp.backend.experience.models.DTO.RecensioneResponse;
 import com.unical.travelapp.backend.experience.services.RecensioneService;
@@ -12,8 +13,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/recensioni")
@@ -71,11 +76,53 @@ public class RecensioneController {
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Rimuove una recensione",
-            description = "Elimina la recensione con l'ID specificato. Solo l'autore puo' cancellarla"
+            description = "Elimina la recensione con l'ID specificato, insieme alle sue foto. " +
+                    "Solo l'autore puo' cancellarla"
     )
     public ResponseEntity<?> removeRecensione(@PathVariable Long id) {
         service.deleteRecensione(id);
         auditLogger.success("RECENSIONE_ELIMINATA", "Recensione", String.valueOf(id));
         return ResponseEntity.ok().build();
+    }
+
+
+    // --- Foto della recensione -----------------------------------------------------------
+
+    @PostMapping(value = "/{id}/immagini", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Allega una foto alla recensione",
+            description = "Riceve il file nel campo \"file\" di una richiesta multipart/form-data. " +
+                    "Consentito all'autore della recensione e agli amministratori"
+    )
+    public ResponseEntity<ImmagineResponse> aggiungiImmagine(
+            @PathVariable Long id, @RequestParam("file") MultipartFile file) {
+
+        ImmagineResponse immagine = service.aggiungiImmagine(id, file);
+        auditLogger.success("IMMAGINE_AGGIUNTA", "Recensione", String.valueOf(id));
+        return ResponseEntity.status(HttpStatus.CREATED).body(immagine);
+    }
+
+
+    @GetMapping("/{id}/immagini")
+    @Operation(
+            summary = "Restituisce le foto di una recensione",
+            description = "Lista completa e non paginata: il numero di foto per recensione e' " +
+                    "limitato lato server (app.storage.immagini.max-per-risorsa)"
+    )
+    public ResponseEntity<List<ImmagineResponse>> getImmagini(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getImmagini(id));
+    }
+
+
+    @DeleteMapping("/{id}/immagini/{immagineId}")
+    @Operation(
+            summary = "Rimuove una foto dalla recensione",
+            description = "Cancella la foto dalla recensione e dallo storage. " +
+                    "Consentito all'autore della recensione e agli amministratori"
+    )
+    public ResponseEntity<Void> rimuoviImmagine(@PathVariable Long id, @PathVariable Long immagineId) {
+        service.rimuoviImmagine(id, immagineId);
+        auditLogger.success("IMMAGINE_RIMOSSA", "Recensione", String.valueOf(id));
+        return ResponseEntity.noContent().build();
     }
 }

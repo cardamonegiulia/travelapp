@@ -6,6 +6,7 @@ import com.unical.travelapp.backend.booking.mapper.PagamentoMapper;
 import com.unical.travelapp.backend.booking.service.PagamentoService;
 import com.unical.travelapp.backend.common.audit.AuditLogger;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -46,7 +47,8 @@ public class PagamentoController {
     }
     @GetMapping("/miei")
     public ResponseEntity<Page<PagamentoResponseDto>> getMieiPagamenti(
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "prenotazione.dataPrenotazione",
+                    direction = Sort.Direction.DESC) Pageable pageable) {
 
         Page<Pagamento> pagamenti =
                 pagamentoService.getPagamentiUtente(pageable);

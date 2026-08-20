@@ -1,11 +1,14 @@
 package com.unical.travelapp.backend.catalog.entity;
 
 import com.unical.travelapp.backend.common.audit.Auditable;
+import com.unical.travelapp.backend.experience.models.Immagine;
 import com.unical.travelapp.backend.experience.models.Recensione;
+import org.hibernate.annotations.BatchSize;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import com.unical.travelapp.backend.identity.entity.Utente;
 
@@ -50,4 +53,14 @@ public class Itinerario extends Auditable {
 
     @OneToMany(mappedBy = "itinerario", cascade = CascadeType.ALL)
     private List<Recensione> recensioni;
+
+    // Galleria del viaggio; per convenzione la prima immagine e' quella di copertina
+    // (@OrderBy garantisce che l'ordine sia sempre lo stesso, altrimenti la "prima" foto
+    // cambierebbe a seconda di come il database restituisce le righe).
+    // La chiave esterna sta su "immagini": vedi il commento in Recensione.
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "itinerario_id")
+    @OrderBy("id ASC")
+    @BatchSize(size = 30)
+    private List<Immagine> immagini = new ArrayList<>();
 }

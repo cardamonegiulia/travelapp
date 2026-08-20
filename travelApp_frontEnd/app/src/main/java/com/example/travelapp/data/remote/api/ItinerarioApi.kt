@@ -1,5 +1,44 @@
 package com.example.travelapp.data.remote.api
 
-// Endpoint del contesto catalog usati dalla home.
+import com.example.travelapp.data.remote.dto.ItinerarioRequestDto
+import com.example.travelapp.data.remote.dto.ItinerarioResponseDto
+import com.example.travelapp.data.remote.dto.PageResponse
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
+import retrofit2.http.Query
+
 interface ItinerarioApi {
+
+    @GET("api/itinerari")
+    suspend fun getAllItinerari(
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20,
+        @Query("sort") sort: String = "id,desc"
+    ): Response<PageResponse<ItinerarioResponseDto>>
+
+    @GET("api/itinerari/{id}")
+    suspend fun getItinerarioById(
+        @Path("id") id: Long
+    ): Response<ItinerarioResponseDto>
+
+    @POST("api/itinerari")
+    suspend fun createItinerario(
+        @Body request: ItinerarioRequestDto
+    ): Response<ItinerarioResponseDto>
+
+    @PUT("api/itinerari/{id}")
+    suspend fun updateItinerario(
+        @Path("id") id: Long,
+        @Body request: ItinerarioRequestDto
+    ): Response<ItinerarioResponseDto>
+
+    @DELETE("api/itinerari/{id}")
+    suspend fun deleteItinerario(
+        @Path("id") id: Long
+    ): Response<Unit>
 }
