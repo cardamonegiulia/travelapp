@@ -48,23 +48,21 @@ import com.example.travelapp.ui.components.ProfileIcons
 import com.example.travelapp.ui.components.ProfileMenuRow
 import com.example.travelapp.ui.components.ProfileSwitchRow
 import com.example.travelapp.ui.components.SectionTitle
-import com.example.travelapp.ui.theme.BackgroundLavender
-import com.example.travelapp.ui.theme.BadgeBlue
-import com.example.travelapp.ui.theme.BadgeGrey
-import com.example.travelapp.ui.theme.BadgeIndigo
-import com.example.travelapp.ui.theme.BadgePink
-import com.example.travelapp.ui.theme.BadgePurple
-import com.example.travelapp.ui.theme.BadgeTeal
-import com.example.travelapp.ui.theme.IconBlue
-import com.example.travelapp.ui.theme.IconGrey
-import com.example.travelapp.ui.theme.IconIndigo
-import com.example.travelapp.ui.theme.IconPink
-import com.example.travelapp.ui.theme.IconPurple
-import com.example.travelapp.ui.theme.IconTeal
-import com.example.travelapp.ui.theme.NavSelectedBlue
-import com.example.travelapp.ui.theme.NavUnselected
-import com.example.travelapp.ui.theme.SurfaceWhite
-import com.example.travelapp.ui.theme.TextPrimary
+import com.example.travelapp.ui.theme.*
+
+// Colori pastello per le icone del profilo
+private val BadgeBlue = Color(0xFFE0F2FE)
+private val IconBlue = Color(0xFF0284C7)
+private val BadgeTeal = Color(0xFFCCFBF1)
+private val IconTeal = Color(0xFF0D9488)
+private val BadgePink = Color(0xFFFFE4E6)
+private val IconPink = Color(0xFFE11D48)
+private val BadgePurple = Color(0xFFF3E8FF)
+private val IconPurple = Color(0xFF9333EA)
+private val BadgeIndigo = Color(0xFFE0E7FF)
+private val IconIndigo = Color(0xFF4F46E5)
+private val BadgeGrey = Color(0xFFF1F5F9)
+private val IconGrey = Color(0xFF64748B)
 
 /** Sezioni raggiungibili dalla bottom navigation. */
 enum class ProfileTab(val label: String, val icon: ImageVector) {
@@ -86,9 +84,6 @@ data class ProfileUiState(
 /**
  * Schermata "Profilo": intestazione utente, scorciatoie alle attività,
  * impostazioni e logout.
- *
- * La schermata è puramente presentazionale: riceve [state] e notifica le
- * interazioni tramite le lambda, senza conoscere navigazione o ViewModel.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -139,7 +134,7 @@ fun ProfileScreen(
 
     Scaffold(
         modifier = modifier,
-        containerColor = BackgroundLavender,
+        containerColor = TravelBg,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -147,7 +142,7 @@ fun ProfileScreen(
                         text = "Profilo",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = TravelTextDark
                     )
                 },
                 navigationIcon = {
@@ -155,7 +150,7 @@ fun ProfileScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Indietro",
-                            tint = TextPrimary
+                            tint = TravelTextDark
                         )
                     }
                 },
@@ -229,7 +224,6 @@ fun ProfileScreen(
     }
 }
 
-/** Voce della sezione "Le mie attività". */
 private data class ActivityItem(
     val title: String,
     val icon: ImageVector,
@@ -245,7 +239,7 @@ private fun ProfileBottomBar(
     modifier: Modifier = Modifier
 ) {
     NavigationBar(
-        containerColor = SurfaceWhite,
+        containerColor = TravelSurface,
         tonalElevation = 0.dp,
         modifier = modifier
     ) {
@@ -260,7 +254,7 @@ private fun ProfileBottomBar(
                         modifier = Modifier
                             .size(36.dp)
                             .background(
-                                color = if (selected) NavSelectedBlue else Color.Transparent,
+                                color = if (selected) TravelBlue else Color.Transparent,
                                 shape = CircleShape
                             )
                     ) {
@@ -279,13 +273,11 @@ private fun ProfileBottomBar(
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    // Il badge circolare è già disegnato dall'icona: l'indicatore
-                    // a pillola di Material3 va reso invisibile.
                     indicatorColor = Color.Transparent,
                     selectedIconColor = Color.White,
-                    selectedTextColor = NavSelectedBlue,
-                    unselectedIconColor = NavUnselected,
-                    unselectedTextColor = NavUnselected
+                    selectedTextColor = TravelBlue,
+                    unselectedIconColor = TravelTextMuted,
+                    unselectedTextColor = TravelTextMuted
                 )
             )
         }

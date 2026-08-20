@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 object ApiClient {
 
     // 10.0.2.2 punta al localhost del Mac quando usi l'emulatore Android
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    private const val BASE_URL = "http://10.0.2.2:8081/"
 
     private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()

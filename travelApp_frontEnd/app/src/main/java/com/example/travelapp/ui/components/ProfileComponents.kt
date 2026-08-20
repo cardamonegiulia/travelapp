@@ -35,19 +35,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.travelapp.ui.theme.AccentOrange
-import com.example.travelapp.ui.theme.BadgeGrey
-import com.example.travelapp.ui.theme.ChevronGrey
-import com.example.travelapp.ui.theme.IconGrey
-import com.example.travelapp.ui.theme.LogoutBackground
-import com.example.travelapp.ui.theme.LogoutRed
-import com.example.travelapp.ui.theme.NavSelectedBlue
-import com.example.travelapp.ui.theme.SurfaceWhite
-import com.example.travelapp.ui.theme.TextPrimary
-import com.example.travelapp.ui.theme.TextSecondary
+import com.example.travelapp.ui.theme.*
 
 private val HeaderCardShape = RoundedCornerShape(16.dp)
 private val RowCardShape = RoundedCornerShape(14.dp)
+private val LogoutRed = Color(0xFFDC2626)
+private val LogoutBg = Color(0xFFFEE2E2)
 
 /** Titolo di una sezione della schermata profilo (es. "Le mie attività"). */
 @Composable
@@ -59,7 +52,7 @@ fun SectionTitle(
         text = text,
         fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
-        color = TextPrimary,
+        color = TravelTextDark,
         modifier = modifier.padding(start = 4.dp, bottom = 10.dp)
     )
 }
@@ -106,13 +99,13 @@ fun ProfileMenuRow(
         Text(
             text = title,
             fontSize = 15.sp,
-            color = TextPrimary,
+            color = TravelTextDark,
             modifier = Modifier.weight(1f)
         )
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            tint = ChevronGrey,
+            tint = TravelTextMuted,
             modifier = Modifier.size(22.dp)
         )
     }
@@ -135,18 +128,18 @@ fun ProfileSwitchRow(
         Text(
             text = title,
             fontSize = 15.sp,
-            color = TextPrimary,
+            color = TravelTextDark,
             modifier = Modifier.weight(1f)
         )
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = SurfaceWhite,
-                checkedTrackColor = NavSelectedBlue,
+                checkedThumbColor = TravelSurface,
+                checkedTrackColor = TravelBlue,
                 checkedBorderColor = Color.Transparent,
-                uncheckedThumbColor = SurfaceWhite,
-                uncheckedTrackColor = ChevronGrey,
+                uncheckedThumbColor = TravelSurface,
+                uncheckedTrackColor = TravelBorder,
                 uncheckedBorderColor = Color.Transparent
             )
         )
@@ -161,7 +154,7 @@ private fun ProfileRowCard(
 ) {
     Card(
         shape = RowCardShape,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = TravelSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -177,10 +170,6 @@ private fun ProfileRowCard(
 
 /**
  * Intestazione del profilo: avatar, nome, email e bottone di modifica.
- *
- * [avatarUrl] fa già parte dello stato, ma il modulo non dipende da una
- * libreria di image loading: finché non viene aggiunta (es. Coil) si mostra un
- * placeholder, e basterà sostituire l'avatar con `AsyncImage(model = avatarUrl)`.
  */
 @Composable
 fun ProfileHeaderCard(
@@ -192,7 +181,7 @@ fun ProfileHeaderCard(
 ) {
     Card(
         shape = HeaderCardShape,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = TravelSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -208,20 +197,20 @@ fun ProfileHeaderCard(
                 text = name,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                color = TravelTextDark
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = email,
                 fontSize = 13.sp,
-                color = TextSecondary
+                color = TravelTextMuted
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = onEditProfile,
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = AccentOrange,
+                    containerColor = TravelOrange,
                     contentColor = Color.White
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
@@ -245,14 +234,13 @@ private fun ProfileAvatar(
     Box(
         modifier = modifier
             .size(80.dp)
-            .background(color = BadgeGrey, shape = CircleShape),
+            .background(color = TravelChipBg, shape = CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        // TODO: sostituire con AsyncImage(model = avatarUrl) quando Coil sarà disponibile.
         Icon(
             imageVector = Icons.Default.Person,
             contentDescription = "Immagine del profilo",
-            tint = IconGrey,
+            tint = TravelTextMuted,
             modifier = Modifier.size(44.dp)
         )
     }
@@ -266,7 +254,7 @@ fun LogoutButton(
 ) {
     Card(
         shape = RowCardShape,
-        colors = CardDefaults.cardColors(containerColor = LogoutBackground),
+        colors = CardDefaults.cardColors(containerColor = LogoutBg),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
             .fillMaxWidth()
