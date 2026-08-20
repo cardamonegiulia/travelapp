@@ -67,7 +67,6 @@ class PagamentoServiceTest {
                 .prenotazione(prenotazione)
                 .importo(new BigDecimal("100.00"))
                 .stato(stato)
-                .dataPagamento(LocalDateTime.now())
                 .build();
     }
 
@@ -217,7 +216,7 @@ class PagamentoServiceTest {
     }
 
     @Test
-    void pagamentoInAttesaDiventaFallitoConAnnullamento() {
+    void pagamentoInAttesaDiventaAnnullatoConAnnullamento() {
 
         Prenotazione prenotazione =
                 prenotazione(StatoPrenotazione.IN_ATTESA);

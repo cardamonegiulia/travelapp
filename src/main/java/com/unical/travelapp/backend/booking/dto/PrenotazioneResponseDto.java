@@ -2,6 +2,7 @@ package com.unical.travelapp.backend.booking.dto;
 
 import com.unical.travelapp.backend.booking.entity.StatoPagamento;
 import com.unical.travelapp.backend.booking.entity.StatoPrenotazione;
+import com.unical.travelapp.backend.booking.entity.TipoPrenotazione;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,7 +28,7 @@ public class PrenotazioneResponseDto {
     private StatoPrenotazione statoPrenotazione;
     private StatoPagamento statoPagamento;
     private LocalDateTime dataPrenotazione;
-    private String tipoPrenotazione;
+    private TipoPrenotazione tipoPrenotazione;
     private String titolo;
     private String luogo;
 }

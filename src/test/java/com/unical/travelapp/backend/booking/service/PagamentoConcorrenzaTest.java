@@ -64,7 +64,6 @@ class PagamentoConcorrenzaTest {
         Pagamento pagamento = Pagamento.builder()
                 .prenotazione(prenotazione)
                 .importo(new BigDecimal("100.00"))
-                .dataPagamento(LocalDateTime.now())
                 .stato(StatoPagamento.IN_ATTESA)
                 .build();
 

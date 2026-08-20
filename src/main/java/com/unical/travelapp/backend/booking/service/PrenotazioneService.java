@@ -40,15 +40,12 @@ public class PrenotazioneService {
     private final UtenteService utenteService;
     private final PagamentoService pagamentoService;
 
-    // cretePrenotazione era diventata troppo grande quindi ora creo diversi piccoli metodi
-    // cosi da avere una logica pulita e leggibile da usare poi dentro createPrenotazione.
-    private Utente recuperaUtente(Long id) {
-        Optional<Utente> utente = utenteRepository.findById(id);
-
-        if (utente.isEmpty()) {
-            throw new UtenteNonTrovatoException("Utente non trovato");
+    private void verificaEsistenzaUtente(Long id) {
+        if (!utenteRepository.existsById(id)) {
+            throw new UtenteNonTrovatoException(
+                    "Utente non trovato: " + id
+            );
         }
-        return utente.get();
     }
 
     private void validaRichiesta(CreaPrenotazioneRequest req){
@@ -83,23 +80,11 @@ public class PrenotazioneService {
     }
 
     private DisponibilitaItinerario recuperaDisponibilita(Long id){
-        Optional<DisponibilitaItinerario> dispon = disponibilitaItinerarioRepository.findById(id);
-
-        if(dispon.isEmpty()){
-            throw new DisponibilitaNonTrovataException("Disponibilità itinerario non trovata");
-        }
-
-        return dispon.get();
+        return disponibilitaItinerarioRepository.findById(id).orElseThrow(()-> new DisponibilitaNonTrovataException("Disponibilità itinerario non trovata: " +id));
     }
 
     private SessioneSingolaAttivita recuperaSingolaAttivita(Long id){
-        Optional<SessioneSingolaAttivita> sessioneSing = sessioneSingolaAttivitaRepository.findById(id);
-
-        if(sessioneSing.isEmpty()){
-            throw new DisponibilitaNonTrovataException("Sessione singola non trovata");
-        }
-
-        return sessioneSing.get();
+        return sessioneSingolaAttivitaRepository.findById(id).orElseThrow(()-> new DisponibilitaNonTrovataException("Sessione singola non trovato: "+ id));
     }
 
     private int calcolaPostiResidui(
@@ -312,8 +297,7 @@ public class PrenotazioneService {
         if (!utenteService.isAdmin() && !richiedente.getId().equals(utenteId)) {
             throw new AccessDeniedException("Non puoi consultare le prenotazioni di un altro utente");
         }
-
-        recuperaUtente(utenteId);
+        verificaEsistenzaUtente(utenteId);
         return prenotazioneRepo.findByViaggiatoreId(utenteId, pageable);
     }
 

@@ -111,9 +111,9 @@ class GlobalExceptionHandlerTest {
                 .isEqualTo(HttpStatus.CONFLICT);
 
         assertThat(response.getBody().getTitle())
-                .isEqualTo("Conflitto sulla disponibilità");
+                .isEqualTo("Conflitto di concorrenza");
 
         assertThat(response.getBody().getDetail())
-                .isEqualTo("La disponibilità è stata modificata da un'altra prenotazione. Riprova.");
+                .isEqualTo("La risorsa è stata modificata da un'altra operazione. Riprova.");
     }
 }
