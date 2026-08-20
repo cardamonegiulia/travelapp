@@ -17,9 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.theme.*
@@ -30,6 +32,8 @@ fun ItinerarioDetailScreen(
     onBack: () -> Unit,
     onPrenota: (Long) -> Unit
 ) {
+    val copertinaUrl = itinerario.immagini.firstOrNull()?.url
+
     Scaffold(
         bottomBar = {
             Surface(
@@ -82,13 +86,21 @@ fun ItinerarioDetailScreen(
                 .background(TravelBg)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Immagine Header Mock
+            // Header con Immagine Coil (copertina dal backend o background di fallback)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(260.dp)
-                    .background(Color(0xFFCBD5E1))
             ) {
+                AsyncImage(
+                    model = copertinaUrl,
+                    contentDescription = itinerario.titolo,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFCBD5E1)),
+                    contentScale = ContentScale.Crop
+                )
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
