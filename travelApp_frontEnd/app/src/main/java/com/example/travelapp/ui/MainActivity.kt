@@ -9,6 +9,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.travelapp.ui.prenotazioni.BookingUiState
+import com.example.travelapp.ui.prenotazioni.PrenotazionePasso1Screen
 import com.example.travelapp.ui.screens.ProfileScreen
 import com.example.travelapp.ui.screens.ProfileTab
 import com.example.travelapp.ui.screens.ProfileUiState
@@ -22,7 +24,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                ProfileRoute(onBack = { finish() })
+                PrenotazionePasso1Screen(
+                    uiState = BookingUiState(),
+                    onIncrementa = {},
+                    onDecrementa = {},
+                    onContinua = {}
+                )
             }
         }
     }
