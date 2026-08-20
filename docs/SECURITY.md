@@ -97,6 +97,9 @@ aggiungendo `@PreAuthorize` non avrebbe funzionato senza il fix.
 | `/api/itinerari/{id}` | DELETE | `ORGANIZZATORE` (solo i propri) o `ADMIN` |
 | `/api/attivita` | GET | autenticato |
 | `/api/attivita/{id}` | GET | autenticato |
+| `/api/itinerari/{id}/immagini` | POST | `ORGANIZZATORE` proprietario o `ADMIN` (404 se non tuo) |
+| `/api/itinerari/{id}/immagini` | GET | autenticato |
+| `/api/itinerari/{id}/immagini/{immagineId}` | DELETE | `ORGANIZZATORE` proprietario o `ADMIN` |
 | `/api/attivita/con-sessioni` | POST | `ORGANIZZATORE` o `ADMIN` |
 | `/api/attivita/{id}` | DELETE | `ORGANIZZATORE` (solo le proprie) o `ADMIN` |
 | `/api/prenotazioni` | POST | autenticato (crea per sé stesso) |
@@ -110,6 +113,14 @@ aggiungendo `@PreAuthorize` non avrebbe funzionato senza il fix.
 | `/api/recensioni/itinerario/{id}/media` | GET | autenticato |
 | `/api/recensioni` | POST | autenticato (a proprio nome) |
 | `/api/recensioni/{id}` | DELETE | autore (403 se non tua) |
+| `/api/recensioni/{id}/immagini` | POST | autore della recensione o `ADMIN` (403 se non tua) |
+| `/api/recensioni/{id}/immagini` | GET | autenticato |
+| `/api/recensioni/{id}/immagini/{immagineId}` | DELETE | autore della recensione o `ADMIN` |
+| `/api/immagini` | POST | autenticato (carica a proprio nome) |
+| `/api/immagini/{id}` | GET | autenticato |
+| `/api/immagini/{id}/contenuto` | GET | autenticato |
+| `/api/immagini/mie` | GET | autenticato (solo le proprie) |
+| `/api/immagini/{id}` | DELETE | proprietario o `ADMIN` (404 se non tua) |
 | `/swagger-ui/**`, `/v3/api-docs/**` | GET | pubblico (**disabilitato** in prod) |
 | `/actuator/health`, `/actuator/info` | GET | pubblico |
 | `/actuator/**` (altri) | — | `ADMIN` (nessun endpoint actuator è oggi sul classpath) |

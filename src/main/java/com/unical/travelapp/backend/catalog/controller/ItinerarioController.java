@@ -6,16 +6,22 @@ import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.catalog.mapper.ItinerarioMapper;
 import com.unical.travelapp.backend.catalog.service.ItinerarioService;
 import com.unical.travelapp.backend.common.audit.AuditLogger;
+import com.unical.travelapp.backend.experience.models.DTO.ImmagineResponse;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/itinerari")
@@ -74,6 +80,39 @@ public class ItinerarioController {
     public ResponseEntity<Void> deleteItinerario(@PathVariable Long id) {
         itinerarioService.deleteItinerario(id, utenteService.getUtenteSessione(), utenteService.isAdmin());
         auditLogger.success("ITINERARIO_ELIMINATO", "Itinerario", String.valueOf(id));
+        return ResponseEntity.noContent().build();
+    }
+
+
+    // --- Immagini dell'itinerario ---------------------------------------------------------
+    // La copertina e' la prima immagine della lista: caricarne una su un itinerario senza
+    // foto equivale a impostarne la copertina.
+
+    @PostMapping(value = "/{id}/immagini", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
+    public ResponseEntity<ImmagineResponse> aggiungiImmagine(
+            @PathVariable Long id, @RequestParam("file") MultipartFile file) {
+
+        ImmagineResponse immagine = itinerarioService.aggiungiImmagine(
+                id, file, utenteService.getUtenteSessione(), utenteService.isAdmin());
+        auditLogger.success("IMMAGINE_AGGIUNTA", "Itinerario", String.valueOf(id));
+        return ResponseEntity.status(HttpStatus.CREATED).body(immagine);
+    }
+
+
+    // in lettura basta essere autenticati: le foto di un itinerario sono parte del catalogo
+    @GetMapping("/{id}/immagini")
+    public ResponseEntity<List<ImmagineResponse>> getImmagini(@PathVariable Long id) {
+        return ResponseEntity.ok(itinerarioService.getImmagini(id));
+    }
+
+
+    @DeleteMapping("/{id}/immagini/{immagineId}")
+    @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
+    public ResponseEntity<Void> rimuoviImmagine(@PathVariable Long id, @PathVariable Long immagineId) {
+        itinerarioService.rimuoviImmagine(
+                id, immagineId, utenteService.getUtenteSessione(), utenteService.isAdmin());
+        auditLogger.success("IMMAGINE_RIMOSSA", "Itinerario", String.valueOf(id));
         return ResponseEntity.noContent().build();
     }
 }
