@@ -20,6 +20,19 @@ class PrenotazioniViewModel(
     val uiState: StateFlow<BookingUiState> =
         _uiState.asStateFlow()
 
+    fun inizializzaBooking(
+        titolo: String,
+        luogo: String,
+        prezzoBase: Double
+    ) {
+        _uiState.value = _uiState.value.copy(
+            titolo = titolo,
+            luogo = luogo,
+            prezzoBase = prezzoBase,
+            prezzoTotaleVisualizzato = prezzoBase
+        )
+    }
+
     fun incrementaPartecipanti() {
         _uiState.value = _uiState.value.copy(
             numeroPartecipanti = _uiState.value.numeroPartecipanti + 1
