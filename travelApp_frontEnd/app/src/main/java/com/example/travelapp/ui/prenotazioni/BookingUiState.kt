@@ -16,6 +16,7 @@ data class BookingUiState(
     // Il prezzo definitivo viene comunque calcolato dal backend.
     val prezzoExtra: Double = 0.0,
     val prezzoTotaleVisualizzato: Double = 0.0,
+    val metodoPagamento: MetodoPagamentoUi = MetodoPagamentoUi.CARTA_CREDITO,
 
     val isLoading: Boolean = false,
     val errore: String? = null,

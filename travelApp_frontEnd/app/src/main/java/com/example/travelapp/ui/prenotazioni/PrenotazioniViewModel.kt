@@ -33,6 +33,16 @@ class PrenotazioniViewModel(
         )
     }
 
+    fun resetBooking() {
+        _uiState.value = BookingUiState()
+    }
+
+    fun pulisciErrore() {
+        _uiState.value = _uiState.value.copy(
+            errore = null
+        )
+    }
+
     fun incrementaPartecipanti() {
         _uiState.value = _uiState.value.copy(
             numeroPartecipanti = _uiState.value.numeroPartecipanti + 1
@@ -65,6 +75,8 @@ class PrenotazioniViewModel(
         disponibilitaItinerarioId: Long? = null,
         sessioneSingolaAttivitaId: Long? = null
     ) {
+        if (_uiState.value.isLoading) return
+
         viewModelScope.launch {
 
             _uiState.value = _uiState.value.copy(
@@ -98,6 +110,8 @@ class PrenotazioniViewModel(
     }
 
     fun pagaPrenotazione() {
+        if (_uiState.value.isLoading) return
+
         val prenotazione = _uiState.value.prenotazioneCreata
 
         if (prenotazione == null) {
@@ -130,5 +144,12 @@ class PrenotazioniViewModel(
                 )
             }
         }
+    }
+    fun selezionaMetodoPagamento(
+        metodo: MetodoPagamentoUi
+    ) {
+        _uiState.value = _uiState.value.copy(
+            metodoPagamento = metodo
+        )
     }
 }
