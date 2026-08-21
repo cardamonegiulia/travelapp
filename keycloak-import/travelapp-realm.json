@@ -30,12 +30,12 @@
   "registrationAllowed" : false,
   "registrationEmailAsUsername" : false,
   "rememberMe" : false,
-  "verifyEmail" : false,
+  "verifyEmail" : true,
   "loginWithEmailAllowed" : true,
   "duplicateEmailsAllowed" : false,
-  "resetPasswordAllowed" : false,
+  "resetPasswordAllowed" : true,
   "editUsernameAllowed" : false,
-  "bruteForceProtected" : false,
+  "bruteForceProtected" : true,
   "permanentLockout" : false,
   "maxTemporaryLockouts" : 0,
   "maxFailureWaitSeconds" : 900,
@@ -43,7 +43,8 @@
   "waitIncrementSeconds" : 60,
   "quickLoginCheckMilliSeconds" : 1000,
   "maxDeltaTimeSeconds" : 43200,
-  "failureFactor" : 30,
+  "failureFactor" : 10,
+  "passwordPolicy" : "length(12) and digits(1) and notUsername and notEmail",
   "roles" : {
     "realm" : [ {
       "id" : "20b20d39-8a33-4f7b-ae96-647687027626",
@@ -437,6 +438,9 @@
   "scopeMappings" : [ {
     "clientScope" : "offline_access",
     "roles" : [ "offline_access" ]
+  }, {
+    "client" : "travelapp-android",
+    "roles" : [ "VIAGGIATORE", "ORGANIZZATORE", "ADMIN" ]
   } ],
   "clientScopeMappings" : {
     "account" : [ {
@@ -448,7 +452,7 @@
     "id" : "7d4b1e90-3a55-4f18-9c62-0e8b4a6c3001",
     "clientId" : "travelapp-registration",
     "name" : "TravelApp - service account di registrazione",
-    "description" : "Usato SOLO dal backend per creare utenti e assegnare ruoli realm durante la registrazione self-service. Client separato da travelapp-backend: privilegi diversi, rotazione e revoca indipendenti. Il secret va letto dalla console (Credentials) e passato al backend come KEYCLOAK_ADMIN_CLIENT_SECRET.",
+    "description" : "Client per registrazione utenti",
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "alwaysDisplayInConsole" : false,
@@ -680,8 +684,8 @@
   }, {
     "id" : "75c893b3-f963-49da-8e42-f3c1fb6452b0",
     "clientId" : "travelapp-backend",
-    "name" : "",
-    "description" : "",
+    "name" : "TravelApp - resource server",
+    "description" : "Resource server: riceve i token e li valida, non ne emette per nessuno. Standard flow e direct access grants sono spenti di proposito - il login passa da travelapp-android. E' anche l'audience attesa dal backend (app.security.expected-audience), per questo i client che emettono token devono avere il mapper aud-travelapp-backend.",
     "rootUrl" : "",
     "adminUrl" : "",
     "baseUrl" : "",
@@ -690,14 +694,14 @@
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "**********",
-    "redirectUris" : [ "/*" ],
-    "webOrigins" : [ "/*" ],
+    "redirectUris" : [ ],
+    "webOrigins" : [ ],
     "notBefore" : 0,
     "bearerOnly" : false,
     "consentRequired" : false,
-    "standardFlowEnabled" : true,
+    "standardFlowEnabled" : false,
     "implicitFlowEnabled" : false,
-    "directAccessGrantsEnabled" : true,
+    "directAccessGrantsEnabled" : false,
     "serviceAccountsEnabled" : false,
     "publicClient" : false,
     "frontchannelLogout" : true,
@@ -713,6 +717,51 @@
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : true,
     "nodeReRegistrationTimeout" : -1,
+    "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "email" ],
+    "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
+  }, {
+    "clientId" : "travelapp-android",
+    "name" : "TravelApp - app Android",
+    "description" : "Client pubblico dell'app Android: Authorization Code + PKCE (S256). Un'app distribuita agli utenti non puo' custodire un secret, quindi la sicurezza dello scambio code -> token viene da PKCE. Non ha privilegi amministrativi: emette solo token per l'utente finale.",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "alwaysDisplayInConsole" : false,
+    "clientAuthenticatorType" : "client-secret",
+    "redirectUris" : [ "com.example.travelapp:/oauth2redirect" ],
+    "webOrigins" : [ ],
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "consentRequired" : false,
+    "standardFlowEnabled" : true,
+    "implicitFlowEnabled" : false,
+    "directAccessGrantsEnabled" : false,
+    "serviceAccountsEnabled" : false,
+    "publicClient" : true,
+    "frontchannelLogout" : true,
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "pkce.code.challenge.method" : "S256",
+      "post.logout.redirect.uris" : "com.example.travelapp:/logout",
+      "oidc.ciba.grant.enabled" : "false",
+      "backchannel.logout.session.required" : "true",
+      "oauth2.device.authorization.grant.enabled" : "false",
+      "backchannel.logout.revoke.offline.tokens" : "false"
+    },
+    "authenticationFlowBindingOverrides" : { },
+    "fullScopeAllowed" : false,
+    "nodeReRegistrationTimeout" : -1,
+    "protocolMappers" : [ {
+      "name" : "aud-travelapp-backend",
+      "protocol" : "openid-connect",
+      "protocolMapper" : "oidc-audience-mapper",
+      "consentRequired" : false,
+      "config" : {
+        "included.client.audience" : "travelapp-backend",
+        "id.token.claim" : "false",
+        "access.token.claim" : "true",
+        "introspection.token.claim" : "true"
+      }
+    } ],
     "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "email" ],
     "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
   } ],
@@ -1221,7 +1270,15 @@
     "xXSSProtection" : "1; mode=block",
     "strictTransportSecurity" : "max-age=31536000; includeSubDomains"
   },
-  "smtpServer" : { },
+  "smtpServer" : {
+    "host" : "travelapp-mailpit",
+    "port" : "1025",
+    "from" : "no-reply@travelapp.test",
+    "fromDisplayName" : "TravelApp",
+    "ssl" : "false",
+    "starttls" : "false",
+    "auth" : ""
+  },
   "eventsEnabled" : false,
   "eventsListeners" : [ "jboss-logging" ],
   "enabledEventTypes" : [ ],
@@ -1298,49 +1355,6 @@
       "subComponents" : { },
       "config" : {
         "allow-default-scopes" : [ "true" ]
-      }
-    } ],
-    "org.keycloak.keys.KeyProvider" : [ {
-      "id" : "12b8a442-8e4e-4acb-bd62-68009760d0af",
-      "name" : "aes-generated",
-      "providerId" : "aes-generated",
-      "subComponents" : { },
-      "config" : {
-        "kid" : [ "69e2900f-810c-4abb-828a-49caa1e47b36" ],
-        "secret" : [ "G1BFjKlh0nezha13A5ClMg" ],
-        "priority" : [ "100" ]
-      }
-    }, {
-      "id" : "dfbc4d37-6dc9-4672-ab7b-1651f1b23e7a",
-      "name" : "hmac-generated-hs512",
-      "providerId" : "hmac-generated",
-      "subComponents" : { },
-      "config" : {
-        "kid" : [ "f08b2926-c2a0-4e33-aab7-2a3d7943c4dc" ],
-        "secret" : [ "9dxvmxzcHUM5ACEwotHp5VPDOksDZ0cq3ZlHihjhjzKZrwpg-g0ce3T5cOQiYcgMvfbb6y1aj2Lg8IWci6tDMPqggGCUwQWNWwRnJ89OuvoRMhlm4c3YF7KWPyswnW6qSvYgzOjv_2Jy6eFWj7O7vbUvWUW9kA3LzIps21YifV8" ],
-        "priority" : [ "100" ],
-        "algorithm" : [ "HS512" ]
-      }
-    }, {
-      "id" : "4039ebb9-5d88-428e-ab2d-619d1f1ca380",
-      "name" : "rsa-generated",
-      "providerId" : "rsa-generated",
-      "subComponents" : { },
-      "config" : {
-        "privateKey" : [ "MIIEowIBAAKCAQEAoV4NTeaGRKwOjWvS7C7gTgkzMwv6dos7IQJGFaytt0a4zHf9d1gqlaVCjYywDEvTQsv8D81d/Pq9KVGBOrX2YUIMelIYjSlj0j23lIwgkBI1HWrPk4JIv72tII650XMGv93yGZWkAZz31oRyH4YFmLBe5uIbg3O888Rt0x8MZa/u0xsCg/bk1b0j5kuSS1s6xqjEDEqANBMsCy3Ik4RnwFEUdGhOPpNQuoLZ/0ZxFIUDXA3VgAU+QVek4r0c1bs1clJF5Qf7oRYui/Alm2nPyu462MfHrHO2UBYcC19RXmeg+HNbVbC/+PKXF0IL2CJomVyxDBtoPXQ9o1HriAFuHwIDAQABAoIBACKM0KxtPzJU5IjDHVYUc1JCBgRX/DiFdxOKORdK8abcLZUZ29tBtVx1FdrY1JjNY15Z7o4zmnwf84B1QwYfD7GjQqiuCzOuOQE61aOonRA71cOGqwsaShlDs13VMVP3HOrXyo5Py93MjgQQN58oQup+WNN2dg2fKkXHOPyLGUxsF6bEOmywGJsvYvZxIjzhUyZF827RLRqMBli3neqN4diL4PBUeuV2ks1TRUwfcurbeqbPCRYz8x9Skhj5JkpN5DWaHNW2/KHo5VZvyNVSOa4VGleGK67klKijbdbraLaUyI8nUaWNAGP5S9LXOBRbKaDUv0dIXD10LWSJ502GAgECgYEA2fsGTOm2qN0GmZZhkUhGOFp0S7ty5vT24YNvuwT3og/09afn7QaXApBMCt73phXck97tSP0A6PTvwYRPMjLHiyW2j4By8i4YZkzG/mGQuLJabsC4nX5oDANFZVvBkTx7vL+7qq+SUIhrunyBc8A1zaj9IiHtD0gu6YjulrkTsTECgYEAvYM2QbMpqTrUWSp5wR8KNV4HDDln36xodjq3gpIhIA/aojmTJhKYUsOlGd1gCGYFc9Nao8S/24PDhSpD5VG55TM+QjfZ4iv1L00UJkHRz5LoS7e4s93EYDUGA49WiFetcI4/aTCBkwi5XWedExDcAOL5roNKmRIpZlWC7sxZwE8CgYAFH0TyobtNFISHL2VziIM958I71VfJ3Y+/lNsXRfKbuExFSYDFrRX3VXSz/LFNEc5xGxfwUyGmV7sajQVfZJoTxvsXPCl3T2X7YWp7p8dCz84YNCcibEn9nkYPL6zIwOcXdFnwlNeXVN1TMIHKOoYJIyNvneR4K3YOvsz8dbTkwQKBgCvIda+GGfjsC4UyKADzD+O2foBXfuURKu0tsZnr8tU6dHOIQ7PHFgQBCVLJb1dhYp8Y1FcDrKOldHV+h0Mit4T5asfXqXH0X+f2sdII4NVJBnv/zR9Y+/aSKXqHEiHbx8k6Q/Ikb7sth83Jk2OFQJ6/0Zl84a4toPzwgphzA8VHAoGBAJEMydiLyTh8kEfIeAlEbCvJoQ4FUa4up6G0CJjt8jZ4FkODIS4ME1zxdcHbtLtkiuAVs4qJP50KhXGoL/W/9snwa7IUrL77XYRqk2NEVq9WK+AbqVp3bNAILIJxrAK87g5BPmv4L6b4nTrilPSBM3fv+kT4uO2w8K4XCKNdyXrk" ],
-        "certificate" : [ "MIICoTCCAYkCBgGeocVLhDANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAl0cmF2ZWxhcHAwHhcNMjYwNjA3MTEwNzAyWhcNMzYwNjA3MTEwODQyWjAUMRIwEAYDVQQDDAl0cmF2ZWxhcHAwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQChXg1N5oZErA6Na9LsLuBOCTMzC/p2izshAkYVrK23RrjMd/13WCqVpUKNjLAMS9NCy/wPzV38+r0pUYE6tfZhQgx6UhiNKWPSPbeUjCCQEjUdas+Tgki/va0gjrnRcwa/3fIZlaQBnPfWhHIfhgWYsF7m4huDc7zzxG3THwxlr+7TGwKD9uTVvSPmS5JLWzrGqMQMSoA0EywLLciThGfAURR0aE4+k1C6gtn/RnEUhQNcDdWABT5BV6TivRzVuzVyUkXlB/uhFi6L8CWbac/K7jrYx8esc7ZQFhwLX1FeZ6D4c1tVsL/48pcXQgvYImiZXLEMG2g9dD2jUeuIAW4fAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAGiMDqUujT0SL+6o8K9l81FpRzC1VPDwOsrM7g67WmQ9I1u01ESboTnMb2JZGcvZsCDF45klj4E/mMYl3+t0s174oW6wDkfRi6Zncws6pUKUGYmxgwwni8iM+HORvP03Zqczzh0zce0/6kaRBwqGKhfB9qvhrttWF7y0GSeXatgVGRElfLoN1tlPi7NqCeUDpUbi7jHx7xaQ3xCeb4bEPfi1HOazeZmFomDaAPab9jbVt5Hj/ssVtFXbiql9Wni1RVZQKUZy28o1z75B6+UcZtdm62pbRtDHPH5iYt9SSC77sY8Au0/jlcqSVSlhA/7TJpx8M3U/37eQGinKfoIKe88=" ],
-        "priority" : [ "100" ]
-      }
-    }, {
-      "id" : "09cd979d-48b0-4f5c-8958-35856a5d4634",
-      "name" : "rsa-enc-generated",
-      "providerId" : "rsa-enc-generated",
-      "subComponents" : { },
-      "config" : {
-        "privateKey" : [ "MIIEowIBAAKCAQEAre5gK2XIkrAOgHdKiQJLKxIZtTTfsVw2bkd+BPtM+TuQZDicLDLySTJ0/xpe4h/nDpRACQzfg5GtLc+YmlUEsU8vvFJv2VHmxDMM+YHPYSoKKISSWUhEushR3QJX69+GVPc24fO+CGRULU+L8yezeqMDnrzpGjoCVQfJW21eqDrro3+Vwel/U1hPIQUwIgZRyVSJ2H2S2/XFCLmXLVp2N8XYQPLNvj3GD6pV2qV92p/W12w1I7FrJRQ4t9T3aKYKUxioUIgy2VJW/Ln9rrRLq2NrknL0qhvqn93PH8lAhetmJt0nPed1HiaL1QuAN7cmmBWjkzkyq7N9m7u0I1vGPQIDAQABAoIBAAFO6g336UZCYqcjnpD0WzZJX9E6diJ6cAj5N5dLTTT3tkctGzs3rXv29otseme6UTQNhR2V6VpIpRQtFYSdqWTsoU5WxjNM6vUxV09K8ASKIVyHwlkMRdx4zfYHwtUKAwbn4boMqdjpNkfgxNiRBSGh3cP0WRvpJH2l8UujTjaD0PYAoMYTC4HzBElP71MfpeomFctr+m/OMLycYnhkwipXRc+2kaL2PDsU8wLEJSmrrlEzXuQbnPddwmB1wh5xw4JLPzhP2+FA6I93WVcB7spI1yGu4LNI4a1xJWvO5P2PVY1yb0oiJ+Yv4QYiDan9Y75vW8Hkx960MDbuJCT45+ECgYEA4JOYOAa86kNGwxA91gkcZ3e0L2T9mVz+BeQO2tWynopnrsFAza0EI2SqqkRHWs2KEEil/NF+nGzl5cgcTKbGW9Rpl56twFRVNObllYBZx/dYsHgGqP/7D/d5Ba16c+8twe3H6MaQW/qXNK0194M8LDiPrQgeMz1gHOZTe3Qks+ECgYEAxkSljexK15dJlueB7OEgbJ5Ulm3nwbqs/oagQVODGIPUBWnKR1qyqtah1SAJeOmyTkQnal5zycVH04le4xo4MsnM/zcEwBmMCx5Q1V1/DMuhF6Jgdq8Y5vQZPqEd2o5rN/Q6Ogrh0Xnh9X2jUSrBEa2M3754/PI6s0wV5WDMHd0CgYEAiSI3ekbLBzXruONrDw7jNF9JPQOrRAIf79LyKzkA6ITViUXi33U+KKqo+G3XMKCAJS9nhHkcmkJ5JBZNCZVxXNPZYsd3jBEzMqmoGeGVcWEd3Cx+zKX7ViWk1g23z6GGzHv5bbAKqM/dk0INyUVu8gXb3iot3tYkoaEX6zPh0aECgYB96+VVkOgrqrsjK1+aKZUlRx2j+KODp+LtOGWZd8fADyHeWkUNMm5dEDnyGQnLEGmdSa3a4agaUsB+ejWYePOOVhprUO8kblVCTnu6N0pUvxNN5mPrnONs80UBQOSsBV3VSLieWoD3QLig6K2MBGJgrt/Uzq0awWFEtKMHboXUxQKBgGSMrKmUIMxMK3B6l/9ZRvxnERgG5ZjEm4twdDoKwYWgwc4kZD0Awrb8pQaF+VIMmQ+TC4EgJM5mqRAHwaMLQIHizTtxXnidj/pV+wDKmnt8sF8xU/y7qAXYRwTKdv9UOoFKd/8t4QnLibhHk0+qg6Tv9a7ynorUcCWt48hg7j2S" ],
-        "certificate" : [ "MIICoTCCAYkCBgGeocVOiDANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAl0cmF2ZWxhcHAwHhcNMjYwNjA3MTEwNzAzWhcNMzYwNjA3MTEwODQzWjAUMRIwEAYDVQQDDAl0cmF2ZWxhcHAwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCt7mArZciSsA6Ad0qJAksrEhm1NN+xXDZuR34E+0z5O5BkOJwsMvJJMnT/Gl7iH+cOlEAJDN+Dka0tz5iaVQSxTy+8Um/ZUebEMwz5gc9hKgoohJJZSES6yFHdAlfr34ZU9zbh874IZFQtT4vzJ7N6owOevOkaOgJVB8lbbV6oOuujf5XB6X9TWE8hBTAiBlHJVInYfZLb9cUIuZctWnY3xdhA8s2+PcYPqlXapX3an9bXbDUjsWslFDi31PdopgpTGKhQiDLZUlb8uf2utEurY2uScvSqG+qf3c8fyUCF62Ym3Sc953UeJovVC4A3tyaYFaOTOTKrs32bu7QjW8Y9AgMBAAEwDQYJKoZIhvcNAQELBQADggEBAEM+1zMF9yjXpu4YD0bkvtbvdSir96pCcFqju6Fr0u7TyrjG62xUfNyYRJ1+0uZ3vMItDwalQt6SlUV5PnAf6GcC+yzfeHjEbZO29mJpM97aYkTT8JSqvH7CiMaVJZlv32RqnjEg+f8CRMBmFCuVuV+s8jyiRxsrvdjgSlFJRNF7cDmv6gbzk4X9sYvKGwuXVO40vyNBC4d//ZTB+9/DMA1/iM2Oa1eTVf8oCa0bCcrnqr9eFOa2wYaieQRwmfl7nabuJJwXfYNaJ2upGEfudmDPoz/F5E0c0eeTJE6pH5S2YELe5Z2hNnwrIg38OaZENP3tJZ6DrY4Ty6nKZHoqXr0=" ],
-        "priority" : [ "100" ],
-        "algorithm" : [ "RSA-OAEP" ]
       }
     } ]
   },

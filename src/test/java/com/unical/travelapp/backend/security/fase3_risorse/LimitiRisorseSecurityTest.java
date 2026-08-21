@@ -9,12 +9,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.util.unit.DataSize;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Fase 3 - limiti su upload, transazioni e query.
@@ -54,6 +58,73 @@ class LimitiRisorseSecurityTest extends SecurityIntegrationTestBase {
         JsonNode corpo = objectMapper.readTree(risultato.getResponse().getContentAsString());
         assertThat(corpo.get("status").asInt()).isEqualTo(415);
         assertThat(corpo.has("traceId")).isTrue();
+    }
+
+    /**
+     * {@code POST /api/attivita/con-sessioni} scrive una riga per ogni giorno dell'intervallo
+     * che ricade nei giorni scelti: se l'ampiezza la decide il chiamante, una sola richiesta
+     * chiede milioni di insert in un'unica transazione. Il timeout la abortirebbe, ma solo
+     * dopo aver occupato per dieci secondi un thread e il database, e il rate limit consente
+     * di ripeterla decine di volte al minuto.
+     */
+    @Test
+    void unIntervalloSmisuratoVieneRifiutatoPrimaDiGenerareSessioni() throws Exception {
+        MvcResult risultato = mockMvc.perform(post("/api/attivita/con-sessioni")
+                        .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attivitaValida())
+                        .param("inizio", "0001-01-01")
+                        .param("fine", "9999-12-31")
+                        .param("giorni", "1", "2", "3", "4", "5", "6", "7"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        NessunLeak.verifica(risultato);
+        assertThat(sessioneRepository.count())
+                .as("il controllo deve scattare prima del ciclo, non lasciarne generare una parte")
+                .isZero();
+        assertThat(singolaAttivitaRepository.count())
+                .as("nemmeno l'attivita' deve restare salvata")
+                .isZero();
+    }
+
+    @Test
+    void unGiornoDellaSettimanaFuoriRangeVieneRifiutato() throws Exception {
+        mockMvc.perform(post("/api/attivita/con-sessioni")
+                        .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attivitaValida())
+                        .param("inizio", "2026-09-01")
+                        .param("fine", "2026-09-30")
+                        .param("giorni", "0", "9"))
+                .andExpect(status().isBadRequest())
+                // i vincoli sui parametri devono passare dal gestore globale come quelli sul
+                // corpo: senza un handler dedicato sarebbero un 500 per un errore del chiamante
+                .andExpect(jsonPath("$.errori.giorni").exists())
+                .andExpect(jsonPath("$.traceId").exists());
+    }
+
+    @Test
+    void unIntervalloNormaleContinuaAFunzionare() throws Exception {
+        mockMvc.perform(post("/api/attivita/con-sessioni")
+                        .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attivitaValida())
+                        .param("inizio", "2026-09-01")
+                        .param("fine", "2026-09-30")
+                        .param("giorni", "1"))
+                .andExpect(status().isOk());
+
+        assertThat(sessioneRepository.count())
+                .as("settembre 2026 ha quattro lunedi': il tetto non deve intralciare l'uso normale")
+                .isEqualTo(4);
+    }
+
+    private String attivitaValida() {
+        return """
+                {"titolo":"Tour del centro","luogo":"Cosenza","prezzo":25.00,
+                 "durataMinuti":90,"maxPartecipanti":10}
+                """;
     }
 
     @Test

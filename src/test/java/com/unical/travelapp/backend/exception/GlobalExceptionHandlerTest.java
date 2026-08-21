@@ -12,8 +12,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 // Verifica che il GlobalExceptionHandler risponda in formato RFC 7807 (ProblemDetail),
 // propaghi il traceId dall'MDC, e non esponga mai il messaggio grezzo di un'eccezione
@@ -93,5 +93,27 @@ class GlobalExceptionHandlerTest {
         assertThat(body.getTitle()).isEqualTo("Accesso negato");
         assertThat(body.getInstance().toString()).isEqualTo("/api/prenotazioni/42");
         assertThat(body.getStatus()).isEqualTo(403);
+    }
+
+    @Test
+    void conflittoOptimisticLockRispondeConConflict() {
+
+        ObjectOptimisticLockingFailureException ex =
+                new ObjectOptimisticLockingFailureException(
+                        "DisponibilitaItinerario",
+                        1L
+                );
+
+        ResponseEntity<ProblemDetail> response =
+                handler.handleOptimisticLock(ex, request());
+
+        assertThat(response.getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+
+        assertThat(response.getBody().getTitle())
+                .isEqualTo("Conflitto di concorrenza");
+
+        assertThat(response.getBody().getDetail())
+                .isEqualTo("La risorsa è stata modificata da un'altra operazione. Riprova.");
     }
 }

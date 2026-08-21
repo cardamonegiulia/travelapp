@@ -38,6 +38,8 @@ postman/environments/
 
 ### Log applicativi e di audit prodotti a runtime (anche dai test)
 logs/
-docs/.env
-travelApp_frontEnd/.gradle/
-travelApp_frontEnd/local.properties
+
+### Immagini caricate dagli utenti in sviluppo locale (default di app.storage.immagini.path)
+storage-immagini/
+docs/
+CLAUDE.md

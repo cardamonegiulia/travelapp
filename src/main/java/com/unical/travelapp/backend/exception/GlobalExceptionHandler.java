@@ -1,13 +1,20 @@
 package com.unical.travelapp.backend.exception;
 
+import com.unical.travelapp.backend.booking.exception.*;
 import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
 import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
 import com.unical.travelapp.backend.common.audit.AuditLogger;
 import com.unical.travelapp.backend.config.CorrelationIdFilter;
+import com.unical.travelapp.backend.experience.exeption.ArchiviazioneImmagineFallita;
+import com.unical.travelapp.backend.experience.exeption.ImmagineNonTrovata;
+import com.unical.travelapp.backend.experience.exeption.ImmagineNonValida;
 import com.unical.travelapp.backend.experience.exeption.ItinerarioNonTrovato;
 import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
+import com.unical.travelapp.backend.identity.exception.IdentityProviderNonDisponibileException;
+import com.unical.travelapp.backend.identity.exception.PasswordNonConformeException;
 import com.unical.travelapp.backend.identity.exception.RegistrazioneNonDisponibileException;
+import com.unical.travelapp.backend.identity.exception.RiautenticazioneRichiestaException;
 import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
 import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
 // Jackson 3 (tools.jackson): e' quello che Spring Boot 4 usa per (de)serializzare le
@@ -15,13 +22,6 @@ import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException
 // dipendenze: le sue eccezioni non verrebbero mai lanciate qui.
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.InvalidFormatException;
-import com.unical.travelapp.backend.booking.exception.AttivitaExtraNonValidaException;
-import com.unical.travelapp.backend.booking.exception.DisponibilitaNonTrovataException;
-import com.unical.travelapp.backend.booking.exception.PagamentoNonTrovatoException;
-import com.unical.travelapp.backend.booking.exception.PostiInsufficientiException;
-import com.unical.travelapp.backend.booking.exception.PrenotazioneNonTrovataException;
-import com.unical.travelapp.backend.booking.exception.RichiestaPrenotazioneNonValidaException;
-import com.unical.travelapp.backend.booking.exception.StatoPrenotazioneNonValidoException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -42,9 +43,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -89,6 +92,45 @@ public class GlobalExceptionHandler {
         log.error("Registrazione non disponibile su {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
         return respond(HttpStatus.SERVICE_UNAVAILABLE, "Servizio non disponibile",
                 "Registrazione temporaneamente non disponibile, riprovare più tardi", "servizio-non-disponibile", request);
+    }
+
+    // 503 - Un'altra operazione che scrive su Keycloak (cancellazione, aggiornamento del
+    // profilo) non e' andata a buon fine. Handler distinto da quello della registrazione,
+    // piu' specifico, che continua a vincere sulle proprie eccezioni.
+    @ExceptionHandler(IdentityProviderNonDisponibileException.class)
+    public ResponseEntity<ProblemDetail> handleIdentityProviderNonDisponibile(IdentityProviderNonDisponibileException ex, HttpServletRequest request) {
+        log.error("Operazione sull'identity provider fallita su {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+        return respond(HttpStatus.SERVICE_UNAVAILABLE, "Servizio non disponibile",
+                "Operazione temporaneamente non disponibile, riprovare più tardi", "servizio-non-disponibile", request);
+    }
+
+    // 400 - Password rifiutata dalla policy del realm Keycloak
+    @ExceptionHandler(PasswordNonConformeException.class)
+    public ResponseEntity<ProblemDetail> handlePasswordNonConforme(PasswordNonConformeException ex, HttpServletRequest request) {
+        return respond(HttpStatus.BAD_REQUEST, "Dati non validi", ex.getMessage(), "password-non-conforme", request);
+    }
+
+    // 401 - Token valido ma autenticazione troppo vecchia per un'operazione sensibile.
+    // L'header WWW-Authenticate segue RFC 9470: dice al client che deve rifare il login
+    // (con max_age), non che il token e' scaduto. Senza, un interceptor che tratta ogni 401
+    // come "rinnova col refresh token" entrerebbe in un ciclo, perche' il refresh non
+    // aggiorna auth_time.
+    @ExceptionHandler(RiautenticazioneRichiestaException.class)
+    public ResponseEntity<ProblemDetail> handleRiautenticazioneRichiesta(RiautenticazioneRichiestaException ex, HttpServletRequest request) {
+        auditLogger.failure("RIAUTENTICAZIONE_RICHIESTA", "endpoint",
+                request.getMethod() + " " + request.getRequestURI(), ex.getMessage());
+
+        ProblemDetail pd = buildProblemDetail(HttpStatus.UNAUTHORIZED, "Riautenticazione richiesta",
+                "L'operazione richiede un'autenticazione recente: ripetere il login",
+                "riautenticazione-richiesta", request);
+        pd.setProperty("maxAge", ex.getEtaMassimaSecondi());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header(HttpHeaders.WWW_AUTHENTICATE,
+                        "Bearer error=\"insufficient_user_authentication\", "
+                                + "error_description=\"A recent authentication is required\", "
+                                + "max_age=\"" + ex.getEtaMassimaSecondi() + "\"")
+                .body(pd);
     }
 
     // 400 - Validazioni fallite (@NotBlank, @Email, @Size sul DTO)
@@ -142,9 +184,21 @@ public class GlobalExceptionHandler {
     }
 
     // 409 - Stato prenotazione/pagamento non valido
-    @ExceptionHandler(StatoPrenotazioneNonValidoException.class)
-    public ResponseEntity<ProblemDetail> handleStatoPrenotazioneNonValido(StatoPrenotazioneNonValidoException ex, HttpServletRequest request) {
-        return respond(HttpStatus.CONFLICT, "Conflitto", ex.getMessage(), "stato-non-valido", request);
+    @ExceptionHandler({
+            StatoPrenotazioneNonValidoException.class,
+            StatoPagamentoNonValidoException.class
+    })
+    public ResponseEntity<ProblemDetail> handleStatoNonValido(
+            RuntimeException ex,
+            HttpServletRequest request) {
+
+        return respond(
+                HttpStatus.CONFLICT,
+                "Conflitto",
+                ex.getMessage(),
+                "stato-non-valido",
+                request
+        );
     }
 
     // 400 - JSON malformato o con campi non previsti dal DTO (es. FAIL_ON_UNKNOWN_PROPERTIES)
@@ -264,6 +318,25 @@ public class GlobalExceptionHandler {
                 "Il contenuto inviato supera la dimensione massima consentita", "contenuto-troppo-grande", request);
     }
 
+    // 400 - Vincoli violati sui parametri del metodo di controller (@Min, @Size, ... su
+    // @RequestParam/@PathVariable). E' l'equivalente di handleValidazione per cio' che non
+    // arriva nel corpo: senza questo handler finirebbe nell'Exception generico, cioe' un 500
+    // per un errore del chiamante.
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ProblemDetail> handleValidazioneParametri(HandlerMethodValidationException ex, HttpServletRequest request) {
+        Map<String, String> errori = new HashMap<>();
+        ex.getParameterValidationResults().forEach(risultato -> {
+            String parametro = risultato.getMethodParameter().getParameterName();
+            risultato.getResolvableErrors().forEach(errore ->
+                    errori.put(parametro == null ? "parametro" : parametro, errore.getDefaultMessage()));
+        });
+
+        ProblemDetail pd = buildProblemDetail(HttpStatus.BAD_REQUEST, "Dati non validi",
+                "Uno o più parametri della richiesta non superano la validazione", "validazione-fallita", request);
+        pd.setProperty("errori", errori);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
+    }
+
     // 400 - Parametro di richiesta assente o non convertibile nel tipo atteso
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
     public ResponseEntity<ProblemDetail> handleParametroNonValido(Exception ex, HttpServletRequest request) {
@@ -313,6 +386,31 @@ public class GlobalExceptionHandler {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
     }
 
+    // 400 - Upload rifiutato dai controlli sul file (dimensione, estensione, tipo reale del
+    // contenuto). Il messaggio del service e' scritto per essere mostrato all'utente e non
+    // rivela nulla dello storage.
+    @ExceptionHandler(ImmagineNonValida.class)
+    public ResponseEntity<ProblemDetail> handleImmagineNonValida(ImmagineNonValida ex, HttpServletRequest request) {
+        auditLogger.failure("IMMAGINE_RIFIUTATA", "endpoint",
+                request.getMethod() + " " + request.getRequestURI(), ex.getMessage());
+        return respond(HttpStatus.BAD_REQUEST, "File non valido", ex.getMessage(), "immagine-non-valida", request);
+    }
+
+    // 404 - Immagine inesistente, oppure esistente ma non del chiamante (vedi ImmagineService)
+    @ExceptionHandler(ImmagineNonTrovata.class)
+    public ResponseEntity<ProblemDetail> handleImmagineNonTrovata(ImmagineNonTrovata ex, HttpServletRequest request) {
+        return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
+    }
+
+    // 500 - Storage non disponibile (disco pieno, permessi, cartella non scrivibile). Il
+    // motivo reale resta nei log: nel body finirebbero percorsi del filesystem del server.
+    @ExceptionHandler(ArchiviazioneImmagineFallita.class)
+    public ResponseEntity<ProblemDetail> handleArchiviazioneFallita(ArchiviazioneImmagineFallita ex, HttpServletRequest request) {
+        log.error("Archiviazione immagine fallita su {} {}", request.getMethod(), request.getRequestURI(), ex);
+        return respond(HttpStatus.INTERNAL_SERVER_ERROR, "Errore interno",
+                "Non e' stato possibile completare l'operazione sull'immagine", "errore-interno", request);
+    }
+
     private ResponseEntity<ProblemDetail> respond(HttpStatus status, String title, String detail, String typeSlug, HttpServletRequest request) {
         return ResponseEntity.status(status).body(buildProblemDetail(status, title, detail, typeSlug, request));
     }
@@ -324,5 +422,19 @@ public class GlobalExceptionHandler {
         problemDetail.setInstance(URI.create(request.getRequestURI()));
         problemDetail.setProperty("traceId", MDC.get(CorrelationIdFilter.MDC_KEY));
         return problemDetail;
+    }
+    // 409 - Conflitto di concorrenza sulla disponibilità dei posti
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ProblemDetail> handleOptimisticLock(
+            ObjectOptimisticLockingFailureException ex,
+            HttpServletRequest request) {
+
+        return respond(
+                HttpStatus.CONFLICT,
+                "Conflitto di concorrenza",
+                "La risorsa è stata modificata da un'altra operazione. Riprova.",
+                "conflitto-concorrenza",
+                request
+        );
     }
 }

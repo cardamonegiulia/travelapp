@@ -6,11 +6,8 @@ import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -20,8 +17,8 @@ import java.time.LocalDateTime;
 // NOArgs costruttore vuoto
 //All arg il contrario costurttore con tutti i campi
 
-@Data
-@EqualsAndHashCode(callSuper = false)
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -31,6 +28,9 @@ public class Prenotazione extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Version
+    private Long version;
 
     @ManyToOne
     @JoinColumn(nullable = false)

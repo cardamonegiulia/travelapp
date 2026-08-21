@@ -3,7 +3,6 @@ package com.unical.travelapp.backend.booking.service;
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.booking.exception.PrenotazioneNonTrovataException;
 import com.unical.travelapp.backend.booking.repositories.ExtraPrenotazioneRepository;
-import com.unical.travelapp.backend.booking.repositories.PagamentoRepository;
 import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
 import com.unical.travelapp.backend.catalog.repository.AttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.DisponibilitaItinerarioRepository;
@@ -25,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
+
 // Verifica il fix BOLA: getPrenotazioneById/getPrenotazioniByUtente usano l'ownership
 // nella query (404 se la prenotazione non e' dell'utente corrente), non un semplice findById.
 @ExtendWith(MockitoExtension.class)
@@ -32,16 +32,16 @@ class PrenotazioneServiceOwnershipTest {
 
     @Mock private PrenotazioneRepository prenotazioneRepo;
     @Mock private ExtraPrenotazioneRepository extraPrenotazioneRepo;
-    @Mock private PagamentoRepository pagamentoRepo;
     @Mock private AttivitaRepository attivitaRepo;
     @Mock private UtenteRepository utenteRepository;
     @Mock private DisponibilitaItinerarioRepository disponibilitaItinerarioRepository;
     @Mock private SessioneSingolaAttivitaRepository sessioneSingolaAttivitaRepository;
     @Mock private UtenteService utenteService;
+    @Mock private PagamentoService pagamentoService;
 
     private PrenotazioneService service() {
-        return new PrenotazioneService(prenotazioneRepo, extraPrenotazioneRepo, pagamentoRepo, attivitaRepo,
-                utenteRepository, disponibilitaItinerarioRepository, sessioneSingolaAttivitaRepository, utenteService);
+        return new PrenotazioneService(prenotazioneRepo, extraPrenotazioneRepo, attivitaRepo,
+                utenteRepository, disponibilitaItinerarioRepository, sessioneSingolaAttivitaRepository, utenteService, pagamentoService);
     }
 
     private Utente utente(Long id) {
@@ -91,4 +91,5 @@ class PrenotazioneServiceOwnershipTest {
         assertThatThrownBy(() -> service().getPrenotazioniByUtente(2L, pageable))
                 .isInstanceOf(AccessDeniedException.class);
     }
+
 }

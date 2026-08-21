@@ -13,6 +13,9 @@ public class DisponibilitaItinerario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private Long version;
+
     @ManyToOne
     @JoinColumn(name = "itinerario_id")
     private Itinerario itinerario;

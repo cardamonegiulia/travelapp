@@ -1,15 +1,15 @@
 package com.unical.travelapp.backend.identity.controller;
 
 import com.unical.travelapp.backend.common.audit.AuditLogger;
+import com.unical.travelapp.backend.identity.dto.CambioPasswordRequest;
 import com.unical.travelapp.backend.identity.dto.UtenteDto;
 import com.unical.travelapp.backend.identity.dto.UtenteResponseDto;
 import com.unical.travelapp.backend.identity.dto.UtenteUpdateDto;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,8 +22,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/utenti")
-@Tag(name = "Utenti", description = "Gestione degli utenti")
-@SecurityRequirement(name = "bearerAuth")
 public class UtenteController {
 
     private final UtenteService utenteService;
@@ -36,17 +34,8 @@ public class UtenteController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(
-            summary = "Crea il record locale di un utente già esistente su Keycloak",
-            description = "Uso amministrativo. La registrazione self-service passa da POST /api/auth/registrazione. Solo ADMIN."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Utente creato con successo"),
-            @ApiResponse(responseCode = "400", description = "Dati non validi"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "403", description = "Permessi insufficienti — solo ADMIN"),
-            @ApiResponse(responseCode = "409", description = "Utente già esistente con stessa email o keycloakId")
-    })
+    @Operation(summary = "Crea il record locale di un utente già esistente su Keycloak (uso amministrativo). "
+            + "La registrazione self-service passa da POST /api/auth/registrazione")
     public ResponseEntity<UtenteResponseDto> creaUtente(@Valid @RequestBody UtenteDto utenteDto) {
         UtenteResponseDto creato = utenteService.salvaUtenteDatoDTO(utenteDto);
         auditLogger.success("UTENTE_CREATO", "Utente", String.valueOf(creato.getId()));
@@ -55,50 +44,19 @@ public class UtenteController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(
-            summary = "Restituisce tutti gli utenti paginati",
-            description = "Accessibile solo da ADMIN. Default 20 utenti per pagina."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista utenti restituita con successo"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "403", description = "Permessi insufficienti — solo ADMIN")
-    })
-    public ResponseEntity<Page<UtenteResponseDto>> getTuttiGliUtenti(
-            @PageableDefault(size = 20) Pageable pageable) {
+    public ResponseEntity<Page<UtenteResponseDto>> getTuttiGliUtenti(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(utenteService.ottieniTutti(pageable));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @utenteSecurity.isSelf(#id, authentication)")
-    @Operation(
-            summary = "Restituisce un utente per id",
-            description = "Accessibile da ADMIN o dal proprietario dell'account. Restituisce 404 se la risorsa non appartiene all'utente."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Utente trovato"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "403", description = "Permessi insufficienti"),
-            @ApiResponse(responseCode = "404", description = "Utente non trovato")
-    })
     public ResponseEntity<UtenteResponseDto> getUtentePerId(@PathVariable Long id) {
         return ResponseEntity.ok(utenteService.ottieniPerId(id));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @utenteSecurity.isSelf(#id, authentication)")
-    @Operation(
-            summary = "Aggiorna i dati di un utente",
-            description = "Accessibile da ADMIN o dal proprietario dell'account. Permette di modificare nome, cognome, email e tema."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Utente aggiornato con successo"),
-            @ApiResponse(responseCode = "400", description = "Dati non validi"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "403", description = "Permessi insufficienti"),
-            @ApiResponse(responseCode = "404", description = "Utente non trovato"),
-            @ApiResponse(responseCode = "409", description = "Email già in uso da un altro utente")
-    })
+    @Operation(summary = "Aggiorna i dati di un utente")
     public ResponseEntity<UtenteResponseDto> aggiornaUtente(
             @PathVariable Long id,
             @Valid @RequestBody UtenteUpdateDto utenteUpdateDto) {
@@ -109,16 +67,7 @@ public class UtenteController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @utenteSecurity.isSelf(#id, authentication)")
-    @Operation(
-            summary = "Elimina un utente per id",
-            description = "Accessibile da ADMIN o dal proprietario dell'account. L'eliminazione è permanente."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Utente eliminato con successo"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "403", description = "Permessi insufficienti"),
-            @ApiResponse(responseCode = "404", description = "Utente non trovato")
-    })
+    @Operation(summary = "Elimina un utente per id")
     public ResponseEntity<Void> eliminaUtente(@PathVariable Long id) {
         utenteService.eliminaUtente(id);
         auditLogger.success("UTENTE_ELIMINATO", "Utente", String.valueOf(id));
@@ -126,16 +75,30 @@ public class UtenteController {
     }
 
     @PostMapping("/me")
-    @Operation(
-            summary = "Sincronizza l'utente loggato con il database locale",
-            description = "Da chiamare al primo accesso dopo il login con Keycloak. Crea il record locale se non esiste, altrimenti restituisce quello esistente."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Utente sincronizzato con successo"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "500", description = "Errore interno del server")
-    })
+    @Operation(summary = "Sincronizza l'utente loggato con il database locale")
     public ResponseEntity<UtenteResponseDto> sincronizzaUtente(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(utenteService.sincronizzaUtente(jwt));
+    }
+
+    @PostMapping("/me/password")
+    @Operation(
+            summary = "Cambia la password dell'utente autenticato",
+            description = "Richiede un'autenticazione recente: il token deve portare un claim "
+                    + "auth_time non piu' vecchio di app.security.max-auth-age-seconds. In caso "
+                    + "contrario risponde 401 con WWW-Authenticate: il client deve rifare il "
+                    + "login con max_age, non rinnovare il token col refresh. Al termine tutte "
+                    + "le sessioni dell'utente vengono chiuse: serve un nuovo login."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Password cambiata; sessioni terminate"),
+            @ApiResponse(responseCode = "400", description = "Password non conforme ai requisiti", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Autenticazione assente o troppo vecchia", content = @Content),
+            @ApiResponse(responseCode = "503", description = "Keycloak non disponibile", content = @Content)
+    })
+    public ResponseEntity<Void> cambiaPassword(@AuthenticationPrincipal Jwt jwt,
+                                               @Valid @RequestBody CambioPasswordRequest richiesta) {
+        Long id = utenteService.cambiaPassword(jwt, richiesta.getNuovaPassword());
+        auditLogger.success("PASSWORD_CAMBIATA", "Utente", String.valueOf(id));
+        return ResponseEntity.noContent().build();
     }
 }

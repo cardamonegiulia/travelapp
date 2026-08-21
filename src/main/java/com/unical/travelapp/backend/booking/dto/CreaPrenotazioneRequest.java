@@ -2,7 +2,6 @@ package com.unical.travelapp.backend.booking.dto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,11 +25,5 @@ public class CreaPrenotazioneRequest {
     private Integer numeroPartecipanti;
     //attivita opzionali
     private List<@Positive(message = "id attività extra non valido") Long> attivitaExtraIds;
-    //se e sessioni singola o it
-    @Size(max = 30, message = "tipoPrenotazione non può superare i 30 caratteri")
-    private String tipoPrenotazione;
-    @Size(max = 150, message = "titolo non può superare i 150 caratteri")
-    private String titolo;
-    @Size(max = 150, message = "luogo non può superare i 150 caratteri")
-    private String luogo;
+
 }

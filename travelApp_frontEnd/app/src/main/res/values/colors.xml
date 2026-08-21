@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Sfondo delle schermate Compose: tenuto allineato a BackgroundLavender
+         in ui/theme/Color.kt, cosi' la status bar non stacca dal contenuto. -->
+    <color name="background_lavender">#FFF3F1FB</color>
 </resources>
