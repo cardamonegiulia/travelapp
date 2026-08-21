@@ -5,6 +5,9 @@ import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoExcept
 import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
 import com.unical.travelapp.backend.common.audit.AuditLogger;
 import com.unical.travelapp.backend.config.CorrelationIdFilter;
+import com.unical.travelapp.backend.experience.exeption.ArchiviazioneImmagineFallita;
+import com.unical.travelapp.backend.experience.exeption.ImmagineNonTrovata;
+import com.unical.travelapp.backend.experience.exeption.ImmagineNonValida;
 import com.unical.travelapp.backend.experience.exeption.ItinerarioNonTrovato;
 import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
@@ -381,6 +384,31 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SingolaAttivitaNonTrovataException.class)
     public ResponseEntity<ProblemDetail> handleSingolaAttivitaNonTrovata(SingolaAttivitaNonTrovataException ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
+    }
+
+    // 400 - Upload rifiutato dai controlli sul file (dimensione, estensione, tipo reale del
+    // contenuto). Il messaggio del service e' scritto per essere mostrato all'utente e non
+    // rivela nulla dello storage.
+    @ExceptionHandler(ImmagineNonValida.class)
+    public ResponseEntity<ProblemDetail> handleImmagineNonValida(ImmagineNonValida ex, HttpServletRequest request) {
+        auditLogger.failure("IMMAGINE_RIFIUTATA", "endpoint",
+                request.getMethod() + " " + request.getRequestURI(), ex.getMessage());
+        return respond(HttpStatus.BAD_REQUEST, "File non valido", ex.getMessage(), "immagine-non-valida", request);
+    }
+
+    // 404 - Immagine inesistente, oppure esistente ma non del chiamante (vedi ImmagineService)
+    @ExceptionHandler(ImmagineNonTrovata.class)
+    public ResponseEntity<ProblemDetail> handleImmagineNonTrovata(ImmagineNonTrovata ex, HttpServletRequest request) {
+        return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
+    }
+
+    // 500 - Storage non disponibile (disco pieno, permessi, cartella non scrivibile). Il
+    // motivo reale resta nei log: nel body finirebbero percorsi del filesystem del server.
+    @ExceptionHandler(ArchiviazioneImmagineFallita.class)
+    public ResponseEntity<ProblemDetail> handleArchiviazioneFallita(ArchiviazioneImmagineFallita ex, HttpServletRequest request) {
+        log.error("Archiviazione immagine fallita su {} {}", request.getMethod(), request.getRequestURI(), ex);
+        return respond(HttpStatus.INTERNAL_SERVER_ERROR, "Errore interno",
+                "Non e' stato possibile completare l'operazione sull'immagine", "errore-interno", request);
     }
 
     private ResponseEntity<ProblemDetail> respond(HttpStatus status, String title, String detail, String typeSlug, HttpServletRequest request) {

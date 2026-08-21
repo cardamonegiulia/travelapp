@@ -35,6 +35,15 @@ app:
     require-https: false
     cors:
       allowed-origins: https://app.travelapp.test,http://localhost:3000
+  storage:
+    immagini:
+      # sotto target/: gia' ignorato da git e ripulito da "mvn clean", cosi' i test non
+      # lasciano file nella cartella di lavoro dello sviluppatore
+      path: target/test-storage-immagini
+      max-size-byte: 5242880
+      max-lato-pixel: 10000
+      max-per-risorsa: 10
+      base-url: /api/immagini
   ratelimit:
     # capienza alta di default: il rate limiting non deve interferire con i test
     # funzionali. Le classi che lo collaudano abbassano il valore con @TestPropertySource

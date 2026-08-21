@@ -3,10 +3,17 @@ package com.unical.travelapp.backend.catalog.mapper;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
+import com.unical.travelapp.backend.experience.mapper.ImmagineMapper;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ItinerarioMapper {
+
+    private final ImmagineMapper immagineMapper;
+
+    public ItinerarioMapper(ImmagineMapper immagineMapper) {
+        this.immagineMapper = immagineMapper;
+    }
 
     // id/organizzatore/stato non sono nel DTO di request: li imposta il chiamante (controller)
     public Itinerario fromRequest(ItinerarioRequestDTO dto) {
@@ -34,6 +41,7 @@ public class ItinerarioMapper {
         dto.setDurataGiorni(itinerario.getDurataGiorni());
         dto.setMaxPartecipanti(itinerario.getMaxPartecipanti());
         dto.setStato(itinerario.getStato());
+        dto.setImmagini(immagineMapper.toResponse(itinerario.getImmagini()));
 
         if (itinerario.getOrganizzatore() != null) {
             dto.setOrganizzatoreId(itinerario.getOrganizzatore().getId());

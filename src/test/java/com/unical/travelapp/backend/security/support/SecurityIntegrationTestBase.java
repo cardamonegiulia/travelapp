@@ -20,6 +20,7 @@ import com.unical.travelapp.backend.catalog.repository.SingolaAttivitaRepository
 import com.unical.travelapp.backend.catalog.repository.TappaRepository;
 import com.unical.travelapp.backend.experience.models.Recensione;
 import com.unical.travelapp.backend.experience.repository.PreferitoRepository;
+import com.unical.travelapp.backend.experience.repository.ImmagineRepository;
 import com.unical.travelapp.backend.experience.repository.RecensioneRepository;
 import com.unical.travelapp.backend.identity.entity.Ruolo;
 import com.unical.travelapp.backend.identity.entity.Tema;
@@ -65,6 +66,7 @@ public abstract class SecurityIntegrationTestBase {
     @Autowired protected PrenotazioneRepository prenotazioneRepository;
     @Autowired protected PagamentoRepository pagamentoRepository;
     @Autowired protected RecensioneRepository recensioneRepository;
+    @Autowired protected ImmagineRepository immagineRepository;
     @Autowired protected PreferitoRepository preferitoRepository;
     @Autowired protected ExtraPrenotazioneRepository extraPrenotazioneRepository;
     @Autowired protected SessioneSingolaAttivitaRepository sessioneRepository;
@@ -79,6 +81,8 @@ public abstract class SecurityIntegrationTestBase {
 
     @BeforeEach
     void ripulisciIlDatabase() {
+        // per prime le immagini: sono figlie di recensioni e itinerari
+        immagineRepository.deleteAll();
         extraPrenotazioneRepository.deleteAll();
         pagamentoRepository.deleteAll();
         recensioneRepository.deleteAll();
