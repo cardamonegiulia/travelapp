@@ -4,6 +4,8 @@ import com.unical.travelapp.backend.experience.models.DTO.PreferitoDTO;
 import com.unical.travelapp.backend.experience.models.DTO.PreferitoItinerarioRequest;
 import com.unical.travelapp.backend.experience.services.PreferitoService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,6 +28,11 @@ public class PreferitoController {
             summary = "Restituisce la lista dei preferiti dell'utente",
             description = "Accessibile da qualsiasi utente autenticato. Restituisce sempre e solo i preferiti dell'utente loggato. Restituisce 404 se non ha preferiti."
     )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista preferiti restituita con successo"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
+            @ApiResponse(responseCode = "404", description = "Nessun preferito trovato per l'utente")
+    })
     public ResponseEntity<?> getPreferiti() {
         PreferitoDTO dto = service.getPreferiti();
         if (dto != null) {
@@ -39,6 +46,12 @@ public class PreferitoController {
             summary = "Aggiunge un itinerario alla lista dei preferiti",
             description = "Accessibile da qualsiasi utente autenticato. Riceve l'id di un itinerario e lo aggiunge alla lista dei preferiti dell'utente loggato."
     )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Itinerario aggiunto ai preferiti con successo"),
+            @ApiResponse(responseCode = "400", description = "Dati non validi"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
+            @ApiResponse(responseCode = "404", description = "Itinerario non trovato")
+    })
     public ResponseEntity<?> addItinerarioNeiPreferiti(
             @Valid @RequestBody PreferitoItinerarioRequest request) {
         service.addPreferito(request.getItinerarioId());
@@ -50,6 +63,12 @@ public class PreferitoController {
             summary = "Rimuove un itinerario dalla lista dei preferiti",
             description = "Accessibile da qualsiasi utente autenticato. Riceve l'id di un itinerario e lo rimuove dalla lista dei preferiti dell'utente loggato."
     )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Itinerario rimosso dai preferiti con successo"),
+            @ApiResponse(responseCode = "400", description = "Dati non validi"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
+            @ApiResponse(responseCode = "404", description = "Itinerario non trovato nei preferiti")
+    })
     public ResponseEntity<?> removeItinerarioDaPreferiti(
             @Valid @RequestBody PreferitoItinerarioRequest request) {
         service.removePreferito(request.getItinerarioId());
