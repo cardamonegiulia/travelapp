@@ -2,32 +2,49 @@ package com.example.travelapp.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-/**
- * Palette dell'app.
- *
- * Il progetto non ha (ancora) un tema Compose: i colori vivono solo in
- * res/values/colors.xml e servono al tema View di AppCompat. Finche' non
- * esistera' un TravelAppTheme, le schermate Compose fanno riferimento a
- * questi valori invece di ripetere letterali esadecimali sparsi nel codice.
- */
+// ── Primari ──────────────────────────────────────────────────────────────────
+val PrimaryBlue = Color(0xFF1B6FA8)       // blu adriatico — colore primario
+val PrimaryDark = Color(0xFF0D4A73)       // primario scuro
+val PrimaryLight = Color(0xFF4C9FD8)      // primario dark mode
+val NavSelectedBlue = PrimaryBlue        // alias per compatibilità
+val NavUnselected = Color(0xFF9CA3AF)
 
-// Superfici
-val BackgroundLavender = Color(0xFFF3F1FB)
-val SurfaceWhite = Color(0xFFFFFFFF)
+// ── Accenti ──────────────────────────────────────────────────────────────────
+val AccentOrange = Color(0xFFF2994A)      // CTA acquisto light
+val AccentOrangeDark = Color(0xFFF2A65A)  // CTA acquisto dark
 
-// Testi
-val TextPrimary = Color(0xFF1C1B1F)
-val TextSecondary = Color(0xFF8A8896)
-val ChevronGrey = Color(0xFFC4C2CE)
+// ── Semantici ────────────────────────────────────────────────────────────────
+val SuccessGreen = Color(0xFF2E9E5B)
+val WarningYellow = Color(0xFFB8860B)
+val WarningBackground = Color(0xFFFFF4D6)
+val ErrorRed = Color(0xFFEB5757)
+val LogoutRed = ErrorRed
+val LogoutBackground = Color(0xFFFFEAEA)
 
-// Accenti
-val AccentOrange = Color(0xFFFF9800)
-val NavSelectedBlue = Color(0xFF2F6BFF)
-val NavUnselected = Color(0xFF9A98A6)
+// ── Sfondi e superfici ───────────────────────────────────────────────────────
+val BackgroundLight = Color(0xFFF7F8FA)
+val BackgroundLavender = BackgroundLight  // alias per compatibilità
+val SurfaceLight = Color(0xFFFFFFFF)
+val SurfaceWhite = SurfaceLight          // alias per compatibilità
+val BackgroundDark = Color(0xFF121417)
+val SurfaceDark = Color(0xFF1C1F23)
 
-// Badge circolari delle voci di menu (sfondo pastello + tinta icona)
-val BadgeBlue = Color(0xFFE3EEFF)
-val IconBlue = Color(0xFF2F80ED)
+// ── Testi ────────────────────────────────────────────────────────────────────
+val TextPrimaryLight = Color(0xFF1A1D1F)
+val TextPrimary = TextPrimaryLight       // alias per compatibilità
+val TextSecondaryLight = Color(0xFF6B7280)
+val TextSecondary = TextSecondaryLight   // alias per compatibilità
+val TextPrimaryDark = Color(0xFFF2F3F4)
+val TextSecondaryDark = Color(0xFF9CA3AF)
+
+// ── Utility ──────────────────────────────────────────────────────────────────
+val DividerColor = Color(0xFFE5E7EB)
+val ChevronGrey = DividerColor           // alias per compatibilità
+val SkeletonColor = Color(0xFFE9EAEC)
+
+// ── Badge circolari ───────────────────────────────────────────────────────────
+val BadgeBlue = Color(0xFFD0E8F5)
+val IconBlue = PrimaryBlue
 val BadgeTeal = Color(0xFFDDF5F0)
 val IconTeal = Color(0xFF13A594)
 val BadgePink = Color(0xFFFFE4EC)
@@ -38,7 +55,3 @@ val BadgeIndigo = Color(0xFFE6E9FF)
 val IconIndigo = Color(0xFF5B6BE1)
 val BadgeGrey = Color(0xFFECECF2)
 val IconGrey = Color(0xFF6B6A76)
-
-// Logout
-val LogoutBackground = Color(0xFFFDEAEA)
-val LogoutRed = Color(0xFFE53935)
