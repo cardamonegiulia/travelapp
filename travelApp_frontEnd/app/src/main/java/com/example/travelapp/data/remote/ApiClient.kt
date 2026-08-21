@@ -10,16 +10,21 @@ import java.util.concurrent.TimeUnit
 object ApiClient {
 
     /**
-     * Backend di sviluppo. `10.0.2.2` è l'indirizzo con cui l'emulatore Android raggiunge
-     * il `localhost` della macchina che lo ospita: `127.0.0.1`, dentro l'emulatore, è
-     * l'emulatore stesso.
+     * Backend di sviluppo, raggiunto da un telefono fisico: qui va l'IP della macchina di
+     * sviluppo sulla rete locale, l'unico indirizzo che il telefono può comporre. Cambia
+     * se il router ne assegna un altro via DHCP, e va tenuto allineato all'elenco di
+     * `res/xml/network_security_config.xml`, che autorizza il traffico in chiaro host per
+     * host.
+     *
+     * Sull'**emulatore** va invece usato `http://10.0.2.2:8081/`: `10.0.2.2` è l'alias con
+     * cui l'emulatore raggiunge il `localhost` della macchina che lo ospita, perché
+     * `127.0.0.1`, lì dentro, è l'emulatore stesso. Su un telefono fisico quell'indirizzo
+     * non esiste e ogni chiamata fallisce con "failed to connect".
      *
      * La porta è quella di `mvnw spring-boot:run` (`server.port=8081`). Con
-     * `docker compose up` il backend sta invece sulla 8080: è l'unico valore da cambiare.
-     * Su dispositivo fisico va messo l'IP della macchina sulla rete locale, e l'host va
-     * aggiunto a `res/xml/network_security_config.xml`.
+     * `docker compose up` il backend sta invece sulla 8080.
      */
-    const val BASE_URL: String = "http://10.0.2.2:8081/"
+    const val BASE_URL: String = "http://10.145.178.54:8081/"
 
     /**
      * Client condiviso. OkHttp è pensato per essere istanziato una volta sola: ogni

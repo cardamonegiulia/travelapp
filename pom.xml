@@ -28,6 +28,7 @@
     </scm>
     <properties>
         <java.version>17</java.version>
+        <aws.sdk.version>2.31.78</aws.sdk.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -36,6 +37,14 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
                 <version>1.21.3</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- SDK AWS: il bom allinea le versioni dei moduli fra loro -->
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws.sdk.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -99,6 +108,14 @@
             <groupId>com.bucket4j</groupId>
             <artifactId>bucket4j-core</artifactId>
             <version>8.10.1</version>
+        </dependency>
+        <!-- Client S3, usato dallo storage esterno delle immagini (app.storage.immagini.tipo=s3).
+             Vale per qualunque servizio compatibile S3: Cloudflare R2, MinIO, S3 di AWS.
+             La dipendenza c'e' sempre, ma il client viene istanziato solo se quel tipo e'
+             attivo (vedi ConfigurazioneArchivioImmagini). -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
         </dependency>
 
         <!-- Test: post-processor jwt()/SecurityMockMvc per i test di autorizzazione sulla catena reale -->

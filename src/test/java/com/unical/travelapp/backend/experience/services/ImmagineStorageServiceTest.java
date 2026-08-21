@@ -3,6 +3,7 @@ package com.unical.travelapp.backend.experience.services;
 import com.unical.travelapp.backend.experience.exeption.ImmagineNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.ImmagineNonValida;
 import com.unical.travelapp.backend.experience.services.ImmagineStorageService.ImmagineArchiviata;
+import com.unical.travelapp.backend.experience.services.storage.ArchivioFilesystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,7 @@ class ImmagineStorageServiceTest {
 
     @BeforeEach
     void setUp() {
-        storage = new ImmagineStorageService(cartellaStorage.toString(), CINQUE_MB, 10000);
+        storage = new ImmagineStorageService(new ArchivioFilesystem(cartellaStorage.toString()), CINQUE_MB, 10000);
     }
 
 
@@ -84,7 +85,7 @@ class ImmagineStorageServiceTest {
     void rifiutaFileTroppoGrande() throws IOException {
         // service con limite di 100 byte: qualunque PNG valido lo supera
         ImmagineStorageService storageStretto =
-                new ImmagineStorageService(cartellaStorage.toString(), 100, 10000);
+                new ImmagineStorageService(new ArchivioFilesystem(cartellaStorage.toString()), 100, 10000);
         MultipartFile file = file("grande.png", "png", immagine(200, 200, "png"));
 
         assertThatThrownBy(() -> storageStretto.salva(file))
@@ -138,7 +139,7 @@ class ImmagineStorageServiceTest {
     @DisplayName("un'immagine con lati oltre il limite viene rifiutata (decompression bomb)")
     void rifiutaImmagineTroppoGrandeInPixel() throws IOException {
         ImmagineStorageService storageStretto =
-                new ImmagineStorageService(cartellaStorage.toString(), CINQUE_MB, 50);
+                new ImmagineStorageService(new ArchivioFilesystem(cartellaStorage.toString()), CINQUE_MB, 50);
         MultipartFile file = file("enorme.png", "image/png", immagine(100, 100, "png"));
 
         assertThatThrownBy(() -> storageStretto.salva(file))
