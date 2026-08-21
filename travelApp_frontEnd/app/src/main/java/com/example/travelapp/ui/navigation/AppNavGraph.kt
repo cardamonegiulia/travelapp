@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,13 +18,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.travelapp.ui.components.AppBottomBar
+import com.example.travelapp.ui.profilo.ProfiloViewModel
 import com.example.travelapp.ui.screens.BookingsScreen
 import com.example.travelapp.ui.screens.ExploreScreen
 import com.example.travelapp.ui.screens.FavoritesScreen
 import com.example.travelapp.ui.screens.ProfileScreen
-import com.example.travelapp.ui.screens.ProfileUiState
 import com.example.travelapp.ui.screens.sampleFavoriteTrips
 import com.example.travelapp.ui.theme.BackgroundLavender
 
@@ -98,37 +100,29 @@ private fun FavoritesRoute(onBack: () -> Unit) {
 }
 
 /**
- * Collega [ProfileScreen] a una sorgente di stato.
+ * Collega [ProfileScreen] al suo [ProfiloViewModel], che tiene lo stato e parla col
+ * backend.
  *
- * I dati dell'utente sono ancora segnaposto: il punto di innesto naturale e'
- * `ProfiloViewModel`, che dovra' esporre un [ProfileUiState] alimentato da
- * `UtenteRepository`.
+ * Lo stato vive nel ViewModel e non in un `remember` locale perche' il caricamento della
+ * foto e' asincrono: con lo stato nella composizione una rotazione dello schermo lo
+ * butterebbe via a meta' upload.
  */
 @Composable
 private fun ProfileRoute(
     onBack: () -> Unit,
-    onNavigateTo: (AppDestination) -> Unit
+    onNavigateTo: (AppDestination) -> Unit,
+    viewModel: ProfiloViewModel = viewModel()
 ) {
-    var state by remember {
-        mutableStateOf(
-            ProfileUiState(
-                name = "Mario Rossi",
-                email = "mario@example.it",
-                avatarUrl = null,
-                isDarkModeEnabled = false
-            )
-        )
-    }
+    val state by viewModel.state.collectAsState()
 
     // Photo picker di sistema: non richiede permessi, l'accesso all'immagine
-    // scelta vale per la sessione corrente.
-    // TODO: caricare la foto sul backend quando l'endpoint sara' disponibile;
-    // per ora resta solo nello stato in memoria.
+    // scelta vale per la sessione corrente. Per questo il file va letto e
+    // caricato subito, non conservato per dopo.
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            state = state.copy(avatarUrl = uri.toString())
+            viewModel.cambiaFotoProfilo(uri)
         }
     }
 
@@ -142,10 +136,11 @@ private fun ProfileRoute(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
             )
         },
+        onPhotoMessageShown = viewModel::messaggioMostrato,
         // TODO: agganciare le destinazioni mancanti quando le schermate esisteranno.
         onPaymentsClick = {},
         onReviewsClick = {},
-        onToggleDarkMode = { enabled -> state = state.copy(isDarkModeEnabled = enabled) },
+        onToggleDarkMode = viewModel::cambiaTemaScuro,
         onChangePassword = {},
         onLogout = {}
     )

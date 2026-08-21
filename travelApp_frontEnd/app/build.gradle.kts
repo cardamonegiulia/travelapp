@@ -62,4 +62,10 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    // Retrofit si porta dietro OkHttp, ma la versione va dichiarata qui: serve anche fuori
+    // da Retrofit (interceptor del token, download della foto profilo).
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    // viewModel() dentro un @Composable, e viewModelScope nel ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
 }

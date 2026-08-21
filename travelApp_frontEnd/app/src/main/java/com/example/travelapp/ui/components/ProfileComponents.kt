@@ -1,6 +1,7 @@
 package com.example.travelapp.ui.components
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.os.Build
 import android.provider.MediaStore
@@ -30,6 +31,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -62,8 +64,10 @@ import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 import androidx.core.net.toUri
+import com.example.travelapp.data.remote.ApiClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.Request
 
 private val HeaderCardShape = RoundedCornerShape(16.dp)
 private val RowCardShape = RoundedCornerShape(14.dp)
@@ -198,10 +202,15 @@ private fun ProfileRowCard(
  * Intestazione del profilo: avatar, nome, email e bottone per aggiungere la
  * foto profilo.
  *
- * [avatarUrl] è l'URI della foto scelta dall'utente: viene decodificato in
- * locale, così il modulo non dipende da una libreria di image loading. Quando
- * Coil sarà disponibile basterà sostituire l'avatar con
- * `AsyncImage(model = avatarUrl)` per supportare anche gli URL remoti.
+ * [avatarUrl] può essere l'URI `content://` della foto appena scelta oppure
+ * l'url del backend da cui scaricarla: l'avatar riconosce e gestisce entrambi,
+ * così il modulo non dipende da una libreria di image loading. Quando Coil sarà
+ * disponibile basterà sostituire l'avatar con `AsyncImage(model = avatarUrl)`
+ * configurato con `ApiClient.httpClient`, che è ciò che porta il token.
+ *
+ * Con [isPhotoUploading] a `true` il bottone si blocca e mostra l'avanzamento:
+ * senza, un secondo tocco farebbe partire un upload in parallelo al primo e
+ * l'ultimo a rispondere deciderebbe quale foto resta.
  */
 @Composable
 fun ProfileHeaderCard(
@@ -209,7 +218,8 @@ fun ProfileHeaderCard(
     email: String,
     avatarUrl: String?,
     onAddProfilePhoto: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isPhotoUploading: Boolean = false
 ) {
     Card(
         shape = HeaderCardShape,
@@ -240,6 +250,7 @@ fun ProfileHeaderCard(
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = onAddProfilePhoto,
+                enabled = !isPhotoUploading,
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AccentOrange,
@@ -248,14 +259,22 @@ fun ProfileHeaderCard(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
             ) {
-                Icon(
-                    imageVector = ProfileIcons.AddAPhoto,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
+                if (isPhotoUploading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(18.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = ProfileIcons.AddAPhoto,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Aggiungi foto profilo",
+                    text = if (isPhotoUploading) "Caricamento…" else "Aggiungi foto profilo",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -297,22 +316,32 @@ private fun ProfileAvatar(
 }
 
 /**
- * Decodifica fuori dal main thread la foto indicata da [avatarUrl], che è
- * l'URI restituito dal selettore di immagini di sistema. Restituisce `null`
- * finché la decodifica non è finita, o se l'URI non è leggibile.
+ * Decodifica fuori dal main thread la foto indicata da [avatarUrl], che è o l'URI
+ * restituito dal selettore di immagini di sistema (`content://`) o l'url del backend.
+ * Restituisce `null` finché non c'è nulla da mostrare.
+ *
+ * La bitmap precedente resta visibile mentre si decodifica quella nuova: azzerandola a
+ * ogni cambio di [avatarUrl], sostituire la foto farebbe lampeggiare il segnaposto proprio
+ * nel momento in cui l'utente si aspetta di vedere la foto appena scelta.
  */
 @Composable
 private fun rememberAvatarBitmap(avatarUrl: String?): ImageBitmap? {
     val context = LocalContext.current
-    var bitmap by remember(avatarUrl) { mutableStateOf<ImageBitmap?>(null) }
+    var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
 
     LaunchedEffect(avatarUrl) {
-        bitmap = avatarUrl?.let { url ->
-            withContext(Dispatchers.IO) { decodeLocalImage(context, url) }
+        if (avatarUrl == null) {
+            bitmap = null
+            return@LaunchedEffect
         }
+        bitmap = withContext(Dispatchers.IO) { decodeImage(context, avatarUrl) }
     }
     return bitmap
 }
+
+private fun decodeImage(context: Context, url: String): ImageBitmap? =
+    if (url.startsWith("http://") || url.startsWith("https://")) decodeRemoteImage(url)
+    else decodeLocalImage(context, url)
 
 private fun decodeLocalImage(context: Context, url: String): ImageBitmap? = runCatching {
     val uri = url.toUri()
@@ -326,6 +355,25 @@ private fun decodeLocalImage(context: Context, url: String): ImageBitmap? = runC
         MediaStore.Images.Media.getBitmap(resolver, uri)
     }
     bitmap.asImageBitmap()
+}.getOrNull()
+
+/**
+ * Scarica la foto dal backend con il client dell'app.
+ *
+ * Deve passare da [ApiClient.httpClient] e non da una connessione qualsiasi: il contenuto
+ * delle immagini sta dietro autenticazione (`GET /api/immagini/{id}/contenuto`), quindi
+ * senza l'interceptor che aggiunge il token la risposta sarebbe un 401 e l'avatar
+ * resterebbe vuoto senza spiegazione.
+ */
+private fun decodeRemoteImage(url: String): ImageBitmap? = runCatching {
+    val richiesta = Request.Builder().url(url).build()
+    ApiClient.httpClient.newCall(richiesta).execute().use { risposta ->
+        val corpo = risposta.body
+        if (!risposta.isSuccessful || corpo == null) {
+            return null
+        }
+        BitmapFactory.decodeStream(corpo.byteStream())?.asImageBitmap()
+    }
 }.getOrNull()
 
 /** Bottone di logout a larghezza piena, in fondo alla schermata. */

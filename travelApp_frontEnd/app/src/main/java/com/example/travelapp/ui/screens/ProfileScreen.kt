@@ -15,8 +15,11 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,8 +57,17 @@ import com.example.travelapp.ui.theme.TextPrimary
 data class ProfileUiState(
     val name: String = "",
     val email: String = "",
+    /**
+     * Foto da mostrare nell'avatar. Può essere un `content://` (la foto appena scelta,
+     * mostrata subito mentre l'upload è in corso) o l'url del backend
+     * (`.../api/immagini/{id}/contenuto`): l'avatar sa leggere entrambi.
+     */
     val avatarUrl: String? = null,
-    val isDarkModeEnabled: Boolean = false
+    val isDarkModeEnabled: Boolean = false,
+    /** Upload in corso: il bottone si blocca per non far partire due caricamenti. */
+    val isPhotoUploading: Boolean = false,
+    /** Esito dell'ultimo caricamento da mostrare all'utente; `null` se non c'è nulla da dire. */
+    val photoMessage: String? = null
 )
 
 /**
@@ -77,7 +89,8 @@ fun ProfileScreen(
     onToggleDarkMode: (Boolean) -> Unit,
     onChangePassword: () -> Unit,
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPhotoMessageShown: () -> Unit = {}
 ) {
     val activityItems = listOf(
         ActivityItem(
@@ -110,12 +123,23 @@ fun ProfileScreen(
         )
     )
 
+    // Esito del caricamento della foto: uno snackbar e non un testo fisso nella pagina,
+    // perche' e' un messaggio che riguarda un'azione appena compiuta e deve sparire da solo.
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(state.photoMessage) {
+        state.photoMessage?.let { messaggio ->
+            snackbarHostState.showSnackbar(messaggio)
+            onPhotoMessageShown()
+        }
+    }
+
     Scaffold(
         modifier = modifier,
         containerColor = BackgroundLavender,
         // Gli inset di sistema sono gia' gestiti dallo Scaffold che ospita il NavHost.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = { AppTopBar(title = "Profilo", onBack = onBack) }
+        topBar = { AppTopBar(title = "Profilo", onBack = onBack) },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -129,6 +153,7 @@ fun ProfileScreen(
                 name = state.name,
                 email = state.email,
                 avatarUrl = state.avatarUrl,
+                isPhotoUploading = state.isPhotoUploading,
                 onAddProfilePhoto = onAddProfilePhoto
             )
 

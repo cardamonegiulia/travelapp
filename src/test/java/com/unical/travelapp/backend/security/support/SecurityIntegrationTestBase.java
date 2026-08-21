@@ -81,6 +81,16 @@ public abstract class SecurityIntegrationTestBase {
 
     @BeforeEach
     void ripulisciIlDatabase() {
+        // La foto profilo va sganciata prima di tutto: e' l'unico riferimento che parte da
+        // "utenti" e arriva a "immagini", quindi cancellare le immagini con la colonna
+        // ancora valorizzata violerebbe la chiave esterna.
+        utenteRepository.findAll().stream()
+                .filter(utente -> utente.getFotoProfilo() != null)
+                .forEach(utente -> {
+                    utente.setFotoProfilo(null);
+                    utenteRepository.save(utente);
+                });
+
         // per prime le immagini: sono figlie di recensioni e itinerari
         immagineRepository.deleteAll();
         extraPrenotazioneRepository.deleteAll();
