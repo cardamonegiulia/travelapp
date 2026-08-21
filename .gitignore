@@ -40,3 +40,8 @@ postman/environments/
 logs/
 docs/
 CLAUDE.md
+
+### Android frontend ###
+/travelApp_frontEnd/.gradle/
+/travelApp_frontEnd/local.properties
+/travelApp_frontEnd/**/build/
