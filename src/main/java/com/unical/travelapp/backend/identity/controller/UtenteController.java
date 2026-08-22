@@ -151,14 +151,14 @@ public class UtenteController {
     @PostMapping("/me/password")
     @Operation(
             summary = "Cambia la password dell'utente autenticato",
-            description = "Richiede un'autenticazione recente: il token deve portare un claim " +
-                    "auth_time non più vecchio di app.security.max-auth-age-seconds. In caso " +
-                    "contrario risponde 401 con WWW-Authenticate: il client deve rifare il " +
-                    "login con max_age, non rinnovare il token col refresh. Al termine tutte " +
-                    "le sessioni dell'utente vengono chiuse: serve un nuovo login."
+            description = "Richiede un'autenticazione recente: il token deve portare un claim "
+                    + "auth_time non piu' vecchio di app.security.max-auth-age-seconds. In caso "
+                    + "contrario risponde 401 con WWW-Authenticate: il client deve rifare il "
+                    + "login con max_age, non rinnovare il token col refresh. Al termine tutte "
+                    + "le sessioni dell'utente vengono chiuse: serve un nuovo login."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Password cambiata — sessioni terminate"),
+            @ApiResponse(responseCode = "204", description = "Password cambiata; sessioni terminate"),
             @ApiResponse(responseCode = "400", description = "Password non conforme ai requisiti", content = @Content),
             @ApiResponse(responseCode = "401", description = "Autenticazione assente o troppo vecchia", content = @Content),
             @ApiResponse(responseCode = "503", description = "Keycloak non disponibile", content = @Content)
