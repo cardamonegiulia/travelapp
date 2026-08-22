@@ -6,23 +6,34 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 
-class InterceptorAutenticazione(private val context: Context) : Interceptor {
+/**
+ * Aggiunge l'header Authorization: Bearer <token>
+ * alle richieste quando è disponibile un token salvato.
+ */
+class InterceptorAutenticazione(
+    private val context: Context
+) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        // Legge il token salvato nel DataStore
+
         val token = runBlocking {
             TokenManager.getToken(context).first()
         }
 
-        val request = if (token != null) {
-            // Aggiunge il Bearer Token a ogni richiesta
-            chain.request().newBuilder()
-                .addHeader("Authorization", "Bearer $token")
-                .build()
-        } else {
-            chain.request()
+        val richiesta = chain.request()
+
+        if (token.isNullOrBlank()) {
+            return chain.proceed(richiesta)
         }
 
-        return chain.proceed(request)
+        val richiestaAutenticata = richiesta
+            .newBuilder()
+            .header(
+                "Authorization",
+                "Bearer $token"
+            )
+            .build()
+
+        return chain.proceed(richiestaAutenticata)
     }
 }
