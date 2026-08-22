@@ -1,76 +1,53 @@
 package com.example.travelapp.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.example.travelapp.ui.components.AppTopBar
 import com.example.travelapp.ui.components.LogoutButton
 import com.example.travelapp.ui.components.ProfileHeaderCard
 import com.example.travelapp.ui.components.ProfileIcons
 import com.example.travelapp.ui.components.ProfileMenuRow
 import com.example.travelapp.ui.components.ProfileSwitchRow
 import com.example.travelapp.ui.components.SectionTitle
-import com.example.travelapp.ui.theme.*
-
-// Colori pastello per le icone del profilo
-private val BadgeBlue = Color(0xFFE0F2FE)
-private val IconBlue = Color(0xFF0284C7)
-private val BadgeTeal = Color(0xFFCCFBF1)
-private val IconTeal = Color(0xFF0D9488)
-private val BadgePink = Color(0xFFFFE4E6)
-private val IconPink = Color(0xFFE11D48)
-private val BadgePurple = Color(0xFFF3E8FF)
-private val IconPurple = Color(0xFF9333EA)
-private val BadgeIndigo = Color(0xFFE0E7FF)
-private val IconIndigo = Color(0xFF4F46E5)
-private val BadgeGrey = Color(0xFFF1F5F9)
-private val IconGrey = Color(0xFF64748B)
-
-/** Sezioni raggiungibili dalla bottom navigation. */
-enum class ProfileTab(val label: String, val icon: ImageVector) {
-    EXPLORE("Explore", ProfileIcons.Explore),
-    BOOKINGS("Bookings", ProfileIcons.Ticket),
-    FAVORITES("Favorites", Icons.Default.Favorite),
-    PROFILE("Profilo", Icons.Default.Person)
-}
+import com.example.travelapp.ui.theme.BackgroundLavender
+import com.example.travelapp.ui.theme.BadgeBlue
+import com.example.travelapp.ui.theme.BadgeGrey
+import com.example.travelapp.ui.theme.BadgeIndigo
+import com.example.travelapp.ui.theme.BadgePink
+import com.example.travelapp.ui.theme.BadgePurple
+import com.example.travelapp.ui.theme.BadgeTeal
+import com.example.travelapp.ui.theme.IconBlue
+import com.example.travelapp.ui.theme.IconGrey
+import com.example.travelapp.ui.theme.IconIndigo
+import com.example.travelapp.ui.theme.IconPink
+import com.example.travelapp.ui.theme.IconPurple
+import com.example.travelapp.ui.theme.IconTeal
 
 /** Stato osservabile della schermata profilo. */
 data class ProfileUiState(
@@ -78,19 +55,19 @@ data class ProfileUiState(
     val email: String = "",
     val avatarUrl: String? = null,
     val isDarkModeEnabled: Boolean = false,
-    val selectedTab: ProfileTab = ProfileTab.PROFILE
+    val isPhotoUploading: Boolean = false,
+    val photoMessage: String? = null
 )
 
 /**
  * Schermata "Profilo": intestazione utente, scorciatoie alle attività,
  * impostazioni e logout.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     state: ProfileUiState,
     onBack: () -> Unit,
-    onEditProfile: () -> Unit,
+    onAddProfilePhoto: () -> Unit,
     onBookingsClick: () -> Unit,
     onPaymentsClick: () -> Unit,
     onFavoritesClick: () -> Unit,
@@ -98,8 +75,8 @@ fun ProfileScreen(
     onToggleDarkMode: (Boolean) -> Unit,
     onChangePassword: () -> Unit,
     onLogout: () -> Unit,
-    onNavigate: (ProfileTab) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPhotoMessageShown: () -> Unit = {}
 ) {
     val activityItems = listOf(
         ActivityItem(
@@ -132,39 +109,20 @@ fun ProfileScreen(
         )
     )
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(state.photoMessage) {
+        state.photoMessage?.let { messaggio ->
+            snackbarHostState.showSnackbar(messaggio)
+            onPhotoMessageShown()
+        }
+    }
+
     Scaffold(
         modifier = modifier,
-        containerColor = TravelBg,
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "Profilo",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TravelTextDark
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Indietro",
-                            tint = TravelTextDark
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.Transparent
-                )
-            )
-        },
-        bottomBar = {
-            ProfileBottomBar(
-                selectedTab = state.selectedTab,
-                onNavigate = onNavigate
-            )
-        }
+        containerColor = BackgroundLavender,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = { AppTopBar(title = "Profilo", onBack = onBack) },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -178,7 +136,8 @@ fun ProfileScreen(
                 name = state.name,
                 email = state.email,
                 avatarUrl = state.avatarUrl,
-                onEditProfile = onEditProfile
+                isPhotoUploading = state.isPhotoUploading,
+                onAddProfilePhoto = onAddProfilePhoto
             )
 
             SectionTitle(
@@ -232,58 +191,6 @@ private data class ActivityItem(
     val onClick: () -> Unit
 )
 
-@Composable
-private fun ProfileBottomBar(
-    selectedTab: ProfileTab,
-    onNavigate: (ProfileTab) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    NavigationBar(
-        containerColor = TravelSurface,
-        tonalElevation = 0.dp,
-        modifier = modifier
-    ) {
-        ProfileTab.entries.forEach { tab ->
-            val selected = tab == selectedTab
-            NavigationBarItem(
-                selected = selected,
-                onClick = { onNavigate(tab) },
-                icon = {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(
-                                color = if (selected) TravelBlue else Color.Transparent,
-                                shape = CircleShape
-                            )
-                    ) {
-                        Icon(
-                            imageVector = tab.icon,
-                            contentDescription = tab.label,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                },
-                label = {
-                    Text(
-                        text = tab.label,
-                        fontSize = 11.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-                    )
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = Color.Transparent,
-                    selectedIconColor = Color.White,
-                    selectedTextColor = TravelBlue,
-                    unselectedIconColor = TravelTextMuted,
-                    unselectedTextColor = TravelTextMuted
-                )
-            )
-        }
-    }
-}
-
 @Preview(showBackground = true, showSystemUi = true, name = "Profilo")
 @Composable
 private fun ProfileScreenPreview() {
@@ -293,8 +200,7 @@ private fun ProfileScreenPreview() {
                 name = "Mario Rossi",
                 email = "mario@example.it",
                 avatarUrl = null,
-                isDarkModeEnabled = false,
-                selectedTab = ProfileTab.PROFILE
+                isDarkModeEnabled = false
             )
         )
     }
@@ -303,15 +209,14 @@ private fun ProfileScreenPreview() {
         ProfileScreen(
             state = state,
             onBack = {},
-            onEditProfile = {},
+            onAddProfilePhoto = {},
             onBookingsClick = {},
             onPaymentsClick = {},
             onFavoritesClick = {},
             onReviewsClick = {},
             onToggleDarkMode = { enabled -> state = state.copy(isDarkModeEnabled = enabled) },
             onChangePassword = {},
-            onLogout = {},
-            onNavigate = { tab -> state = state.copy(selectedTab = tab) }
+            onLogout = {}
         )
     }
 }

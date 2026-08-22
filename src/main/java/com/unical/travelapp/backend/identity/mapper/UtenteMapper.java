@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.identity.mapper;
 
+import com.unical.travelapp.backend.experience.mapper.ImmagineMapper;
 import com.unical.travelapp.backend.identity.dto.UtenteDto;
 import com.unical.travelapp.backend.identity.dto.UtenteResponseDto;
 import com.unical.travelapp.backend.identity.dto.UtenteUpdateDto;
@@ -11,6 +12,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class UtenteMapper {
 
+    // stesso mapper usato da itinerari e recensioni: l'url della foto profilo deve essere
+    // costruito nello stesso identico modo di quello delle altre immagini
+    private final ImmagineMapper immagineMapper;
+
+    public UtenteMapper(ImmagineMapper immagineMapper) {
+        this.immagineMapper = immagineMapper;
+    }
+
     public UtenteResponseDto toResponseDto(Utente utente) {
         UtenteResponseDto dto = new UtenteResponseDto();
         dto.setId(utente.getId());
@@ -19,6 +28,7 @@ public class UtenteMapper {
         dto.setEmail(utente.getEmail());
         dto.setRuolo(utente.getRuolo());
         dto.setTema(utente.getTema());
+        dto.setFotoProfilo(immagineMapper.toResponse(utente.getFotoProfilo()));
         return dto;
     }
 

@@ -1,5 +1,11 @@
 package com.example.travelapp.ui.components
 
+import android.content.Context
+import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
+import android.os.Build
+import android.provider.MediaStore
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,26 +30,49 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.travelapp.ui.theme.*
+import androidx.core.net.toUri
+import com.example.travelapp.data.remote.ApiClient
+import com.example.travelapp.ui.theme.BadgeGrey
+import com.example.travelapp.ui.theme.IconGrey
+import com.example.travelapp.ui.theme.LogoutBackground
+import com.example.travelapp.ui.theme.LogoutRed
+import com.example.travelapp.ui.theme.SurfaceWhite
+import com.example.travelapp.ui.theme.TravelBorder
+import com.example.travelapp.ui.theme.TravelBlue
+import com.example.travelapp.ui.theme.TravelOrange
+import com.example.travelapp.ui.theme.TravelSurface
+import com.example.travelapp.ui.theme.TravelTextDark
+import com.example.travelapp.ui.theme.TravelTextMuted
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.Request
 
 private val HeaderCardShape = RoundedCornerShape(16.dp)
 private val RowCardShape = RoundedCornerShape(14.dp)
-private val LogoutRed = Color(0xFFDC2626)
-private val LogoutBg = Color(0xFFFEE2E2)
 
-/** Titolo di una sezione della schermata profilo (es. "Le mie attività"). */
 @Composable
 fun SectionTitle(
     text: String,
@@ -57,7 +87,6 @@ fun SectionTitle(
     )
 }
 
-/** Icona dentro il badge circolare pastello usato dalle righe di menu. */
 @Composable
 fun IconBadge(
     icon: ImageVector,
@@ -80,10 +109,6 @@ fun IconBadge(
     }
 }
 
-/**
- * Riga cliccabile "badge + testo + chevron": è il mattone comune a tutte le
- * voci di menu, così da non ripetere la stessa Card per ogni voce.
- */
 @Composable
 fun ProfileMenuRow(
     icon: ImageVector,
@@ -111,7 +136,6 @@ fun ProfileMenuRow(
     }
 }
 
-/** Riga con interruttore, per le preferenze booleane (es. tema scuro). */
 @Composable
 fun ProfileSwitchRow(
     icon: ImageVector,
@@ -146,7 +170,6 @@ fun ProfileSwitchRow(
     }
 }
 
-/** Card bianca contenitore, condivisa da tutte le righe di lista. */
 @Composable
 private fun ProfileRowCard(
     modifier: Modifier = Modifier,
@@ -168,16 +191,14 @@ private fun ProfileRowCard(
     }
 }
 
-/**
- * Intestazione del profilo: avatar, nome, email e bottone di modifica.
- */
 @Composable
 fun ProfileHeaderCard(
     name: String,
     email: String,
     avatarUrl: String?,
-    onEditProfile: () -> Unit,
-    modifier: Modifier = Modifier
+    onAddProfilePhoto: () -> Unit,
+    modifier: Modifier = Modifier,
+    isPhotoUploading: Boolean = false
 ) {
     Card(
         shape = HeaderCardShape,
@@ -207,17 +228,32 @@ fun ProfileHeaderCard(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = onEditProfile,
+                onClick = onAddProfilePhoto,
+                enabled = !isPhotoUploading,
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = TravelOrange,
                     contentColor = Color.White
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                contentPadding = PaddingValues(horizontal = 28.dp, vertical = 10.dp)
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
             ) {
+                if (isPhotoUploading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(18.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = ProfileIcons.AddAPhoto,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Modifica Profilo",
+                    text = if (isPhotoUploading) "Caricamento…" else "Aggiungi foto profilo",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -231,22 +267,77 @@ private fun ProfileAvatar(
     avatarUrl: String?,
     modifier: Modifier = Modifier
 ) {
+    val photo = rememberAvatarBitmap(avatarUrl)
+
     Box(
         modifier = modifier
             .size(80.dp)
-            .background(color = TravelChipBg, shape = CircleShape),
+            .clip(CircleShape)
+            .background(color = BadgeGrey, shape = CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.Person,
-            contentDescription = "Immagine del profilo",
-            tint = TravelTextMuted,
-            modifier = Modifier.size(44.dp)
-        )
+        if (photo != null) {
+            Image(
+                bitmap = photo,
+                contentDescription = "Foto del profilo",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Immagine del profilo",
+                tint = IconGrey,
+                modifier = Modifier.size(44.dp)
+            )
+        }
     }
 }
 
-/** Bottone di logout a larghezza piena, in fondo alla schermata. */
+@Composable
+private fun rememberAvatarBitmap(avatarUrl: String?): ImageBitmap? {
+    val context = LocalContext.current
+    var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+
+    LaunchedEffect(avatarUrl) {
+        if (avatarUrl == null) {
+            bitmap = null
+            return@LaunchedEffect
+        }
+        bitmap = withContext(Dispatchers.IO) { decodeImage(context, avatarUrl) }
+    }
+    return bitmap
+}
+
+private fun decodeImage(context: Context, url: String): ImageBitmap? =
+    if (url.startsWith("http://") || url.startsWith("https://")) decodeRemoteImage(url)
+    else decodeLocalImage(context, url)
+
+private fun decodeLocalImage(context: Context, url: String): ImageBitmap? = runCatching {
+    val uri = url.toUri()
+    val resolver = context.contentResolver
+    val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        ImageDecoder.decodeBitmap(ImageDecoder.createSource(resolver, uri)) { decoder, _, _ ->
+            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+        }
+    } else {
+        @Suppress("DEPRECATION")
+        MediaStore.Images.Media.getBitmap(resolver, uri)
+    }
+    bitmap.asImageBitmap()
+}.getOrNull()
+
+private fun decodeRemoteImage(url: String): ImageBitmap? = runCatching {
+    val richiesta = Request.Builder().url(url).build()
+    ApiClient.httpClient.newCall(richiesta).execute().use { risposta ->
+        val corpo = risposta.body
+        if (!risposta.isSuccessful || corpo == null) {
+            return null
+        }
+        BitmapFactory.decodeStream(corpo.byteStream())?.asImageBitmap()
+    }
+}.getOrNull()
+
 @Composable
 fun LogoutButton(
     onClick: () -> Unit,
@@ -254,7 +345,7 @@ fun LogoutButton(
 ) {
     Card(
         shape = RowCardShape,
-        colors = CardDefaults.cardColors(containerColor = LogoutBg),
+        colors = CardDefaults.cardColors(containerColor = LogoutBackground),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
             .fillMaxWidth()

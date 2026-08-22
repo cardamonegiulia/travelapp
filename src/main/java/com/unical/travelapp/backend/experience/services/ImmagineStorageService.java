@@ -1,13 +1,10 @@
 package com.unical.travelapp.backend.experience.services;
 
 import com.unical.travelapp.backend.experience.exeption.ArchiviazioneImmagineFallita;
-import com.unical.travelapp.backend.experience.exeption.ImmagineNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.ImmagineNonValida;
 import com.unical.travelapp.backend.experience.models.TipoImmagine;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.unical.travelapp.backend.experience.services.storage.ArchivioImmagini;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -18,10 +15,6 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -32,11 +25,16 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * Scrittura, lettura e cancellazione dei file immagine sullo storage.
+ * Validazione delle immagini caricate e accesso allo storage.
  *
  * Qui sta tutta la logica di sicurezza dell'upload; il resto dell'applicazione riceve solo
  * un percorso gia' validato. La classe non conosce JPA ne' l'utente in sessione:
  * l'orchestrazione (chi carica, cosa finisce sul database) e' in {@link ImmagineService}.
+ *
+ * *Dove* finiscono i byte non la riguarda: e' un {@link ArchivioImmagini} iniettato — disco
+ * locale o object storage esterno, scelto da {@code app.storage.immagini.tipo}. Le
+ * validazioni restano identiche nei due casi, ed e' la ragione per cui stanno qui e non
+ * nelle implementazioni dell'archivio.
  *
  * Ordine dei controlli, dal piu' economico al piu' costoso:
  * 1. file presente e non vuoto;
@@ -49,8 +47,6 @@ import java.util.regex.Pattern;
 @Service
 public class ImmagineStorageService {
 
-    private static final Logger log = LoggerFactory.getLogger(ImmagineStorageService.class);
-
     private static final DateTimeFormatter CARTELLA_MESE = DateTimeFormatter.ofPattern("yyyy/MM");
 
     // Forma esatta dei percorsi generati da questa classe: "aaaa/mm/<uuid>.<est>".
@@ -59,16 +55,16 @@ public class ImmagineStorageService {
     private static final Pattern PERCORSO_VALIDO = Pattern.compile(
             "^\\d{4}/\\d{2}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.[a-z]{3}$");
 
-    private final Path cartellaBase;
+    private final ArchivioImmagini archivio;
     private final long dimensioneMassimaByte;
     private final int latoMassimoPixel;
 
     public ImmagineStorageService(
-            @Value("${app.storage.immagini.path}") String percorsoCartellaBase,
+            ArchivioImmagini archivio,
             @Value("${app.storage.immagini.max-size-byte}") long dimensioneMassimaByte,
             @Value("${app.storage.immagini.max-lato-pixel}") int latoMassimoPixel) {
 
-        this.cartellaBase = Paths.get(percorsoCartellaBase).toAbsolutePath().normalize();
+        this.archivio = archivio;
         this.dimensioneMassimaByte = dimensioneMassimaByte;
         this.latoMassimoPixel = latoMassimoPixel;
     }
@@ -136,7 +132,7 @@ public class ImmagineStorageService {
         String nomeFile = UUID.randomUUID() + "." + tipo.getEstensioneCanonica();
         String percorsoRelativo = LocalDate.now().format(CARTELLA_MESE) + "/" + nomeFile;
 
-        scrivi(percorsoRelativo, contenuto);
+        archivio.scrivi(percorsoRelativo, contenuto);
 
         return new ImmagineArchiviata(percorsoRelativo, tipo.getContentType(),
                 contenuto.length, dimensioni[0], dimensioni[1]);
@@ -144,24 +140,14 @@ public class ImmagineStorageService {
 
     /** Restituisce il file come Resource, per lo streaming verso il client. */
     public Resource carica(String percorsoRelativo) {
-        Path file = risolvi(percorsoRelativo);
-
-        if (!Files.isRegularFile(file)) {
-            throw new ImmagineNonTrovata("File dell'immagine non presente sullo storage");
-        }
-
-        return new FileSystemResource(file);
+        verificaFormatoPercorso(percorsoRelativo);
+        return archivio.leggi(percorsoRelativo);
     }
 
     /** Rimuove il file dallo storage; se non c'e' piu', non e' un errore. */
     public void elimina(String percorsoRelativo) {
-        Path file = risolvi(percorsoRelativo);
-        try {
-            Files.deleteIfExists(file);
-        } catch (IOException e) {
-            throw new ArchiviazioneImmagineFallita(
-                    "Cancellazione del file " + percorsoRelativo + " fallita", e);
-        }
+        verificaFormatoPercorso(percorsoRelativo);
+        archivio.elimina(percorsoRelativo);
     }
 
     private byte[] leggiContenuto(MultipartFile file) {
@@ -209,34 +195,16 @@ public class ImmagineStorageService {
         }
     }
 
-    private void scrivi(String percorsoRelativo, byte[] contenuto) {
-        Path destinazione = risolvi(percorsoRelativo);
-        try {
-            Files.createDirectories(destinazione.getParent());
-            // CREATE_NEW: se il nome esistesse gia' (UUID ripetuto, praticamente impossibile)
-            // la scrittura fallisce invece di sovrascrivere in silenzio un'altra immagine.
-            Files.write(destinazione, contenuto, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-        } catch (IOException e) {
-            log.error("Scrittura dell'immagine {} fallita", percorsoRelativo, e);
-            throw new ArchiviazioneImmagineFallita("Scrittura del file sullo storage fallita", e);
-        }
-    }
-
-    // Unico punto in cui un percorso relativo diventa assoluto. Doppia difesa contro il path
-    // traversal: la forma deve corrispondere esattamente a quella generata da salva(), e il
-    // risultato normalizzato deve restare dentro la cartella base (un "../../etc/passwd"
-    // uscirebbe e viene rifiutato qui).
-    private Path risolvi(String percorsoRelativo) {
+    // Prima difesa contro il path traversal, valida per qualunque archivio: la forma deve
+    // corrispondere esattamente a quella generata da salva(), quindi un "../.." non arriva
+    // mai all'implementazione, che sia un percorso su disco o la chiave di un oggetto
+    // remoto. Vale anche sui valori che arrivano dal database: se una riga venisse
+    // manomessa, non passerebbe di qui. L'archivio su filesystem aggiunge poi il proprio
+    // controllo di contenimento, come seconda difesa.
+    private void verificaFormatoPercorso(String percorsoRelativo) {
         if (percorsoRelativo == null || !PERCORSO_VALIDO.matcher(percorsoRelativo).matches()) {
             throw new ImmagineNonValida("Percorso dell'immagine non valido");
         }
-
-        Path risolto = cartellaBase.resolve(percorsoRelativo).normalize();
-        if (!risolto.startsWith(cartellaBase)) {
-            throw new ImmagineNonValida("Percorso dell'immagine non valido");
-        }
-
-        return risolto;
     }
 
     // Estensione ricavata dal nome originale, usata solo come dichiarazione da confrontare

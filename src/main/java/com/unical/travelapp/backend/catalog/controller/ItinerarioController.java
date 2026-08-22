@@ -29,7 +29,6 @@ public class ItinerarioController {
 
     @Autowired
     private ItinerarioService itinerarioService;
-
     @Autowired
     private ItinerarioMapper itinerarioMapper;
 

@@ -17,11 +17,13 @@ import androidx.compose.ui.unit.sp
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.catalog.*
+import com.example.travelapp.ui.navigation.AppNavGraph
 import com.example.travelapp.ui.theme.*
 import java.math.BigDecimal
 
 enum class TestScreen {
     MENU,
+    APP_NAV_GRAPH,
     CREA_ITINERARIO,
     CREA_ATTIVITA,
     MODIFICA_ITINERARIO,
@@ -37,6 +39,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 MainTestHub(
+                    onExit = { finish() },
                     showToast = { msg ->
                         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
                     }
@@ -49,6 +52,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainTestHub(
+    onExit: () -> Unit,
     showToast: (String) -> Unit
 ) {
     var currentScreen by remember { mutableStateOf(TestScreen.MENU) }
@@ -123,7 +127,7 @@ private fun MainTestHub(
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text("Hub Test Schermate Catalog", fontWeight = FontWeight.Bold, color = TravelTextDark) },
+                        title = { Text("Hub Test Generale", fontWeight = FontWeight.Bold, color = TravelTextDark) },
                         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
                     )
                 }
@@ -134,15 +138,22 @@ private fun MainTestHub(
                         .padding(padding)
                         .background(TravelBg)
                         .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Seleziona una schermata da testare:", color = TravelTextMuted, fontSize = 14.sp)
+                    Button(
+                        onClick = { currentScreen = TestScreen.APP_NAV_GRAPH },
+                        colors = ButtonDefaults.buttonColors(containerColor = TravelBlueDark),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                    ) {
+                        Text("0. Avvia App Completa (Profilo / NavGraph)", fontWeight = FontWeight.Bold)
+                    }
 
                     Button(
                         onClick = { currentScreen = TestScreen.CREA_ITINERARIO },
                         colors = ButtonDefaults.buttonColors(containerColor = TravelBlue),
                         shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
                         Text("1. Crea Itinerario (Organizzatore)", fontWeight = FontWeight.Bold)
                     }
@@ -151,7 +162,7 @@ private fun MainTestHub(
                         onClick = { currentScreen = TestScreen.CREA_ATTIVITA },
                         colors = ButtonDefaults.buttonColors(containerColor = TravelBlue),
                         shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
                         Text("2. Crea Attività Singola (Organizzatore)", fontWeight = FontWeight.Bold)
                     }
@@ -160,7 +171,7 @@ private fun MainTestHub(
                         onClick = { currentScreen = TestScreen.LE_MIE_OFFERTE },
                         colors = ButtonDefaults.buttonColors(containerColor = TravelOrange),
                         shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
                         Text("3. Le Mie Offerte (Organizzatore)", fontWeight = FontWeight.Bold)
                     }
@@ -169,7 +180,7 @@ private fun MainTestHub(
                         onClick = { currentScreen = TestScreen.OFFERTE_ADMIN },
                         colors = ButtonDefaults.buttonColors(containerColor = TravelOrange),
                         shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
                         Text("4. Gestione Globale Offerte (Admin)", fontWeight = FontWeight.Bold)
                     }
@@ -178,12 +189,16 @@ private fun MainTestHub(
                         onClick = { currentScreen = TestScreen.GESTIONE_UTENTI_ADMIN },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F172A)),
                         shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
                         Text("5. Gestione Utenti (Admin)", fontWeight = FontWeight.Bold)
                     }
                 }
             }
+        }
+
+        TestScreen.APP_NAV_GRAPH -> {
+            AppNavGraph(onExitApp = { currentScreen = TestScreen.MENU })
         }
 
         TestScreen.CREA_ITINERARIO -> {
