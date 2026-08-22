@@ -685,7 +685,7 @@
     "id" : "75c893b3-f963-49da-8e42-f3c1fb6452b0",
     "clientId" : "travelapp-backend",
     "name" : "TravelApp - resource server",
-    "description" : "Resource server: riceve i token e li valida, non ne emette per nessuno. Standard flow e direct access grants sono spenti di proposito - il login passa da travelapp-android. E' anche l'audience attesa dal backend (app.security.expected-audience), per questo i client che emettono token devono avere il mapper aud-travelapp-backend.",
+    "description" : "Resource server: valida i token, non ne emette. Flussi spenti apposta - il login passa da travelapp-android. E' l'audience attesa dal backend: i client che emettono token devono avere il mapper aud-travelapp-backend.",
     "rootUrl" : "",
     "adminUrl" : "",
     "baseUrl" : "",
@@ -722,7 +722,7 @@
   }, {
     "clientId" : "travelapp-android",
     "name" : "TravelApp - app Android",
-    "description" : "Client pubblico dell'app Android: Authorization Code + PKCE (S256). Un'app distribuita agli utenti non puo' custodire un secret, quindi la sicurezza dello scambio code -> token viene da PKCE. Non ha privilegi amministrativi: emette solo token per l'utente finale.",
+    "description" : "Client pubblico dell'app Android: Authorization Code + PKCE (S256). Non puo' custodire un secret, la sicurezza dello scambio code->token viene da PKCE. Non ha privilegi amministrativi: emette solo token per l'utente finale.",
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "alwaysDisplayInConsole" : false,

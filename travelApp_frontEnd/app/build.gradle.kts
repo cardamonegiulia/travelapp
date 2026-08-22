@@ -16,9 +16,12 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Aggiunto per AppAuth — schema del redirect URI
+        manifestPlaceholders["appAuthRedirectScheme"] = "com.example.travelapp"
     }
+
 
     buildTypes {
         release {
@@ -61,4 +64,14 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    // Keycloak / OAuth2 login con PKCE
+    implementation("net.openid:appauth:0.11.1")
+    // Navigazione tra schermate
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    // ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    // DataStore per salvare il token
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 }

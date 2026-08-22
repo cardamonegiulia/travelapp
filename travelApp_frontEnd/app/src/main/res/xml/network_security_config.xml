@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Permette il traffico HTTP in chiaro solo verso 10.0.2.2 (l'host della macchina
+    dev visto dall'emulatore Android): li' girano Keycloak e il backend in sviluppo,
+    entrambi senza HTTPS. Tutto il resto del traffico dell'app resta soggetto al
+    default di Android (solo HTTPS).
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
