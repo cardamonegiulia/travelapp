@@ -727,7 +727,7 @@
     "enabled" : true,
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
-    "redirectUris" : [ "com.example.travelapp:/oauth2redirect" ],
+    "redirectUris" : [ "travelapp:/oauth2redirect" ],
     "webOrigins" : [ ],
     "notBefore" : 0,
     "bearerOnly" : false,
@@ -741,7 +741,7 @@
     "protocol" : "openid-connect",
     "attributes" : {
       "pkce.code.challenge.method" : "S256",
-      "post.logout.redirect.uris" : "com.example.travelapp:/logout",
+      "post.logout.redirect.uris" : "travelapp:/logout",
       "oidc.ciba.grant.enabled" : "false",
       "backchannel.logout.session.required" : "true",
       "oauth2.device.authorization.grant.enabled" : "false",
