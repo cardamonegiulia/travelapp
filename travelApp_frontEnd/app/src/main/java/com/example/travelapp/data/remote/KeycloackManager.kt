@@ -13,7 +13,7 @@ import net.openid.appauth.ResponseTypeValues
 
 object KeycloakManager {
 
-    private const val KEYCLOAK_BASE = "http://10.0.2.2:8090/realms/travelapp"
+    private const val KEYCLOAK_BASE = "http://192.168.1.51:8090/realms/travelapp"
     private const val REDIRECT_URI = "com.example.travelapp:/oauth2redirect"
 
     private val serviceConfig = AuthorizationServiceConfiguration(

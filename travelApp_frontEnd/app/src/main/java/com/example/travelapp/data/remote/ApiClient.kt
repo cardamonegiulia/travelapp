@@ -31,7 +31,7 @@ object ApiClient {
      *
      * Verificare che il backend utilizzi effettivamente la porta 8081.
      */
-    const val BASE_URL: String = "http://10.0.2.2:8081/"
+    const val BASE_URL = "http://192.168.1.51:8081/"
 
     /*
      * Client HTTP generale.
