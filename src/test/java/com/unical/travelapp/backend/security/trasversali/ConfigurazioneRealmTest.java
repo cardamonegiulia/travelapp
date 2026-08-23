@@ -6,9 +6,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -153,6 +156,31 @@ class ConfigurazioneRealmTest {
                                 + "redirect URI permissiva aiuta un'app malevola a farsi consegnare "
                                 + "l'authorization code")
                         .doesNotContain("*"));
+    }
+
+    @Test
+    void leRedirectUriUsanoLoSchemaCustomDichiaratoDallApp() throws IOException {
+        String schema = schemaRedirectDelloApp();
+
+        assertThat(schema)
+                .as("senza 'appAuthRedirectScheme' nel build.gradle.kts l'app non registra "
+                        + "nessuno schema e Android non sa a chi consegnare il redirect")
+                .isNotBlank();
+
+        client("travelapp-android").path("redirectUris").forEach(uri ->
+                assertThat(uri.asText())
+                        .as("Keycloak confronta la redirect URI per intero: se il realm registra uno "
+                                + "schema e l'app ne chiede un altro, il login muore su 'Invalid parameter: "
+                                + "redirect_uri' prima ancora della form di login. Da Postman non si vede, "
+                                + "perche' il password grant non usa nessuna redirect URI")
+                        .startsWith(schema + ":"));
+    }
+
+    /** Lo schema custom registrato dall'app, letto dal {@code build.gradle.kts} del modulo Android. */
+    private static String schemaRedirectDelloApp() throws IOException {
+        String gradle = Files.readString(Path.of("travelApp_frontEnd/app/build.gradle.kts"));
+        Matcher m = Pattern.compile("appAuthRedirectScheme\"\\]\\s*=\\s*\"([^\"]+)\"").matcher(gradle);
+        return m.find() ? m.group(1) : "";
     }
 
     @Test

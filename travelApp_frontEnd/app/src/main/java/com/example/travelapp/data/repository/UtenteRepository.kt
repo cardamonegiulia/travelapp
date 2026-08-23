@@ -12,7 +12,7 @@ import retrofit2.Response
 /** Profilo dell'utente corrente e aggiornamento dei suoi dati. */
 class UtenteRepository(
     context: Context,
-    private val api: UtenteApi = ApiClient.utenteApi
+    private val api: UtenteApi = ApiClient.getUtenteApi(context)
 ) {
 
     // applicationContext: il repository può sopravvivere alla Activity che l'ha creato

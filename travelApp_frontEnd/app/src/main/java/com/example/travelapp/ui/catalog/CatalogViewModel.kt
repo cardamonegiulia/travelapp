@@ -1,6 +1,7 @@
 package com.example.travelapp.ui.catalog
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.repository.ItinerarioRepository
@@ -11,10 +12,21 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class CatalogViewModel(
-    private val itinerarioRepository: ItinerarioRepository = ItinerarioRepository(ApiClient.itinerarioApi),
-    private val attivitaRepository: SingolaAttivitaRepository = SingolaAttivitaRepository(ApiClient.singolaAttivitaApi)
-) : ViewModel() {
+/**
+ * E' un `AndroidViewModel` perche' le API del catalogo, come tutte le altre sotto `/api`,
+ * viaggiano sul client autenticato, e per leggere il token dal DataStore serve un Context.
+ *
+ * `@JvmOverloads` non e' decorativo: la factory di default di `viewModel()` cerca per
+ * reflection un costruttore che prenda il solo `Application`, e i parametri con valore di
+ * default in Kotlin non ne generano uno. Senza, l'app crasherebbe aprendo il catalogo.
+ */
+class CatalogViewModel @JvmOverloads constructor(
+    application: Application,
+    private val itinerarioRepository: ItinerarioRepository =
+        ItinerarioRepository(ApiClient.getItinerarioApi(application)),
+    private val attivitaRepository: SingolaAttivitaRepository =
+        SingolaAttivitaRepository(ApiClient.getSingolaAttivitaApi(application))
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(CatalogUiState())
     val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
