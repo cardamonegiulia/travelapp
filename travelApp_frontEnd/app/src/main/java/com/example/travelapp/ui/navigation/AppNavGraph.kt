@@ -8,17 +8,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.travelapp.ui.components.AppBottomBar
 import com.example.travelapp.ui.pagamenti.PaymentsScreen
@@ -30,6 +33,12 @@ import com.example.travelapp.ui.screens.BookingsScreen
 import com.example.travelapp.ui.screens.ExploreScreen
 import com.example.travelapp.ui.screens.FavoritesScreen
 import com.example.travelapp.ui.screens.ProfileScreen
+import com.example.travelapp.ui.prenotazioni.PrenotazionePasso1Screen
+import com.example.travelapp.ui.prenotazioni.PrenotazionePasso2Screen
+import com.example.travelapp.ui.prenotazioni.PrenotazioneSuccessoScreen
+import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModel
+import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModelFactory
+import androidx.navigation.compose.navigation
 import com.example.travelapp.ui.screens.sampleFavoriteTrips
 import com.example.travelapp.ui.theme.BackgroundLavender
 
@@ -48,10 +57,19 @@ fun AppNavGraph(
 ) {
     val onBack: () -> Unit = { if (!navController.popBackStack()) onExitApp() }
 
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    val mostraBottomBar = currentRoute !in setOf(
+        AppDestination.BookingStep1.route,
+        AppDestination.BookingStep2.route,
+        AppDestination.BookingSuccess.route
+    )
+
     Scaffold(
         modifier = modifier,
         containerColor = BackgroundLavender,
-        bottomBar = { AppBottomBar(navController = navController) }
+        bottomBar = { if (mostraBottomBar) { AppBottomBar(navController = navController) } }
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -81,6 +99,111 @@ fun AppNavGraph(
                     onBack = onBack,
                     onNavigateTo = { destination -> navController.navigate(destination.route) }
                 )
+            }
+            navigation(
+                startDestination = AppDestination.BookingStep1.route,
+                route = "booking_graph"
+            ) {
+
+                composable(AppDestination.BookingStep1.route) { backStackEntry ->
+
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("booking_graph")
+                    }
+
+                    val context = LocalContext.current
+
+                    val bookingViewModel: PrenotazioniViewModel = viewModel(
+                        viewModelStoreOwner = parentEntry,
+                        factory = PrenotazioniViewModelFactory(context)
+                    )
+
+                    val state by bookingViewModel.uiState.collectAsState()
+
+                    LaunchedEffect(state.prenotazioneCreata) {
+                        if (state.prenotazioneCreata != null) {
+                            navController.navigate(
+                                AppDestination.BookingStep2.route
+                            )
+                        }
+                    }
+
+                    PrenotazionePasso1Screen(
+                        uiState = state,
+                        extraDisponibili = emptyList(),
+                        onIncrementa = bookingViewModel::incrementaPartecipanti,
+                        onDecrementa = bookingViewModel::decrementaPartecipanti,
+                        onToggleExtra = bookingViewModel::toggleExtra,
+                        onContinua = {
+                            // qui chiameremo bookingViewModel.creaPrenotazione(...)
+                            // quando avremo l'ID reale della disponibilità/sessione
+                        }
+                    )
+                }
+
+                composable(AppDestination.BookingStep2.route) { backStackEntry ->
+
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("booking_graph")
+                    }
+
+                    val context = LocalContext.current
+
+                    val bookingViewModel: PrenotazioniViewModel = viewModel(
+                        viewModelStoreOwner = parentEntry,
+                        factory = PrenotazioniViewModelFactory(context)
+                    )
+
+                    val state by bookingViewModel.uiState.collectAsState()
+
+                    LaunchedEffect(state.pagamentoCompletato) {
+                        if (state.pagamentoCompletato != null) {
+                            navController.navigate(
+                                AppDestination.BookingSuccess.route
+                            )
+                        }
+                    }
+
+                    PrenotazionePasso2Screen(
+                        uiState = state,
+                        onMetodoPagamentoSelezionato =
+                            bookingViewModel::selezionaMetodoPagamento,
+                        onConfermaEPaga = {
+                            bookingViewModel.pagaPrenotazione()
+                        }
+                    )
+                }
+
+                composable(AppDestination.BookingSuccess.route) { backStackEntry ->
+
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("booking_graph")
+                    }
+
+                    val context = LocalContext.current
+
+                    val bookingViewModel: PrenotazioniViewModel = viewModel(
+                        viewModelStoreOwner = parentEntry,
+                        factory = PrenotazioniViewModelFactory(context)
+                    )
+
+                    val state by bookingViewModel.uiState.collectAsState()
+
+                    PrenotazioneSuccessoScreen(
+                        uiState = state,
+                        onFine = {
+                            bookingViewModel.resetBooking()
+
+                            navController.navigate(
+                                AppDestination.Bookings.route
+                            ) {
+                                popUpTo("booking_graph") {
+                                    inclusive = true
+                                }
+                            }
+                        }
+                    )
+                }
             }
         }
     }
@@ -214,6 +337,8 @@ private fun PaymentsRoute(
         onBack = onBack
     )
 }
+
+
 
 @Preview(showBackground = true, showSystemUi = true, name = "App")
 @Composable

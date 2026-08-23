@@ -58,6 +58,27 @@ sealed class AppDestination(
         unselectedIcon = ProfileIcons.CreditCard
     )
 
+    data object BookingStep1 : AppDestination(
+        route = "booking_step_1",
+        label = "Prenotazione",
+        selectedIcon = ProfileIcons.Ticket,
+        unselectedIcon = ProfileIcons.Ticket
+    )
+
+    data object BookingStep2 : AppDestination(
+        route = "booking_step_2",
+        label = "Pagamento",
+        selectedIcon = ProfileIcons.CreditCard,
+        unselectedIcon = ProfileIcons.CreditCard
+    )
+
+    data object BookingSuccess : AppDestination(
+        route = "booking_success",
+        label = "Successo",
+        selectedIcon = ProfileIcons.Ticket,
+        unselectedIcon = ProfileIcons.Ticket
+    )
+
     companion object {
         /** Voci della bottom navigation, nell'ordine in cui compaiono. */
         val bottomBarItems: List<AppDestination> = listOf(Explore, Bookings, Favorites, Profile)
