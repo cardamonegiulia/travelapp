@@ -2,8 +2,8 @@ package com.example.travelapp.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,7 +17,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,10 +26,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.travelapp.ui.components.AppTopBar
 import com.example.travelapp.ui.components.LogoutButton
 import com.example.travelapp.ui.components.ProfileHeaderCard
@@ -51,31 +48,20 @@ import com.example.travelapp.ui.theme.IconIndigo
 import com.example.travelapp.ui.theme.IconPink
 import com.example.travelapp.ui.theme.IconPurple
 import com.example.travelapp.ui.theme.IconTeal
-import com.example.travelapp.ui.theme.TextPrimary
 
 /** Stato osservabile della schermata profilo. */
 data class ProfileUiState(
     val name: String = "",
     val email: String = "",
-    /**
-     * Foto da mostrare nell'avatar. Può essere un `content://` (la foto appena scelta,
-     * mostrata subito mentre l'upload è in corso) o l'url del backend
-     * (`.../api/immagini/{id}/contenuto`): l'avatar sa leggere entrambi.
-     */
     val avatarUrl: String? = null,
     val isDarkModeEnabled: Boolean = false,
-    /** Upload in corso: il bottone si blocca per non far partire due caricamenti. */
     val isPhotoUploading: Boolean = false,
-    /** Esito dell'ultimo caricamento da mostrare all'utente; `null` se non c'è nulla da dire. */
     val photoMessage: String? = null
 )
 
 /**
  * Schermata "Profilo": intestazione utente, scorciatoie alle attività,
  * impostazioni e logout.
- *
- * La schermata è puramente presentazionale: riceve [state] e notifica le
- * interazioni tramite le lambda, senza conoscere navigazione o ViewModel.
  */
 @Composable
 fun ProfileScreen(
@@ -123,8 +109,6 @@ fun ProfileScreen(
         )
     )
 
-    // Esito del caricamento della foto: uno snackbar e non un testo fisso nella pagina,
-    // perche' e' un messaggio che riguarda un'azione appena compiuta e deve sparire da solo.
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.photoMessage) {
         state.photoMessage?.let { messaggio ->
@@ -136,7 +120,6 @@ fun ProfileScreen(
     Scaffold(
         modifier = modifier,
         containerColor = BackgroundLavender,
-        // Gli inset di sistema sono gia' gestiti dallo Scaffold che ospita il NavHost.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = { AppTopBar(title = "Profilo", onBack = onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -200,7 +183,6 @@ fun ProfileScreen(
     }
 }
 
-/** Voce della sezione "Le mie attività". */
 private data class ActivityItem(
     val title: String,
     val icon: ImageVector,

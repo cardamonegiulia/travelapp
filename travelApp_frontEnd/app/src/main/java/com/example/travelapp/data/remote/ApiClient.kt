@@ -1,63 +1,115 @@
 package com.example.travelapp.data.remote
 
+import android.content.Context
+import com.example.travelapp.BuildConfig
+import com.example.travelapp.data.remote.api.ItinerarioApi
+import com.example.travelapp.data.remote.api.PagamentoApi
+import com.example.travelapp.data.remote.api.PrenotazioneApi
+import com.example.travelapp.data.remote.api.SingolaAttivitaApi
 import com.example.travelapp.data.remote.api.UtenteApi
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-/** Configurazione unica del client HTTP: base url, timeout, interceptor del token. */
+/**
+ * Configurazione centralizzata del client HTTP.
+ *
+ * Gestisce:
+ * - base URL del backend, letto da `local.properties` a build time;
+ * - timeout;
+ * - le API REST, tutte autenticate: sotto `/api` SecurityConfig protegge ogni rotta,
+ *   quindi non esiste piu' una variante "senza token" da cui una chiamata possa passare
+ *   per distrazione.
+ */
 object ApiClient {
 
     /**
-     * Backend di sviluppo, raggiunto da un telefono fisico: qui va l'IP della macchina di
-     * sviluppo sulla rete locale, l'unico indirizzo che il telefono può comporre. Cambia
-     * se il router ne assegna un altro via DHCP, e va tenuto allineato all'elenco di
-     * `res/xml/network_security_config.xml`, che autorizza il traffico in chiaro host per
-     * host.
+     * Indirizzo del backend, iniettato a build time da `local.properties`
+     * (chiave `backend.base.url`, default `http://localhost:8081/`).
      *
-     * Sull'**emulatore** va invece usato `http://10.0.2.2:8081/`: `10.0.2.2` è l'alias con
-     * cui l'emulatore raggiunge il `localhost` della macchina che lo ospita, perché
-     * `127.0.0.1`, lì dentro, è l'emulatore stesso. Su un telefono fisico quell'indirizzo
-     * non esiste e ogni chiamata fallisce con "failed to connect".
-     *
-     * La porta è quella di `mvnw spring-boot:run` (`server.port=8081`). Con
-     * `docker compose up` il backend sta invece sulla 8080.
+     * Non e' piu' una costante scritta nel sorgente: cambiava a ogni cambio di rete, e la
+     * modifica finiva per essere committata o dimenticata. Come impostarlo, e come far
+     * raggiungere il PC a un telefono fisico, e' spiegato in `local.properties.example`.
      */
-    const val BASE_URL: String = "http://10.145.178.54:8081/"
+    val BASE_URL: String = BuildConfig.BACKEND_BASE_URL
 
-    /**
-     * Client condiviso. OkHttp è pensato per essere istanziato una volta sola: ogni
-     * istanza porta con sé il proprio pool di connessioni e i propri thread, e crearne una
-     * per chiamata annulla il riuso delle connessioni.
+    /*
+     * Client HTTP e Retrofit, in un'unica variante: quella che AGGIUNGE il token.
      *
-     * Serve anche fuori da Retrofit: il contenuto delle immagini sta dietro
-     * autenticazione (`GET /api/immagini/{id}/contenuto`), quindi va scaricato con questo
-     * client e non con una `URL.openStream()` qualsiasi, che non porterebbe il token.
+     * Prima ne esistevano due, e le API di catalogo, itinerari e profilo passavano da
+     * quella senza interceptor. Ma SecurityConfig protegge ogni rotta sotto `/api`, non solo
+     * prenotazioni e pagamenti: quelle chiamate partivano senza header Authorization e
+     * tornavano 401 anche a login perfettamente riuscito. Una sola strada, e il caso
+     * "ho dimenticato di autenticare questa" non si ripresenta.
+     *
+     * L'interceptor lascia comunque partire la richiesta quando il token non c'e'
+     * (vedi InterceptorAutenticazione): serve a distinguere "non ho fatto il login" —
+     * 401 dal backend — da "il backend non risponde" — errore di connessione.
+     *
+     * Serve un Context perche' il token sta nel DataStore, che e' per applicazione.
+     * Le istanze sono memoizzate: OkHttp vuole essere condiviso, ha un suo pool di
+     * connessioni e un suo thread pool.
      */
-    val httpClient: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .addInterceptor(InterceptorAutenticazione())
-            .connectTimeout(15, TimeUnit.SECONDS)
+    @Volatile
+    private var httpClientAutenticato: OkHttpClient? = null
+
+    @Volatile
+    private var retrofitAutenticato: Retrofit? = null
+
+    /** Client OkHttp che allega il bearer token: usarlo per QUALUNQUE richiesta a `/api`. */
+    @Synchronized
+    fun getHttpClient(context: Context): OkHttpClient =
+        httpClientAutenticato ?: OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
-            // l'upload di una foto può arrivare a 5 MB: il tempo di scrittura è più lungo
-            // di quello di una richiesta JSON
             .writeTimeout(60, TimeUnit.SECONDS)
+            .addInterceptor(
+                InterceptorAutenticazione(
+                    context.applicationContext
+                )
+            )
             .build()
-    }
+            .also { httpClientAutenticato = it }
 
-    private val retrofit: Retrofit by lazy {
-        Retrofit.Builder()
+    @Synchronized
+    fun getClientAutenticato(context: Context): Retrofit =
+        retrofitAutenticato ?: Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(httpClient)
+            .client(getHttpClient(context))
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+            .also { retrofitAutenticato = it }
+
+    fun getItinerarioApi(context: Context): ItinerarioApi =
+        getClientAutenticato(context).create(ItinerarioApi::class.java)
+
+    fun getSingolaAttivitaApi(context: Context): SingolaAttivitaApi =
+        getClientAutenticato(context).create(SingolaAttivitaApi::class.java)
+
+    fun getUtenteApi(context: Context): UtenteApi =
+        getClientAutenticato(context).create(UtenteApi::class.java)
+
+    fun getPrenotazioneApi(context: Context): PrenotazioneApi =
+        getClientAutenticato(context).create(PrenotazioneApi::class.java)
+
+    fun getPagamentoApi(context: Context): PagamentoApi =
+        getClientAutenticato(context).create(PagamentoApi::class.java)
+
+    /**
+     * Trasforma in URL assoluto i link relativi restituiti
+     * dal backend, ad esempio "/api/...".
+     */
+    fun urlAssoluto(percorso: String): String {
+        return if (
+            percorso.startsWith("http://") ||
+            percorso.startsWith("https://")
+        ) {
+            percorso
+        } else {
+            BASE_URL.trimEnd('/') +
+                    "/" +
+                    percorso.trimStart('/')
+        }
     }
-
-    val utenteApi: UtenteApi by lazy { retrofit.create(UtenteApi::class.java) }
-
-    /** Trasforma in url assoluto i link relativi che il backend mette nei DTO (`/api/...`). */
-    fun urlAssoluto(percorso: String): String =
-        if (percorso.startsWith("http://") || percorso.startsWith("https://")) percorso
-        else BASE_URL.trimEnd('/') + "/" + percorso.trimStart('/')
 }

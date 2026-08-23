@@ -11,5 +11,6 @@ data class Itinerario(
     val prezzoBase: BigDecimal?,
     val durataGiorni: Int?,
     val maxPartecipanti: Int?,
-    val stato: String?
+    val stato: String?,
+    val immagini: List<ImmagineResponse> = emptyList()
 )

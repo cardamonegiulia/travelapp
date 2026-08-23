@@ -43,11 +43,12 @@ logs/
 storage-immagini/
 docs/
 CLAUDE.md
-### Gradle: cache di build locale, non va versionata
-.gradle/
 
-### Android Studio: percorsi SDK specifici della macchina locale
-local.properties
+### Android frontend ###
+/travelApp_frontEnd/.gradle/
+/travelApp_frontEnd/local.properties
+/travelApp_frontEnd/**/build/
 
-### Kotlin: log di errore del compilatore
-.kotlin/
+### Variabili d'ambiente di docker compose: contengono credenziali reali
+### (database, client secret di Keycloak). Riferimento versionato: .env.example
+.env

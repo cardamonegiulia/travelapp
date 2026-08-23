@@ -1,0 +1,27 @@
+# Copia questo file in `local.properties` (che NON e' versionato) e adatta i valori.
+#
+# `local.properties` contiene tutto cio' che dipende dalla singola macchina: il path
+# dell'SDK Android e gli indirizzi di backend e Keycloak. Nessuno dei due e' scritto
+# nel sorgente, proprio perche' cambiano da una postazione all'altra e a ogni cambio
+# di rete (l'IP della Wi-Fi e' assegnato in DHCP).
+
+# Path dell'SDK Android: lo scrive Android Studio da solo alla prima apertura.
+#sdk.dir=C\:\Users\<utente>\AppData\Local\Android\Sdk
+
+# --- Indirizzi dell'ambiente di sviluppo ------------------------------------------
+# Se ometti queste due righe valgono i default (`localhost`), che funzionano gia' con:
+#   - emulatore Android;
+#   - telefono fisico collegato via USB con il debug attivo, dopo:
+#       adb reverse tcp:8081 tcp:8081
+#       adb reverse tcp:8090 tcp:8090
+#     (e' la via che funziona sempre: passa dal cavo, quindi non dipende dalla rete
+#      Wi-Fi ne' dal firewall di Windows)
+#
+# Se invece vuoi passare dalla rete locale, metti qui l'IP della macchina di sviluppo:
+# lo leggi con `ipconfig` (Windows) o `ip addr` (Linux/macOS). Perche' funzioni servono
+# anche: il telefono sulla stessa rete, una rete che non isoli i client fra loro e il
+# firewall aperto in ingresso sulle porte 8081 e 8090.
+#
+# La barra finale su backend.base.url e' richiesta da Retrofit.
+#backend.base.url=http://192.168.1.10:8081/
+#keycloak.base.url=http://192.168.1.10:8090

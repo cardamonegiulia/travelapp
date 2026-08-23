@@ -30,8 +30,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -53,18 +53,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.travelapp.ui.theme.AccentOrange
+import androidx.core.net.toUri
+import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.ui.theme.BadgeGrey
-import com.example.travelapp.ui.theme.ChevronGrey
 import com.example.travelapp.ui.theme.IconGrey
 import com.example.travelapp.ui.theme.LogoutBackground
 import com.example.travelapp.ui.theme.LogoutRed
-import com.example.travelapp.ui.theme.NavSelectedBlue
 import com.example.travelapp.ui.theme.SurfaceWhite
-import com.example.travelapp.ui.theme.TextPrimary
-import com.example.travelapp.ui.theme.TextSecondary
-import androidx.core.net.toUri
-import com.example.travelapp.data.remote.ApiClient
+import com.example.travelapp.ui.theme.TravelBorder
+import com.example.travelapp.ui.theme.TravelBlue
+import com.example.travelapp.ui.theme.TravelOrange
+import com.example.travelapp.ui.theme.TravelSurface
+import com.example.travelapp.ui.theme.TravelTextDark
+import com.example.travelapp.ui.theme.TravelTextMuted
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Request
@@ -72,7 +73,6 @@ import okhttp3.Request
 private val HeaderCardShape = RoundedCornerShape(16.dp)
 private val RowCardShape = RoundedCornerShape(14.dp)
 
-/** Titolo di una sezione della schermata profilo (es. "Le mie attività"). */
 @Composable
 fun SectionTitle(
     text: String,
@@ -82,12 +82,11 @@ fun SectionTitle(
         text = text,
         fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
-        color = TextPrimary,
+        color = TravelTextDark,
         modifier = modifier.padding(start = 4.dp, bottom = 10.dp)
     )
 }
 
-/** Icona dentro il badge circolare pastello usato dalle righe di menu. */
 @Composable
 fun IconBadge(
     icon: ImageVector,
@@ -110,10 +109,6 @@ fun IconBadge(
     }
 }
 
-/**
- * Riga cliccabile "badge + testo + chevron": è il mattone comune a tutte le
- * voci di menu, così da non ripetere la stessa Card per ogni voce.
- */
 @Composable
 fun ProfileMenuRow(
     icon: ImageVector,
@@ -129,19 +124,18 @@ fun ProfileMenuRow(
         Text(
             text = title,
             fontSize = 15.sp,
-            color = TextPrimary,
+            color = TravelTextDark,
             modifier = Modifier.weight(1f)
         )
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            tint = ChevronGrey,
+            tint = TravelTextMuted,
             modifier = Modifier.size(22.dp)
         )
     }
 }
 
-/** Riga con interruttore, per le preferenze booleane (es. tema scuro). */
 @Composable
 fun ProfileSwitchRow(
     icon: ImageVector,
@@ -158,25 +152,24 @@ fun ProfileSwitchRow(
         Text(
             text = title,
             fontSize = 15.sp,
-            color = TextPrimary,
+            color = TravelTextDark,
             modifier = Modifier.weight(1f)
         )
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = SurfaceWhite,
-                checkedTrackColor = NavSelectedBlue,
+                checkedThumbColor = TravelSurface,
+                checkedTrackColor = TravelBlue,
                 checkedBorderColor = Color.Transparent,
-                uncheckedThumbColor = SurfaceWhite,
-                uncheckedTrackColor = ChevronGrey,
+                uncheckedThumbColor = TravelSurface,
+                uncheckedTrackColor = TravelBorder,
                 uncheckedBorderColor = Color.Transparent
             )
         )
     }
 }
 
-/** Card bianca contenitore, condivisa da tutte le righe di lista. */
 @Composable
 private fun ProfileRowCard(
     modifier: Modifier = Modifier,
@@ -184,7 +177,7 @@ private fun ProfileRowCard(
 ) {
     Card(
         shape = RowCardShape,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = TravelSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -198,20 +191,6 @@ private fun ProfileRowCard(
     }
 }
 
-/**
- * Intestazione del profilo: avatar, nome, email e bottone per aggiungere la
- * foto profilo.
- *
- * [avatarUrl] può essere l'URI `content://` della foto appena scelta oppure
- * l'url del backend da cui scaricarla: l'avatar riconosce e gestisce entrambi,
- * così il modulo non dipende da una libreria di image loading. Quando Coil sarà
- * disponibile basterà sostituire l'avatar con `AsyncImage(model = avatarUrl)`
- * configurato con `ApiClient.httpClient`, che è ciò che porta il token.
- *
- * Con [isPhotoUploading] a `true` il bottone si blocca e mostra l'avanzamento:
- * senza, un secondo tocco farebbe partire un upload in parallelo al primo e
- * l'ultimo a rispondere deciderebbe quale foto resta.
- */
 @Composable
 fun ProfileHeaderCard(
     name: String,
@@ -223,7 +202,7 @@ fun ProfileHeaderCard(
 ) {
     Card(
         shape = HeaderCardShape,
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        colors = CardDefaults.cardColors(containerColor = TravelSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -239,13 +218,13 @@ fun ProfileHeaderCard(
                 text = name,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                color = TravelTextDark
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = email,
                 fontSize = 13.sp,
-                color = TextSecondary
+                color = TravelTextMuted
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
@@ -253,7 +232,7 @@ fun ProfileHeaderCard(
                 enabled = !isPhotoUploading,
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = AccentOrange,
+                    containerColor = TravelOrange,
                     contentColor = Color.White
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
@@ -315,15 +294,6 @@ private fun ProfileAvatar(
     }
 }
 
-/**
- * Decodifica fuori dal main thread la foto indicata da [avatarUrl], che è o l'URI
- * restituito dal selettore di immagini di sistema (`content://`) o l'url del backend.
- * Restituisce `null` finché non c'è nulla da mostrare.
- *
- * La bitmap precedente resta visibile mentre si decodifica quella nuova: azzerandola a
- * ogni cambio di [avatarUrl], sostituire la foto farebbe lampeggiare il segnaposto proprio
- * nel momento in cui l'utente si aspetta di vedere la foto appena scelta.
- */
 @Composable
 private fun rememberAvatarBitmap(avatarUrl: String?): ImageBitmap? {
     val context = LocalContext.current
@@ -340,7 +310,7 @@ private fun rememberAvatarBitmap(avatarUrl: String?): ImageBitmap? {
 }
 
 private fun decodeImage(context: Context, url: String): ImageBitmap? =
-    if (url.startsWith("http://") || url.startsWith("https://")) decodeRemoteImage(url)
+    if (url.startsWith("http://") || url.startsWith("https://")) decodeRemoteImage(context, url)
     else decodeLocalImage(context, url)
 
 private fun decodeLocalImage(context: Context, url: String): ImageBitmap? = runCatching {
@@ -358,16 +328,13 @@ private fun decodeLocalImage(context: Context, url: String): ImageBitmap? = runC
 }.getOrNull()
 
 /**
- * Scarica la foto dal backend con il client dell'app.
- *
- * Deve passare da [ApiClient.httpClient] e non da una connessione qualsiasi: il contenuto
- * delle immagini sta dietro autenticazione (`GET /api/immagini/{id}/contenuto`), quindi
- * senza l'interceptor che aggiunge il token la risposta sarebbe un 401 e l'avatar
- * resterebbe vuoto senza spiegazione.
+ * La foto profilo arriva da `/api/immagini/{id}/contenuto`, che e' un endpoint autenticato
+ * come tutto il resto di `/api`: va scaricata con il client che allega il bearer token,
+ * altrimenti il backend risponde 401 e l'avatar resta vuoto senza dire perche'.
  */
-private fun decodeRemoteImage(url: String): ImageBitmap? = runCatching {
+private fun decodeRemoteImage(context: Context, url: String): ImageBitmap? = runCatching {
     val richiesta = Request.Builder().url(url).build()
-    ApiClient.httpClient.newCall(richiesta).execute().use { risposta ->
+    ApiClient.getHttpClient(context).newCall(richiesta).execute().use { risposta ->
         val corpo = risposta.body
         if (!risposta.isSuccessful || corpo == null) {
             return null
@@ -376,7 +343,6 @@ private fun decodeRemoteImage(url: String): ImageBitmap? = runCatching {
     }
 }.getOrNull()
 
-/** Bottone di logout a larghezza piena, in fondo alla schermata. */
 @Composable
 fun LogoutButton(
     onClick: () -> Unit,
