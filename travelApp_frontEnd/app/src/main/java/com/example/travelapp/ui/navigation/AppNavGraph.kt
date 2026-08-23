@@ -21,6 +21,10 @@ import androidx.navigation.compose.composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.travelapp.ui.components.AppBottomBar
+import com.example.travelapp.ui.pagamenti.PaymentsScreen
+import com.example.travelapp.ui.pagamenti.PaymentsViewModel
+import com.example.travelapp.ui.prenotazioni.BookingsViewModel
+import com.example.travelapp.ui.prenotazioni.PrenotazioneDettaglioScreen
 import com.example.travelapp.ui.profilo.ProfiloViewModel
 import com.example.travelapp.ui.screens.BookingsScreen
 import com.example.travelapp.ui.screens.ExploreScreen
@@ -60,7 +64,14 @@ fun AppNavGraph(
                 ExploreScreen()
             }
             composable(AppDestination.Bookings.route) {
-                BookingsScreen()
+                BookingsRoute()
+            }
+            composable(AppDestination.Payments.route) {
+                PaymentsRoute(
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
             composable(AppDestination.Favorites.route) {
                 FavoritesRoute(onBack = onBack)
@@ -138,11 +149,69 @@ private fun ProfileRoute(
         },
         onPhotoMessageShown = viewModel::messaggioMostrato,
         // TODO: agganciare le destinazioni mancanti quando le schermate esisteranno.
-        onPaymentsClick = {},
+        onPaymentsClick = { onNavigateTo(AppDestination.Payments) },
         onReviewsClick = {},
         onToggleDarkMode = viewModel::cambiaTemaScuro,
         onChangePassword = {},
         onLogout = {}
+    )
+}
+
+@Composable
+private fun BookingsRoute(
+    viewModel: BookingsViewModel = viewModel()
+) {
+
+    val state by viewModel.uiState.collectAsState()
+
+    val prenotazioneSelezionata =
+        state.prenotazioneSelezionata
+
+    if (prenotazioneSelezionata != null) {
+
+        PrenotazioneDettaglioScreen(
+            prenotazione = prenotazioneSelezionata,
+            onBack = {
+                viewModel.chiudiDettaglio()
+            },
+            onAnnulla = {
+                viewModel.annullaPrenotazione()
+            },
+            isLoading = state.isLoading
+        )
+
+    } else {
+
+        BookingsScreen(
+            prenotazioni = state.prenotazioni,
+            isLoading = state.isLoading,
+            errore = state.errore,
+            onRiprova = {
+                viewModel.caricaPrenotazioni()
+            },
+            onPrenotazioneClick = {
+                viewModel.selezionaPrenotazione(it)
+            }
+        )
+    }
+}
+
+@Composable
+private fun PaymentsRoute(
+    onBack: () -> Unit,
+    viewModel: PaymentsViewModel = viewModel()
+) {
+
+    val state by viewModel.uiState.collectAsState()
+
+    PaymentsScreen(
+        pagamenti = state.pagamenti,
+        isLoading = state.isLoading,
+        errore = state.errore,
+        onRiprova = {
+            viewModel.caricaPagamenti()
+        },
+        onBack = onBack
     )
 }
 

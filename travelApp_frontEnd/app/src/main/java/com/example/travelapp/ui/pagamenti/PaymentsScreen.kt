@@ -1,4 +1,4 @@
-package com.example.travelapp.ui.screens
+package com.example.travelapp.ui.pagamenti
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,20 +18,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.travelapp.domain.model.Prenotazione
+import com.example.travelapp.domain.model.Pagamento
 import com.example.travelapp.ui.components.AppTopBar
-import com.example.travelapp.ui.prenotazioni.PrenotazioneCard
 import com.example.travelapp.ui.theme.BackgroundLavender
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 
 @Composable
-fun BookingsScreen(
-    prenotazioni: List<Prenotazione> = emptyList(),
-    isLoading: Boolean = false,
-    errore: String? = null,
-    onRiprova: () -> Unit = {},
-    onPrenotazioneClick: (Prenotazione) -> Unit = {},
+fun PaymentsScreen(
+    pagamenti: List<Pagamento>,
+    isLoading: Boolean,
+    errore: String?,
+    onRiprova: () -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -42,14 +40,14 @@ fun BookingsScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             AppTopBar(
-                title = "Le mie prenotazioni"
+                title = "I miei pagamenti",
+                onBack = onBack
             )
         }
     ) { innerPadding ->
 
         when {
 
-            // 1. CARICAMENTO
             isLoading -> {
                 Box(
                     modifier = Modifier
@@ -61,7 +59,6 @@ fun BookingsScreen(
                 }
             }
 
-            // 2. ERRORE
             errore != null -> {
                 Column(
                     modifier = Modifier
@@ -73,7 +70,7 @@ fun BookingsScreen(
                 ) {
 
                     Text(
-                        text = "Impossibile caricare le prenotazioni",
+                        text = "Impossibile caricare i pagamenti",
                         style = MaterialTheme.typography.titleMedium,
                         color = TextPrimary
                     )
@@ -94,8 +91,7 @@ fun BookingsScreen(
                 }
             }
 
-            // 3. LISTA VUOTA
-            prenotazioni.isEmpty() -> {
+            pagamenti.isEmpty() -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -103,27 +99,15 @@ fun BookingsScreen(
                         .padding(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
 
-                        Text(
-                            text = "Nessuna prenotazione",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = TextPrimary
-                        )
-
-                        Text(
-                            text = "Le prenotazioni che effettuerai compariranno qui.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
+                    Text(
+                        text = "Non hai ancora effettuato pagamenti.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
                 }
             }
 
-            // 4. PRENOTAZIONI PRESENTI
             else -> {
                 LazyColumn(
                     modifier = Modifier
@@ -137,16 +121,12 @@ fun BookingsScreen(
                 ) {
 
                     items(
-                        items = prenotazioni,
-                        key = { prenotazione -> prenotazione.id }
-                    ) { prenotazione ->
+                        items = pagamenti,
+                        key = { it.id }
+                    ) { pagamento ->
 
-                        PrenotazioneCard(
-                            prenotazione = prenotazione,
-                            onClick = {
-                                onPrenotazioneClick(prenotazione)
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                        PagamentoCard(
+                            pagamento = pagamento
                         )
                     }
                 }

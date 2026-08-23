@@ -51,6 +51,13 @@ sealed class AppDestination(
         unselectedIcon = Icons.Outlined.Person
     )
 
+    data object Payments : AppDestination(
+        route = "payments",
+        label = "Pagamenti",
+        selectedIcon = ProfileIcons.CreditCard,
+        unselectedIcon = ProfileIcons.CreditCard
+    )
+
     companion object {
         /** Voci della bottom navigation, nell'ordine in cui compaiono. */
         val bottomBarItems: List<AppDestination> = listOf(Explore, Bookings, Favorites, Profile)
