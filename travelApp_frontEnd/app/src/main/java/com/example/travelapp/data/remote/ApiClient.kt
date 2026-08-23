@@ -129,4 +129,24 @@ object ApiClient {
                     percorso.trimStart('/')
         }
     }
+
+    /**
+     * Restituisce l'API utente usando il client autenticato.
+     *
+     * Gli endpoint /api/utenti/me identificano l'utente tramite il JWT,
+     * quindi devono ricevere l'header Authorization: Bearer <token>.
+     * Usare il client Retrofit generale causerebbe il fallimento della
+     * sincronizzazione del profilo dell'utente autenticato.
+     * uso questo metodo in utenterepositorei dentro class
+     */
+
+    fun getUtenteApi(context: Context): UtenteApi{
+        return getClientAutenticato(context).create(UtenteApi::class.java)
+    }
+
+
+
+
+
+
 }
