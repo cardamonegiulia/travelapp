@@ -43,3 +43,11 @@ logs/
 storage-immagini/
 docs/
 CLAUDE.md
+### Gradle: cache di build locale, non va versionata
+.gradle/
+
+### Android Studio: percorsi SDK specifici della macchina locale
+local.properties
+
+### Kotlin: log di errore del compilatore
+.kotlin/
