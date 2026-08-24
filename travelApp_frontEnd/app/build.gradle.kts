@@ -256,11 +256,11 @@ dependencies {
 }
 
 /*
- * Quando installDebug viene eseguito con un dispositivo fisico collegato via USB,
- * espone automaticamente backend (8081) e Keycloak (8090) tramite localhost
- * sul dispositivo.
+ * Quando installDebug o assembleDebug vengono eseguiti con un dispositivo
+ * fisico collegato via USB, espone automaticamente backend (8081)
+ * e Keycloak (8090) tramite localhost sul dispositivo.
  *
- * Se non c'è un dispositivo fisico collegato, il task non blocca la build.
+ * Se non c'è un dispositivo collegato, il task non blocca la build.
  */
 tasks.register("adbReversePortauto") {
 
@@ -285,20 +285,13 @@ tasks.register("adbReversePortauto") {
             )
 
         if (!adb.exists()) {
-
             logger.warn(
                 "adb non trovato in ${adb.path}, salto adb reverse"
             )
-
             return@doLast
         }
 
-        for (
-        port in listOf(
-            8081,
-            8090
-        )
-        ) {
+        for (port in listOf(8081, 8090)) {
 
             val risultato =
                 project.exec {
@@ -313,13 +306,10 @@ tasks.register("adbReversePortauto") {
                     isIgnoreExitValue = true
                 }
 
-            if (
-                risultato.exitValue != 0
-            ) {
-
+            if (risultato.exitValue != 0) {
                 logger.lifecycle(
                     "adb reverse per la porta $port non applicato " +
-                            "(nessun dispositivo fisico collegato?)"
+                            "(nessun dispositivo collegato, oppure più di uno)"
                 )
             }
         }
@@ -330,7 +320,9 @@ afterEvaluate {
 
     tasks
         .findByName("installDebug")
-        ?.dependsOn(
-            "adbReversePortauto"
-        )
+        ?.dependsOn("adbReversePortauto")
+
+    tasks
+        .findByName("assembleDebug")
+        ?.dependsOn("adbReversePortauto")
 }

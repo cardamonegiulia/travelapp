@@ -17,8 +17,8 @@ object KeycloakManager {
     /**
      * Indirizzo di Keycloak iniettato a build time da local.properties.
      *
-     * In questo modo ogni sviluppatore può usare localhost, emulator,
-     * adb reverse o IP LAN senza modificare il sorgente condiviso.
+     * In questo modo ogni sviluppatore può usare localhost,
+     * adb reverse, emulatore o IP LAN senza modificare il sorgente.
      */
     private val KEYCLOAK_BASE =
         BuildConfig.KEYCLOAK_BASE_URL
@@ -27,7 +27,7 @@ object KeycloakManager {
 
     /**
      * Deve coincidere con una Valid Redirect URI
-     * configurata sul client travelapp-android.
+     * configurata nel client travelapp-android.
      */
     private const val REDIRECT_URI =
         "com.example.travelapp:/oauth2redirect"
@@ -43,8 +43,7 @@ object KeycloakManager {
         )
 
     /**
-     * Permette ad AppAuth di comunicare con Keycloak
-     * anche durante lo sviluppo locale via HTTP.
+     * Permette l'uso di Keycloak via HTTP durante lo sviluppo locale.
      */
     private val appAuthConfig =
         AppAuthConfiguration.Builder()
@@ -54,21 +53,35 @@ object KeycloakManager {
             .build()
 
     /**
-     * Crea l'intent per avviare il login Keycloak.
+     * Manteniamo una sola istanza attiva alla volta.
+     */
+    private var authService: AuthorizationService? = null
+
+    /**
+     * Crea l'intent per il login Keycloak.
      *
-     * loginHint è opzionale e permette di precompilare
-     * username/email nella schermata Keycloak.
+     * loginHint:
+     * precompila username/email quando disponibile.
+     *
+     * forzaLogin:
+     * forza Keycloak a mostrare nuovamente la schermata di login
+     * invece di riutilizzare automaticamente una sessione precedente.
      */
     fun creaIntentLogin(
         context: Context,
-        loginHint: String? = null
+        loginHint: String? = null,
+        forzaLogin: Boolean = false
     ): Intent {
 
-        val authService =
+        authService?.dispose()
+
+        val servizio =
             AuthorizationService(
                 context,
                 appAuthConfig
             )
+
+        authService = servizio
 
         val requestBuilder =
             AuthorizationRequest.Builder(
@@ -89,7 +102,11 @@ object KeycloakManager {
             )
         }
 
-        return authService
+        if (forzaLogin) {
+            requestBuilder.setPrompt("login")
+        }
+
+        return servizio
             .getAuthorizationRequestIntent(
                 requestBuilder.build()
             )
@@ -102,11 +119,12 @@ object KeycloakManager {
         onError: (String) -> Unit
     ) {
 
-        val authService =
-            AuthorizationService(
-                context,
-                appAuthConfig
-            )
+        val servizio =
+            authService
+                ?: AuthorizationService(
+                    context,
+                    appAuthConfig
+                )
 
         val response =
             AuthorizationResponse
@@ -117,22 +135,35 @@ object KeycloakManager {
                 .fromIntent(intent)
 
         if (error != null) {
+
+            servizio.dispose()
+            authService = null
+
             onError(
                 "Errore login: ${error.message}"
             )
+
             return
         }
 
         if (response == null) {
+
+            servizio.dispose()
+            authService = null
+
             onError(
                 "Risposta Keycloak vuota"
             )
+
             return
         }
 
-        authService.performTokenRequest(
+        servizio.performTokenRequest(
             response.createTokenExchangeRequest()
         ) { tokenResponse, ex ->
+
+            servizio.dispose()
+            authService = null
 
             if (ex != null) {
                 onError(
@@ -157,8 +188,8 @@ object KeycloakManager {
     /**
      * Ricava il ruolo applicativo dal JWT.
      *
-     * In assenza di un ruolo riconosciuto usa VIAGGIATORE
-     * come fallback.
+     * Se non trova ORGANIZZATORE,
+     * usa VIAGGIATORE come fallback.
      */
     fun estraiRuolo(
         accessToken: String

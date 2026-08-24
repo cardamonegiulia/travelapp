@@ -58,7 +58,7 @@ fun LoginScreen(
 
     LaunchedEffect(Unit) {
         if (!emailPreCompilata.isNullOrBlank()) {
-            launcher.launch(viewModel.creaIntentLogin(emailPreCompilata))
+            launcher.launch(viewModel.creaIntentLogin(emailPreCompilata, forzaLogin = true))
         }
     }
 
