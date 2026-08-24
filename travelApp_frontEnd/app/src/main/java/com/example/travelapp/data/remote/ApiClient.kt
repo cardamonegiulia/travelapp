@@ -1,6 +1,7 @@
 package com.example.travelapp.data.remote
 
 import com.example.travelapp.data.remote.api.ItinerarioApi
+import com.example.travelapp.data.remote.api.PrenotazioneApi
 import com.example.travelapp.data.remote.api.SingolaAttivitaApi
 import com.example.travelapp.data.remote.api.UtenteApi
 import okhttp3.OkHttpClient
@@ -41,6 +42,10 @@ object ApiClient {
 
     val utenteApi: UtenteApi by lazy {
         retrofit.create(UtenteApi::class.java)
+    }
+
+    val prenotazioneApi: PrenotazioneApi by lazy {
+        retrofit.create(PrenotazioneApi::class.java)
     }
 
     /** Trasforma in url assoluto i link relativi che il backend mette nei DTO (`/api/...`). */
