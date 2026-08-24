@@ -198,96 +198,35 @@ fun AppNavGraph(
                 }
             }
 
-            // --- Creazione e Modifica Catalogo ---
+            // --- Creazione e Modifica Catalogo (API Reali) ---
 
             composable(CatalogRoutes.CREA_ITINERARIO) {
                 CreaItinerarioScreen(
-                    onBack = onBack,
-                    onSalva = { dto, _ ->
-                        mockItinerari.add(
-                            Itinerario(
-                                id = (mockItinerari.maxOfOrNull { it.id } ?: 0L) + 1L,
-                                organizzatoreId = 1L,
-                                titolo = dto.titolo,
-                                descrizione = dto.descrizione,
-                                destinazionePrincipale = dto.destinazionePrincipale,
-                                prezzoBase = dto.prezzoBase,
-                                durataGiorni = dto.durataGiorni,
-                                maxPartecipanti = dto.maxPartecipanti,
-                                stato = "ATTIVO"
-                            )
-                        )
-                        Toast.makeText(context, "Itinerario creato con successo!", Toast.LENGTH_SHORT).show()
-                        navController.popBackStack()
-                    }
-                )
-            }
-
-            composable(CatalogRoutes.CREA_ATTIVITA) {
-                CreaAttivitaScreen(
-                    onBack = onBack,
-                    onSalva = { dto, _ ->
-                        mockAttivita.add(
-                            SingolaAttivita(
-                                id = (mockAttivita.maxOfOrNull { it.id } ?: 0L) + 1L,
-                                organizzatoreId = 1L,
-                                titolo = dto.titolo,
-                                descrizione = dto.descrizione,
-                                luogo = dto.luogo,
-                                prezzo = dto.prezzo,
-                                durataMinuti = dto.durataMinuti,
-                                maxPartecipanti = dto.maxPartecipanti
-                            )
-                        )
-                        Toast.makeText(context, "Attività creata con successo!", Toast.LENGTH_SHORT).show()
-                        navController.popBackStack()
-                    }
+                    onBack = onBack
                 )
             }
 
             composable(CatalogRoutes.MODIFICA_ITINERARIO) {
                 CreaItinerarioScreen(
                     itinerarioDaModificare = itinerarioInModifica,
-                    onBack = onBack,
-                    onSalva = { dto, _ ->
-                        val index = mockItinerari.indexOfFirst { it.id == itinerarioInModifica?.id }
-                        if (index != -1) {
-                            mockItinerari[index] = mockItinerari[index].copy(
-                                titolo = dto.titolo,
-                                descrizione = dto.descrizione,
-                                destinazionePrincipale = dto.destinazionePrincipale,
-                                prezzoBase = dto.prezzoBase,
-                                durataGiorni = dto.durataGiorni,
-                                maxPartecipanti = dto.maxPartecipanti
-                            )
-                            Toast.makeText(context, "Itinerario aggiornato!", Toast.LENGTH_SHORT).show()
-                        }
-                        navController.popBackStack()
-                    }
+                    onBack = onBack
+                )
+            }
+
+            composable(CatalogRoutes.CREA_ATTIVITA) {
+                CreaAttivitaScreen(
+                    onBack = onBack
                 )
             }
 
             composable(CatalogRoutes.MODIFICA_ATTIVITA) {
                 CreaAttivitaScreen(
                     attivitaDaModificare = attivitaInModifica,
-                    onBack = onBack,
-                    onSalva = { dto, _ ->
-                        val index = mockAttivita.indexOfFirst { it.id == attivitaInModifica?.id }
-                        if (index != -1) {
-                            mockAttivita[index] = mockAttivita[index].copy(
-                                titolo = dto.titolo,
-                                descrizione = dto.descrizione,
-                                luogo = dto.luogo,
-                                prezzo = dto.prezzo,
-                                durataMinuti = dto.durataMinuti,
-                                maxPartecipanti = dto.maxPartecipanti
-                            )
-                            Toast.makeText(context, "Attività aggiornata!", Toast.LENGTH_SHORT).show()
-                        }
-                        navController.popBackStack()
-                    }
+                    onBack = onBack
                 )
             }
+
+            // --- Gestione Offerte e Admin ---
 
             composable(CatalogRoutes.LE_MIE_OFFERTE) {
                 OfferteManagementScreen(
