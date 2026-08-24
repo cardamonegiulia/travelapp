@@ -34,7 +34,7 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
     /**
      * Rilegge il profilo dal backend, foto compresa.
      *
-     * Se la chiamata fallisce lo stato resta com'è: senza login (vedi `SessioneUtente`) la
+     * Se la chiamata fallisce lo stato resta com'è: senza login (nessun token in `TokenManager`) la
      * risposta è 401, e svuotare la schermata per questo non aiuterebbe nessuno.
      */
     fun caricaProfilo() {

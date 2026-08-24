@@ -1,6 +1,7 @@
 package com.example.travelapp.data.remote
 
 import android.content.Context
+import com.example.travelapp.BuildConfig
 import com.example.travelapp.data.remote.api.ItinerarioApi
 import com.example.travelapp.data.remote.api.PagamentoApi
 import com.example.travelapp.data.remote.api.PrenotazioneApi
@@ -15,103 +16,85 @@ import java.util.concurrent.TimeUnit
  * Configurazione centralizzata del client HTTP.
  *
  * Gestisce:
- * - base URL del backend;
+ * - base URL del backend, letto da `local.properties` a build time;
  * - timeout;
- * - API del catalogo/utente;
- * - API booking protette tramite interceptor di autenticazione.
+ * - le API REST, tutte autenticate: sotto `/api` SecurityConfig protegge ogni rotta,
+ *   quindi non esiste piu' una variante "senza token" da cui una chiamata possa passare
+ *   per distrazione.
  */
 object ApiClient {
 
-    /*
-     * Emulatore Android:
-     * 10.0.2.2 punta al localhost del PC.
+    /**
+     * Indirizzo del backend, iniettato a build time da `local.properties`
+     * (chiave `backend.base.url`, default `http://localhost:8081/`).
      *
-     * Telefono fisico:
-     * servirà l'IP locale del PC sulla stessa rete.
-     *
-     * Verificare che il backend utilizzi effettivamente la porta 8081.
+     * Non e' piu' una costante scritta nel sorgente: cambiava a ogni cambio di rete, e la
+     * modifica finiva per essere committata o dimenticata. Come impostarlo, e come far
+     * raggiungere il PC a un telefono fisico, e' spiegato in `local.properties.example`.
      */
-    const val BASE_URL = "http://192.168.1.51:8081/"
+    val BASE_URL: String = BuildConfig.BACKEND_BASE_URL
 
     /*
-     * Client HTTP generale.
+     * Client HTTP e Retrofit, in un'unica variante: quella che AGGIUNGE il token.
      *
-     * Manteniamo i timeout già introdotti dagli altri moduli.
+     * Prima ne esistevano due, e le API di catalogo, itinerari e profilo passavano da
+     * quella senza interceptor. Ma SecurityConfig protegge ogni rotta sotto `/api`, non solo
+     * prenotazioni e pagamenti: quelle chiamate partivano senza header Authorization e
+     * tornavano 401 anche a login perfettamente riuscito. Una sola strada, e il caso
+     * "ho dimenticato di autenticare questa" non si ripresenta.
+     *
+     * L'interceptor lascia comunque partire la richiesta quando il token non c'e'
+     * (vedi InterceptorAutenticazione): serve a distinguere "non ho fatto il login" —
+     * 401 dal backend — da "il backend non risponde" — errore di connessione.
+     *
+     * Serve un Context perche' il token sta nel DataStore, che e' per applicazione.
+     * Le istanze sono memoizzate: OkHttp vuole essere condiviso, ha un suo pool di
+     * connessioni e un suo thread pool.
      */
-    val httpClient: OkHttpClient by lazy {
-        OkHttpClient.Builder()
+    @Volatile
+    private var httpClientAutenticato: OkHttpClient? = null
+
+    @Volatile
+    private var retrofitAutenticato: Retrofit? = null
+
+    /** Client OkHttp che allega il bearer token: usarlo per QUALUNQUE richiesta a `/api`. */
+    @Synchronized
+    fun getHttpClient(context: Context): OkHttpClient =
+        httpClientAutenticato ?: OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
+            .addInterceptor(
+                InterceptorAutenticazione(
+                    context.applicationContext
+                )
+            )
             .build()
-    }
+            .also { httpClientAutenticato = it }
 
-    /*
-     * Retrofit generale già utilizzato dagli altri moduli.
-     */
-    private val retrofit: Retrofit by lazy {
-        Retrofit.Builder()
+    @Synchronized
+    fun getClientAutenticato(context: Context): Retrofit =
+        retrofitAutenticato ?: Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(httpClient)
+            .client(getHttpClient(context))
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-    }
+            .also { retrofitAutenticato = it }
 
-    val itinerarioApi: ItinerarioApi by lazy {
-        retrofit.create(ItinerarioApi::class.java)
-    }
+    fun getItinerarioApi(context: Context): ItinerarioApi =
+        getClientAutenticato(context).create(ItinerarioApi::class.java)
 
-    val singolaAttivitaApi: SingolaAttivitaApi by lazy {
-        retrofit.create(SingolaAttivitaApi::class.java)
-    }
+    fun getSingolaAttivitaApi(context: Context): SingolaAttivitaApi =
+        getClientAutenticato(context).create(SingolaAttivitaApi::class.java)
 
-    val utenteApi: UtenteApi by lazy {
-        retrofit.create(UtenteApi::class.java)
-    }
+    fun getUtenteApi(context: Context): UtenteApi =
+        getClientAutenticato(context).create(UtenteApi::class.java)
 
-    /*
-     * Retrofit autenticato.
-     *
-     * Viene creato quando abbiamo un Context perché
-     * InterceptorAutenticazione necessita del Context
-     * per recuperare il token.
-     */
-    private var retrofitAutenticato: Retrofit? = null
+    fun getPrenotazioneApi(context: Context): PrenotazioneApi =
+        getClientAutenticato(context).create(PrenotazioneApi::class.java)
 
-    fun getClientAutenticato(context: Context): Retrofit {
-
-        if (retrofitAutenticato == null) {
-
-            val clientAutenticato = OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
-                .addInterceptor(
-                    InterceptorAutenticazione(
-                        context.applicationContext
-                    )
-                )
-                .build()
-
-            retrofitAutenticato = Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .client(clientAutenticato)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-        }
-
-        return retrofitAutenticato!!
-    }
-
-    fun getPrenotazioneApi(context: Context): PrenotazioneApi {
-        return getClientAutenticato(context)
-            .create(PrenotazioneApi::class.java)
-    }
-
-    fun getPagamentoApi(context: Context): PagamentoApi {
-        return getClientAutenticato(context)
-            .create(PagamentoApi::class.java)
-    }
+    fun getPagamentoApi(context: Context): PagamentoApi =
+        getClientAutenticato(context).create(PagamentoApi::class.java)
 
     /**
      * Trasforma in URL assoluto i link relativi restituiti

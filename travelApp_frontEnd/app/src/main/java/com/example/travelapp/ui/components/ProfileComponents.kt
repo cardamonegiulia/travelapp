@@ -310,7 +310,7 @@ private fun rememberAvatarBitmap(avatarUrl: String?): ImageBitmap? {
 }
 
 private fun decodeImage(context: Context, url: String): ImageBitmap? =
-    if (url.startsWith("http://") || url.startsWith("https://")) decodeRemoteImage(url)
+    if (url.startsWith("http://") || url.startsWith("https://")) decodeRemoteImage(context, url)
     else decodeLocalImage(context, url)
 
 private fun decodeLocalImage(context: Context, url: String): ImageBitmap? = runCatching {
@@ -327,9 +327,14 @@ private fun decodeLocalImage(context: Context, url: String): ImageBitmap? = runC
     bitmap.asImageBitmap()
 }.getOrNull()
 
-private fun decodeRemoteImage(url: String): ImageBitmap? = runCatching {
+/**
+ * La foto profilo arriva da `/api/immagini/{id}/contenuto`, che e' un endpoint autenticato
+ * come tutto il resto di `/api`: va scaricata con il client che allega il bearer token,
+ * altrimenti il backend risponde 401 e l'avatar resta vuoto senza dire perche'.
+ */
+private fun decodeRemoteImage(context: Context, url: String): ImageBitmap? = runCatching {
     val richiesta = Request.Builder().url(url).build()
-    ApiClient.httpClient.newCall(richiesta).execute().use { risposta ->
+    ApiClient.getHttpClient(context).newCall(richiesta).execute().use { risposta ->
         val corpo = risposta.body
         if (!risposta.isSuccessful || corpo == null) {
             return null

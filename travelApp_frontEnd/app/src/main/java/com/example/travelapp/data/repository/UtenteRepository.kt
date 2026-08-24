@@ -57,10 +57,6 @@ class UtenteRepository(
     ): Result<Utente> =
         try {
             val risposta = blocco()
-            android.util.Log.d(
-                "UTENTE_DEBUG",
-                "HTTP ${risposta.code()} - URL: ${risposta.raw().request.url}"
-            )
             val corpo = risposta.body()
             if (risposta.isSuccessful && corpo != null) {
                 Result.success(corpo.toDomain())
@@ -68,11 +64,6 @@ class UtenteRepository(
                 Result.failure(Exception(messaggioErrore(contesto, risposta)))
             }
         } catch (e: Exception) {
-            android.util.Log.e(
-                "UTENTE_DEBUG",
-                "Eccezione durante sincronizzazione profilo",
-                e
-            )
             Result.failure(e)
         }
 

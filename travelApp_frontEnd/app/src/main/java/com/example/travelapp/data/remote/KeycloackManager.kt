@@ -3,6 +3,7 @@ package com.example.travelapp.data.remote
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.example.travelapp.BuildConfig
 import net.openid.appauth.AppAuthConfiguration
 import net.openid.appauth.AuthorizationRequest
 import net.openid.appauth.AuthorizationResponse
@@ -13,7 +14,25 @@ import net.openid.appauth.ResponseTypeValues
 
 object KeycloakManager {
 
-    private const val KEYCLOAK_BASE = "http://192.168.1.51:8090/realms/travelapp"
+    /**
+     * Indirizzo di Keycloak, iniettato a build time da `local.properties`
+     * (chiave `keycloak.base.url`, default `http://localhost:8090`).
+     *
+     * Attenzione: l'host con cui l'app raggiunge Keycloak finisce nel claim `iss` del token,
+     * perche' Keycloak costruisce l'issuer a partire dall'URL della richiesta. Il backend
+     * valida `iss` contro `OAUTH2_ISSUER_URI`: i due valori devono descrivere lo stesso
+     * indirizzo, altrimenti il login riesce e poi ogni chiamata all'API risponde 401.
+     * Il `docker-compose.yml` fissa l'issuer con `KC_HOSTNAME_URL` proprio per questo.
+     */
+    private val KEYCLOAK_BASE =
+        BuildConfig.KEYCLOAK_BASE_URL.trimEnd('/') + "/realms/travelapp"
+
+    /**
+     * Deve coincidere ESATTAMENTE con una delle "Valid redirect URIs" del client
+     * `travelapp-android` sul realm, e con `appAuthRedirectScheme` nel `build.gradle.kts`.
+     * Il confronto che fa Keycloak e' sulla stringa intera: uno schema diverso fa fallire
+     * il login con "Invalid parameter: redirect_uri", prima ancora della form di login.
+     */
     private const val REDIRECT_URI = "com.example.travelapp:/oauth2redirect"
 
     private val serviceConfig = AuthorizationServiceConfiguration(

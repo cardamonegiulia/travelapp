@@ -4,12 +4,33 @@ services:
     build: .
     container_name: travelapp-backend
     ports:
-      - "8080:8080"
+      # l'applicazione ascolta sulla 8081 (server.port in application.properties):
+      # la porta pubblicata deve corrispondere, altrimenti il container e' irraggiungibile
+      - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://travelapp-keycloak:8080/realms/travelapp
+      # i nomi delle variabili sono quelli letti da application.properties, che non ha
+      # default per il database: sbagliarli non da' un errore di connessione ma un
+      # fallimento all'avvio del context, molto meno leggibile
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      # --- OAuth2: due indirizzi diversi, di proposito -------------------------------
+      # issuer-uri e' un CONFRONTO sul claim 'iss' del token, non una chiamata di rete:
+      # deve valere esattamente l'URL con cui il client ha raggiunto Keycloak, cioe' lo
+      # stesso KEYCLOAK_PUBLIC_URL con cui e' fissato KC_HOSTNAME_URL qui sotto.
+      OAUTH2_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8090}/realms/travelapp
+      # jwk-set-uri invece e' una chiamata vera, fatta dal backend per scaricare le chiavi
+      # di firma: passa dalla rete docker, dove Keycloak si chiama travelapp-keycloak:8080.
+      # Usare qui l'indirizzo pubblico significherebbe, dentro il container, non trovare
+      # nessuno in ascolto e rifiutare ogni token per firma non verificabile.
+      OAUTH2_JWK_SET_URI: http://travelapp-keycloak:8080/realms/travelapp/protocol/openid-connect/certs
+      # Admin REST API (registrazione self-service): anche questa e' una chiamata vera
+      KEYCLOAK_BASE_URL: http://travelapp-keycloak:8080
+      # secret del service account: senza, l'applicazione parte e la sola registrazione
+      # risponde 503 (vedi KeycloakAdminClient). Va messo nel .env, mai qui.
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-}
+
       # cartella di destinazione degli upload: volume dedicato, separato dal filesystem
       # dell'applicazione, cosi' i file sopravvivono al riavvio del container e un upload
       # che riempie il volume non tocca la directory in cui gira l'applicazione
@@ -27,6 +48,21 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+
+      # --- Issuer fisso -------------------------------------------------------------
+      # Senza questo, Keycloak costruisce issuer, endpoint e redirect a partire dall'host
+      # della singola richiesta: il PC che la chiama su localhost ottiene token con
+      # iss=http://localhost:8090/..., il telefono che la chiama sull'IP della Wi-Fi ne
+      # ottiene con iss=http://192.168.x.y:8090/... . Il backend ne accetta uno solo,
+      # quindi dall'app il login riusciva e poi ogni chiamata rispondeva 401.
+      #
+      # Fissandolo, l'issuer e' sempre lo stesso da qualunque parte si arrivi. Il valore
+      # deve pero' essere un indirizzo che raggiungono TUTTI i client, telefono compreso:
+      # con `adb reverse tcp:8090 tcp:8090` va bene il default localhost, altrimenti va
+      # messo in .env l'IP della macchina di sviluppo (lo stesso di keycloak.base.url in
+      # travelApp_frontEnd/local.properties).
+      KC_HOSTNAME_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8090}
+      KC_HOSTNAME_ADMIN_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8090}
     command: start-dev --import-realm
     volumes:
       - ./keycloak-import:/opt/keycloak/data/import
