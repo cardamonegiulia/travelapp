@@ -23,8 +23,14 @@ data class CreaItinerarioUiState(
 )
 
 class CreaItinerarioViewModel(
-    private val repository: ItinerarioRepository = ItinerarioRepository(ApiClient.itinerarioApi)
-) : ViewModel() {
+    application: android.app.Application
+) : androidx.lifecycle.AndroidViewModel(application) {
+
+    private val repository =
+        ItinerarioRepository(
+            ApiClient.getItinerarioApi(application)
+        )
+
 
     private val _uiState = MutableStateFlow(CreaItinerarioUiState())
     val uiState: StateFlow<CreaItinerarioUiState> = _uiState.asStateFlow()
@@ -75,7 +81,9 @@ class CreaItinerarioViewModel(
             val requestBody = bytes.toRequestBody(type.toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("file", "copertina.jpg", requestBody)
 
-            ApiClient.itinerarioApi.caricaImmagine(itinerarioId, part)
+            ApiClient
+                .getItinerarioApi(getApplication())
+                .caricaImmagine(itinerarioId, part)
         } catch (_: Exception) {
             // Se fallisce l'upload immagine l'itinerario rimane comunque creato
         }

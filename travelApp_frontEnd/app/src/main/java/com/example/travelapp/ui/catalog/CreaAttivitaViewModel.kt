@@ -24,8 +24,13 @@ data class CreaAttivitaUiState(
 )
 
 class CreaAttivitaViewModel(
-    private val repository: SingolaAttivitaRepository = SingolaAttivitaRepository(ApiClient.singolaAttivitaApi)
-) : ViewModel() {
+    application: android.app.Application
+) : androidx.lifecycle.AndroidViewModel(application) {
+
+    private val repository =
+        SingolaAttivitaRepository(
+            ApiClient.getSingolaAttivitaApi(application)
+        )
 
     private val _uiState = MutableStateFlow(CreaAttivitaUiState())
     val uiState: StateFlow<CreaAttivitaUiState> = _uiState.asStateFlow()

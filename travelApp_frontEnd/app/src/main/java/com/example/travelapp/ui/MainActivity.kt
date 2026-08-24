@@ -389,146 +389,33 @@ private fun MainTestHub(
         }
 
         TestScreen.CREA_ITINERARIO -> {
-
             CreaItinerarioScreen(
                 onBack = {
-                    currentScreen = TestScreen.MENU
-                },
-                onSalva = { dto, _ ->
-
-                    mockItinerari.add(
-                        Itinerario(
-                            id = (
-                                    mockItinerari.maxOfOrNull { it.id }
-                                        ?: 0L
-                                    ) + 1L,
-                            organizzatoreId = 1L,
-                            titolo = dto.titolo,
-                            descrizione = dto.descrizione,
-                            destinazionePrincipale =
-                            dto.destinazionePrincipale,
-                            prezzoBase = dto.prezzoBase,
-                            durataGiorni = dto.durataGiorni,
-                            maxPartecipanti = dto.maxPartecipanti,
-                            stato = "ATTIVO"
-                        )
-                    )
-
-                    showToast(
-                        "Itinerario creato con successo!"
-                    )
-
                     currentScreen = TestScreen.MENU
                 }
             )
         }
-
         TestScreen.CREA_ATTIVITA -> {
-
             CreaAttivitaScreen(
                 onBack = {
-                    currentScreen = TestScreen.MENU
-                },
-                onSalva = { dto, _ ->
-
-                    mockAttivita.add(
-                        SingolaAttivita(
-                            id = (
-                                    mockAttivita.maxOfOrNull { it.id }
-                                        ?: 0L
-                                    ) + 1L,
-                            organizzatoreId = 1L,
-                            titolo = dto.titolo,
-                            descrizione = dto.descrizione,
-                            luogo = dto.luogo,
-                            prezzo = dto.prezzo,
-                            durataMinuti = dto.durataMinuti,
-                            maxPartecipanti = dto.maxPartecipanti
-                        )
-                    )
-
-                    showToast(
-                        "Attività creata con successo!"
-                    )
-
                     currentScreen = TestScreen.MENU
                 }
             )
         }
 
         TestScreen.MODIFICA_ITINERARIO -> {
-
             CreaItinerarioScreen(
-                itinerarioDaModificare =
-                itinerarioInModifica,
+                itinerarioDaModificare = itinerarioInModifica,
                 onBack = {
-                    currentScreen = previousScreen
-                },
-                onSalva = { dto, _ ->
-
-                    val index =
-                        mockItinerari.indexOfFirst {
-                            it.id == itinerarioInModifica?.id
-                        }
-
-                    if (index != -1) {
-
-                        mockItinerari[index] =
-                            mockItinerari[index].copy(
-                                titolo = dto.titolo,
-                                descrizione = dto.descrizione,
-                                destinazionePrincipale =
-                                dto.destinazionePrincipale,
-                                prezzoBase = dto.prezzoBase,
-                                durataGiorni = dto.durataGiorni,
-                                maxPartecipanti =
-                                dto.maxPartecipanti
-                            )
-
-                        showToast(
-                            "Itinerario aggiornato!"
-                        )
-                    }
-
                     currentScreen = previousScreen
                 }
             )
         }
 
         TestScreen.MODIFICA_ATTIVITA -> {
-
             CreaAttivitaScreen(
-                attivitaDaModificare =
-                attivitaInModifica,
+                attivitaDaModificare = attivitaInModifica,
                 onBack = {
-                    currentScreen = previousScreen
-                },
-                onSalva = { dto, _ ->
-
-                    val index =
-                        mockAttivita.indexOfFirst {
-                            it.id == attivitaInModifica?.id
-                        }
-
-                    if (index != -1) {
-
-                        mockAttivita[index] =
-                            mockAttivita[index].copy(
-                                titolo = dto.titolo,
-                                descrizione = dto.descrizione,
-                                luogo = dto.luogo,
-                                prezzo = dto.prezzo,
-                                durataMinuti =
-                                dto.durataMinuti,
-                                maxPartecipanti =
-                                dto.maxPartecipanti
-                            )
-
-                        showToast(
-                            "Attività aggiornata!"
-                        )
-                    }
-
                     currentScreen = previousScreen
                 }
             )

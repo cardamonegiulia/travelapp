@@ -22,9 +22,18 @@ data class DetailUiState(
 )
 
 class DetailViewModel(
-    private val itinerarioRepository: ItinerarioRepository = ItinerarioRepository(ApiClient.itinerarioApi),
-    private val attivitaRepository: SingolaAttivitaRepository = SingolaAttivitaRepository(ApiClient.singolaAttivitaApi)
-) : ViewModel() {
+    application: android.app.Application
+) : androidx.lifecycle.AndroidViewModel(application) {
+
+    private val itinerarioRepository =
+        ItinerarioRepository(
+            ApiClient.getItinerarioApi(application)
+        )
+
+    private val attivitaRepository =
+        SingolaAttivitaRepository(
+            ApiClient.getSingolaAttivitaApi(application)
+        )
 
     private val _uiState = MutableStateFlow(DetailUiState())
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
