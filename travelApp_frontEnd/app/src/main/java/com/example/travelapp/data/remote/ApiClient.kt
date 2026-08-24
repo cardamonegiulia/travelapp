@@ -72,6 +72,13 @@ object ApiClient {
                 retrofitAutenticato = it
             }
 
+    /**
+     * Compatibilità con le classi che usano ancora ApiClient.getClient(context).
+     * Restituisce comunque il Retrofit autenticato condiviso.
+     */
+    fun getClient(context: Context): Retrofit =
+        getClientAutenticato(context)
+
     fun getItinerarioApi(
         context: Context
     ): ItinerarioApi =

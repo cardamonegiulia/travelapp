@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.auth.LoginScreen
+import com.example.travelapp.ui.auth.RegistrazioneScreen
 import com.example.travelapp.ui.catalog.CreaAttivitaScreen
 import com.example.travelapp.ui.catalog.CreaItinerarioScreen
 import com.example.travelapp.ui.catalog.GestioneUtentiAdminScreen
@@ -46,6 +47,7 @@ import com.example.travelapp.ui.theme.TravelOrange
 import com.example.travelapp.ui.theme.TravelTextDark
 import java.math.BigDecimal
 
+
 enum class TestScreen {
     MENU,
     APP_NAV_GRAPH,
@@ -57,6 +59,7 @@ enum class TestScreen {
     OFFERTE_ADMIN,
     GESTIONE_UTENTI_ADMIN
 }
+
 
 class MainActivity : ComponentActivity() {
 
@@ -80,6 +83,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @Composable
 fun AppNavigation(
     onExit: () -> Unit,
@@ -90,41 +94,57 @@ fun AppNavigation(
         mutableStateOf("login")
     }
 
+    /*
+     * Dopo una registrazione riuscita conserviamo temporaneamente
+     * l'email per riproporla nella schermata di login.
+     */
+    var emailAppenaRegistrata by remember {
+        mutableStateOf<String?>(null)
+    }
+
     when (schermataCorrente) {
 
         "login" -> {
+
             LoginScreen(
                 onLoginSuccessViaggiatore = {
                     schermataCorrente = "home"
                 },
+
                 onLoginSuccessOrganizzatore = {
                     schermataCorrente = "home"
                 },
+
                 onVaiRegistrazione = {
+                    emailAppenaRegistrata = null
                     schermataCorrente = "registrazione"
+                },
+
+                emailPreCompilata = emailAppenaRegistrata
+            )
+        }
+
+
+        "registrazione" -> {
+
+            RegistrazioneScreen(
+                onRegistrazioneSuccess = { email ->
+
+                    emailAppenaRegistrata = email
+
+                    // Dopo la registrazione si torna al login.
+                    schermataCorrente = "login"
+                },
+
+                onVaiLogin = {
+                    schermataCorrente = "login"
                 }
             )
         }
 
-        "registrazione" -> {
-
-            /*
-             * Temporaneo:
-             * quando sarà disponibile la schermata di registrazione reale
-             * sostituiremo questo LoginScreen.
-             */
-            LoginScreen(
-                onLoginSuccessViaggiatore = {
-                    schermataCorrente = "home"
-                },
-                onLoginSuccessOrganizzatore = {
-                    schermataCorrente = "home"
-                },
-                onVaiRegistrazione = {}
-            )
-        }
 
         "home" -> {
+
             MainTestHub(
                 onExit = onExit,
                 showToast = showToast
@@ -132,6 +152,7 @@ fun AppNavigation(
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,6 +177,7 @@ private fun MainTestHub(
         mutableStateOf<SingolaAttivita?>(null)
     }
 
+
     val mockItinerari = remember {
         mutableStateListOf(
             Itinerario(
@@ -169,6 +191,7 @@ private fun MainTestHub(
                 maxPartecipanti = 12,
                 stato = "ATTIVO"
             ),
+
             Itinerario(
                 id = 2L,
                 organizzatoreId = 1L,
@@ -183,6 +206,7 @@ private fun MainTestHub(
         )
     }
 
+
     val mockAttivita = remember {
         mutableStateListOf(
             SingolaAttivita(
@@ -195,6 +219,7 @@ private fun MainTestHub(
                 durataMinuti = 120,
                 maxPartecipanti = 10
             ),
+
             SingolaAttivita(
                 id = 102L,
                 organizzatoreId = 1L,
@@ -208,6 +233,7 @@ private fun MainTestHub(
         )
     }
 
+
     val mockUtenti = remember {
         listOf(
             UtenteAdminItem(
@@ -216,18 +242,21 @@ private fun MainTestHub(
                 "mario@example.it",
                 "VIAGGIATORE"
             ),
+
             UtenteAdminItem(
                 2L,
                 "Elena Bianchi",
                 "elena@organizer.it",
                 "ORGANIZZATORE"
             ),
+
             UtenteAdminItem(
                 3L,
                 "Luca Conti",
                 "luca.c@example.it",
                 "VIAGGIATORE"
             ),
+
             UtenteAdminItem(
                 4L,
                 "Alessandro Ricci",
@@ -236,6 +265,7 @@ private fun MainTestHub(
             )
         )
     }
+
 
     when (currentScreen) {
 
@@ -251,6 +281,7 @@ private fun MainTestHub(
                                 color = TravelTextDark
                             )
                         },
+
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = Color.White
                         )
@@ -264,112 +295,147 @@ private fun MainTestHub(
                         .padding(padding)
                         .background(TravelBg)
                         .padding(20.dp),
+
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
 
                     Button(
                         onClick = {
-                            currentScreen = TestScreen.APP_NAV_GRAPH
+                            currentScreen =
+                                TestScreen.APP_NAV_GRAPH
                         },
+
                         colors = ButtonDefaults.buttonColors(
                             containerColor = TravelBlueDark
                         ),
+
                         shape = RoundedCornerShape(10.dp),
+
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
+
                         Text(
                             text = "0. Avvia App Completa (Profilo / NavGraph)",
                             fontWeight = FontWeight.Bold
                         )
                     }
 
+
                     Button(
                         onClick = {
-                            currentScreen = TestScreen.CREA_ITINERARIO
+                            currentScreen =
+                                TestScreen.CREA_ITINERARIO
                         },
+
                         colors = ButtonDefaults.buttonColors(
                             containerColor = TravelBlue
                         ),
+
                         shape = RoundedCornerShape(10.dp),
+
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
+
                         Text(
                             text = "1. Crea Itinerario (Organizzatore)",
                             fontWeight = FontWeight.Bold
                         )
                     }
 
+
                     Button(
                         onClick = {
-                            currentScreen = TestScreen.CREA_ATTIVITA
+                            currentScreen =
+                                TestScreen.CREA_ATTIVITA
                         },
+
                         colors = ButtonDefaults.buttonColors(
                             containerColor = TravelBlue
                         ),
+
                         shape = RoundedCornerShape(10.dp),
+
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
+
                         Text(
                             text = "2. Crea Attività Singola (Organizzatore)",
                             fontWeight = FontWeight.Bold
                         )
                     }
 
+
                     Button(
                         onClick = {
-                            currentScreen = TestScreen.LE_MIE_OFFERTE
+                            currentScreen =
+                                TestScreen.LE_MIE_OFFERTE
                         },
+
                         colors = ButtonDefaults.buttonColors(
                             containerColor = TravelOrange
                         ),
+
                         shape = RoundedCornerShape(10.dp),
+
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
+
                         Text(
                             text = "3. Le Mie Offerte (Organizzatore)",
                             fontWeight = FontWeight.Bold
                         )
                     }
 
+
                     Button(
                         onClick = {
-                            currentScreen = TestScreen.OFFERTE_ADMIN
+                            currentScreen =
+                                TestScreen.OFFERTE_ADMIN
                         },
+
                         colors = ButtonDefaults.buttonColors(
                             containerColor = TravelOrange
                         ),
+
                         shape = RoundedCornerShape(10.dp),
+
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
+
                         Text(
                             text = "4. Gestione Globale Offerte (Admin)",
                             fontWeight = FontWeight.Bold
                         )
                     }
 
+
                     Button(
                         onClick = {
                             currentScreen =
                                 TestScreen.GESTIONE_UTENTI_ADMIN
                         },
+
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF0F172A)
                         ),
+
                         shape = RoundedCornerShape(10.dp),
+
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
+
                         Text(
                             text = "5. Gestione Utenti (Admin)",
                             fontWeight = FontWeight.Bold
@@ -378,6 +444,7 @@ private fun MainTestHub(
                 }
             }
         }
+
 
         TestScreen.APP_NAV_GRAPH -> {
 
@@ -388,55 +455,76 @@ private fun MainTestHub(
             )
         }
 
+
         TestScreen.CREA_ITINERARIO -> {
+
             CreaItinerarioScreen(
                 onBack = {
                     currentScreen = TestScreen.MENU
                 }
             )
         }
+
+
         TestScreen.CREA_ATTIVITA -> {
+
             CreaAttivitaScreen(
                 onBack = {
                     currentScreen = TestScreen.MENU
                 }
             )
         }
+
 
         TestScreen.MODIFICA_ITINERARIO -> {
+
             CreaItinerarioScreen(
-                itinerarioDaModificare = itinerarioInModifica,
+                itinerarioDaModificare =
+                    itinerarioInModifica,
+
                 onBack = {
                     currentScreen = previousScreen
                 }
             )
         }
 
+
         TestScreen.MODIFICA_ATTIVITA -> {
+
             CreaAttivitaScreen(
-                attivitaDaModificare = attivitaInModifica,
+                attivitaDaModificare =
+                    attivitaInModifica,
+
                 onBack = {
                     currentScreen = previousScreen
                 }
             )
         }
+
 
         TestScreen.LE_MIE_OFFERTE -> {
 
             OfferteManagementScreen(
                 isAdmin = false,
+
                 itinerari = mockItinerari,
                 attivita = mockAttivita,
+
                 onBack = {
                     currentScreen = TestScreen.MENU
                 },
+
                 onModificaItinerario = { item ->
+
                     itinerarioInModifica = item
+
                     previousScreen =
                         TestScreen.LE_MIE_OFFERTE
+
                     currentScreen =
                         TestScreen.MODIFICA_ITINERARIO
                 },
+
                 onEliminaItinerario = { id ->
 
                     mockItinerari.removeAll {
@@ -447,13 +535,18 @@ private fun MainTestHub(
                         "Itinerario #$id eliminato!"
                     )
                 },
+
                 onModificaAttivita = { item ->
+
                     attivitaInModifica = item
+
                     previousScreen =
                         TestScreen.LE_MIE_OFFERTE
+
                     currentScreen =
                         TestScreen.MODIFICA_ATTIVITA
                 },
+
                 onEliminaAttivita = { id ->
 
                     mockAttivita.removeAll {
@@ -467,22 +560,30 @@ private fun MainTestHub(
             )
         }
 
+
         TestScreen.OFFERTE_ADMIN -> {
 
             OfferteManagementScreen(
                 isAdmin = true,
+
                 itinerari = mockItinerari,
                 attivita = mockAttivita,
+
                 onBack = {
                     currentScreen = TestScreen.MENU
                 },
+
                 onModificaItinerario = { item ->
+
                     itinerarioInModifica = item
+
                     previousScreen =
                         TestScreen.OFFERTE_ADMIN
+
                     currentScreen =
                         TestScreen.MODIFICA_ITINERARIO
                 },
+
                 onEliminaItinerario = { id ->
 
                     mockItinerari.removeAll {
@@ -493,13 +594,18 @@ private fun MainTestHub(
                         "[ADMIN] Itinerario #$id eliminato!"
                     )
                 },
+
                 onModificaAttivita = { item ->
+
                     attivitaInModifica = item
+
                     previousScreen =
                         TestScreen.OFFERTE_ADMIN
+
                     currentScreen =
                         TestScreen.MODIFICA_ATTIVITA
                 },
+
                 onEliminaAttivita = { id ->
 
                     mockAttivita.removeAll {
@@ -513,10 +619,12 @@ private fun MainTestHub(
             )
         }
 
+
         TestScreen.GESTIONE_UTENTI_ADMIN -> {
 
             GestioneUtentiAdminScreen(
                 utenti = mockUtenti,
+
                 onBack = {
                     currentScreen = TestScreen.MENU
                 }

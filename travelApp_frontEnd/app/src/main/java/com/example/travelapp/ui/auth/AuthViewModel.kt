@@ -31,8 +31,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
      * Crea l'Intent per aprire Keycloak nel browser.
      * La schermata di login lo lancia con startActivityForResult.
      */
-    fun creaIntentLogin(): Intent {
-        return KeycloakManager.creaIntentLogin(getApplication())
+    fun creaIntentLogin(loginHint: String? = null): Intent {
+        return KeycloakManager.creaIntentLogin(getApplication(), loginHint)
     }
 
     /**
