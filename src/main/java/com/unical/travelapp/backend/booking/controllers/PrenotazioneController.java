@@ -8,6 +8,7 @@ import com.unical.travelapp.backend.booking.mapper.PrenotazioneMapper;
 import com.unical.travelapp.backend.booking.service.PrenotazioneService;
 import com.unical.travelapp.backend.booking.service.PagamentoService;
 import com.unical.travelapp.backend.common.audit.AuditLogger;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,8 +17,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -75,4 +78,17 @@ public class PrenotazioneController {
         return ResponseEntity.ok(responseDto);
     }
 
+    @GetMapping("/saldo/totale")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Ottiene il saldo globale totale della piattaforma")
+    public ResponseEntity<BigDecimal> getSaldoTotaleGlobale() {
+        return ResponseEntity.ok(prenotazioneService.getSaldoTotaleGlobale());
+    }
+
+    @GetMapping("/saldo/organizzatore")
+    @PreAuthorize("hasRole('ORGANIZZATORE') or hasRole('ADMIN')")
+    @Operation(summary = "Ottiene il saldo incassato dall'organizzatore autenticato")
+    public ResponseEntity<BigDecimal> getSaldoOrganizzatore() {
+        return ResponseEntity.ok(prenotazioneService.getSaldoOrganizzatore());
+    }
 }

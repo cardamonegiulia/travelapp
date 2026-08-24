@@ -109,18 +109,15 @@ public class PrenotazioneService {
         disp.setPostiDisponibili(calcolaPostiResidui(disp.getPostiDisponibili(), numeroPartecipanti));
     }
 
-    // Lo compatto appena capisco e cerco poi di evitare i duplicati come con scala posto. Sorry guys.
     private BigDecimal calcolaPrezzoItinerario(DisponibilitaItinerario disp, Integer numeroPartecipanti) {
         BigDecimal prezzoBase = disp.getItinerario().getPrezzoBase();
-        BigDecimal partecipanti = BigDecimal.valueOf(numeroPartecipanti); // converto Big in un inter int se non erro
-        // cosi posso moltiplicare (dannato Bigdecimal)
+        BigDecimal partecipanti = BigDecimal.valueOf(numeroPartecipanti);
         return prezzoBase.multiply(partecipanti);
     }
 
     private BigDecimal calcolaPrezzoSessioneSingola(SessioneSingolaAttivita sessione, Integer numeroPartecipanti) {
         BigDecimal prezzoBase = sessione.getSingolaAttivita().getPrezzo();
-        BigDecimal partecipanti = BigDecimal.valueOf(numeroPartecipanti); // converto Big in un inter int se non erro
-        // cosi posso moltiplicare (dannato Bigdecimal)
+        BigDecimal partecipanti = BigDecimal.valueOf(numeroPartecipanti);
         return prezzoBase.multiply(partecipanti);
     }
 
@@ -198,7 +195,6 @@ public class PrenotazioneService {
     public Prenotazione createPrenotazione(CreaPrenotazioneRequest req) {
         validaRichiesta(req);
 
-        // Il viaggiatore viene sempre ricavato dal token.
         Utente viaggiatore = utenteService.getUtenteSessione();
 
         boolean isItinerario = req.getDisponibilitaItinerarioId() != null;
@@ -279,8 +275,7 @@ public class PrenotazioneService {
 
         return prenotazioneSave;
     }
-    // Ownership nella query: se la prenotazione esiste ma e di un altro utente, 404 (non 403)
-    // per non rivelare l'esistenza dell'id a chi non ne ha diritto. L'admin vede tutto.
+
     public Prenotazione getPrenotazioneById(Long id){
         if (utenteService.isAdmin()) {
             return prenotazioneRepo.findById(id)
@@ -301,7 +296,6 @@ public class PrenotazioneService {
         return prenotazioneRepo.findByViaggiatoreId(utenteId, pageable);
     }
 
-    // qui gestisco l'annullamento di una prenotazione, da capire se posso compattarla
     @Transactional
     public Prenotazione annullaPrenotazione(Long prenotazioneId) {
         Prenotazione prenotazione = getPrenotazioneById(prenotazioneId);
@@ -335,4 +329,12 @@ public class PrenotazioneService {
         );
     }
 
+    public BigDecimal getSaldoTotaleGlobale() {
+        return prenotazioneRepo.sumTotaleGlobale(StatoPrenotazione.CANCELLATA);
+    }
+
+    public BigDecimal getSaldoOrganizzatore() {
+        Long organizzatoreId = utenteService.getUtenteSessione().getId();
+        return prenotazioneRepo.sumTotalePerOrganizzatore(organizzatoreId, StatoPrenotazione.CANCELLATA);
+    }
 }
