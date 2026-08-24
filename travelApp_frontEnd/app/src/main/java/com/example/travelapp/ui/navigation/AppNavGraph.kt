@@ -25,9 +25,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
+import com.example.travelapp.ui.catalog.AttivitaDetailScreen
 import com.example.travelapp.ui.catalog.CreaAttivitaScreen
 import com.example.travelapp.ui.catalog.CreaItinerarioScreen
 import com.example.travelapp.ui.catalog.GestioneUtentiAdminScreen
+import com.example.travelapp.ui.catalog.ItinerarioDetailScreen
 import com.example.travelapp.ui.catalog.OfferteManagementScreen
 import com.example.travelapp.ui.catalog.UtenteAdminItem
 import com.example.travelapp.ui.components.AppBottomBar
@@ -40,7 +42,6 @@ import com.example.travelapp.ui.screens.sampleFavoriteTrips
 import com.example.travelapp.ui.theme.BackgroundLavender
 import java.math.BigDecimal
 
-// Rotte interne per le schermate di catalogo e gestione
 object CatalogRoutes {
     const val CREA_ITINERARIO = "catalog/crea_itinerario"
     const val CREA_ATTIVITA = "catalog/crea_attivita"
@@ -49,6 +50,8 @@ object CatalogRoutes {
     const val LE_MIE_OFFERTE = "catalog/le_mie_offerte"
     const val OFFERTE_ADMIN = "catalog/offerte_admin"
     const val GESTIONE_UTENTI_ADMIN = "catalog/gestione_utenti_admin"
+    const val DETTAGLIO_ITINERARIO = "catalog/dettaglio_itinerario"
+    const val DETTAGLIO_ATTIVITA = "catalog/dettaglio_attivita"
 }
 
 @Composable
@@ -60,7 +63,6 @@ fun AppNavGraph(
     val context = LocalContext.current
     val onBack: () -> Unit = { if (!navController.popBackStack()) onExitApp() }
 
-    // Dati mock condivisi per testare creazioni, modifiche ed eliminazioni
     val mockItinerari = remember {
         mutableStateListOf(
             Itinerario(
@@ -122,6 +124,8 @@ fun AppNavGraph(
         )
     }
 
+    var itinerarioSelezionato by remember { mutableStateOf<Itinerario?>(null) }
+    var attivitaSelezionata by remember { mutableStateOf<SingolaAttivita?>(null) }
     var itinerarioInModifica by remember { mutableStateOf<Itinerario?>(null) }
     var attivitaInModifica by remember { mutableStateOf<SingolaAttivita?>(null) }
 
@@ -138,14 +142,26 @@ fun AppNavGraph(
                 .padding(innerPadding)
         ) {
             composable(AppDestination.Explore.route) {
-                ExploreScreen()
+                ExploreScreen(
+                    onItinerarioClick = { itinerario ->
+                        itinerarioSelezionato = itinerario
+                        navController.navigate(CatalogRoutes.DETTAGLIO_ITINERARIO)
+                    },
+                    onAttivitaClick = { attivita ->
+                        attivitaSelezionata = attivita
+                        navController.navigate(CatalogRoutes.DETTAGLIO_ATTIVITA)
+                    }
+                )
             }
+
             composable(AppDestination.Bookings.route) {
                 BookingsScreen()
             }
+
             composable(AppDestination.Favorites.route) {
                 FavoritesRoute(onBack = onBack)
             }
+
             composable(AppDestination.Profile.route) {
                 ProfileRoute(
                     onBack = onBack,
@@ -154,7 +170,35 @@ fun AppNavGraph(
                 )
             }
 
-            // --- Destinazioni Catalogo e Gestione ---
+            // --- Dettaglio con Date / Sessioni reali ---
+
+            composable(CatalogRoutes.DETTAGLIO_ITINERARIO) {
+                itinerarioSelezionato?.let { item ->
+                    ItinerarioDetailScreen(
+                        itinerario = item,
+                        onBack = onBack,
+                        onPrenota = { disponibilitaId ->
+                            Toast.makeText(context, "Slot disponibilità #$disponibilitaId selezionato", Toast.LENGTH_SHORT).show()
+                            navController.navigate(AppDestination.Bookings.route)
+                        }
+                    )
+                }
+            }
+
+            composable(CatalogRoutes.DETTAGLIO_ATTIVITA) {
+                attivitaSelezionata?.let { item ->
+                    AttivitaDetailScreen(
+                        attivita = item,
+                        onBack = onBack,
+                        onPrenota = { sessioneId ->
+                            Toast.makeText(context, "Slot sessione #$sessioneId selezionato", Toast.LENGTH_SHORT).show()
+                            navController.navigate(AppDestination.Bookings.route)
+                        }
+                    )
+                }
+            }
+
+            // --- Creazione e Modifica Catalogo ---
 
             composable(CatalogRoutes.CREA_ITINERARIO) {
                 CreaItinerarioScreen(

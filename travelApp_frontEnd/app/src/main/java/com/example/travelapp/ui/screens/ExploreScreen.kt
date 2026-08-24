@@ -6,36 +6,33 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.sp
-import com.example.travelapp.ui.components.AppTopBar
+import com.example.travelapp.domain.model.Itinerario
+import com.example.travelapp.domain.model.SingolaAttivita
+import com.example.travelapp.ui.catalog.CatalogScreen
 import com.example.travelapp.ui.theme.BackgroundLavender
-import com.example.travelapp.ui.theme.TextSecondary
 
-/** Segnaposto della sezione "Explore", in attesa della UI definitiva. */
 @Composable
-fun ExploreScreen(modifier: Modifier = Modifier) {
+fun ExploreScreen(
+    modifier: Modifier = Modifier,
+    onItinerarioClick: (Itinerario) -> Unit = {},
+    onAttivitaClick: (SingolaAttivita) -> Unit = {}
+) {
     Scaffold(
         modifier = modifier,
         containerColor = BackgroundLavender,
-        // Gli inset di sistema sono gia' gestiti dallo Scaffold che ospita il NavHost.
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = { AppTopBar(title = "Explore") }
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(
-            contentAlignment = Alignment.Center,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Text(
-                text = "Sezione Explore in arrivo",
-                fontSize = 15.sp,
-                color = TextSecondary
+            CatalogScreen(
+                onItinerarioClick = onItinerarioClick,
+                onAttivitaClick = onAttivitaClick
             )
         }
     }

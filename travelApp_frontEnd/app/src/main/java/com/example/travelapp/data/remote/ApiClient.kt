@@ -11,11 +11,12 @@ import java.util.concurrent.TimeUnit
 /** Configurazione unica del client HTTP: base url, timeout, interceptor del token. */
 object ApiClient {
 
-    // 10.0.2.2 punta al localhost del Mac quando usi l'emulatore Android
-    const val BASE_URL: String = "http://10.0.2.2:8081/"
+    // Con adb reverse attivo via cavo USB, il tablet accede al Mac tramite localhost
+    const val BASE_URL: String = "http://localhost:8081/"
 
     val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(InterceptorAutenticazione())
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
