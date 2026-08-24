@@ -6,8 +6,8 @@ import com.unical.travelapp.backend.identity.dto.UtenteResponseDto;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.mapper.UtenteMapper;
 import com.unical.travelapp.backend.identity.repository.UtenteRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -54,8 +54,17 @@ public class FotoProfiloService {
      *
      * <p>Se la validazione del file fallisce ({@code ImmagineNonValida}) la transazione si
      * chiude senza aver toccato nulla: la foto precedente resta al suo posto.
+     *
+     * <p>Il timeout e' esplicito perche' quello predefinito — {@code
+     * spring.transaction.default-timeout}, dieci secondi — e' tarato su transazioni che
+     * parlano solo col database, mentre qui dentro c'e' anche la scrittura su object
+     * storage, che passa per la rete: superati i dieci secondi, la {@code saveAndFlush}
+     * successiva moriva con {@code TransactionTimedOutException} e l'utente vedeva un 500
+     * dopo una lunga attesa, con il file gia' finito sullo storage. Il valore va tenuto
+     * sopra il tempo di caricamento peggiore ragionevole, non largo a piacere: per tutta la
+     * sua durata resta impegnata una connessione del pool.
      */
-    @Transactional
+    @Transactional(timeoutString = "${app.storage.immagini.upload-timeout-secondi}")
     public UtenteResponseDto imposta(MultipartFile file) {
         Utente utente = utenteService.getUtenteSessione();
         Immagine precedente = utente.getFotoProfilo();
