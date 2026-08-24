@@ -10,9 +10,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MailOutline
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -53,6 +57,8 @@ import com.example.travelapp.ui.theme.IconTeal
 data class ProfileUiState(
     val name: String = "",
     val email: String = "",
+    /** Ruolo utente: "VIAGGIATORE", "ORGANIZZATORE" o "ADMIN" */
+    val ruolo: String = "ORGANIZZATORE",
     val avatarUrl: String? = null,
     val isDarkModeEnabled: Boolean = false,
     val isPhotoUploading: Boolean = false,
@@ -60,8 +66,8 @@ data class ProfileUiState(
 )
 
 /**
- * Schermata "Profilo": intestazione utente, scorciatoie alle attività,
- * impostazioni e logout.
+ * Schermata "Profilo": intestazione utente, sezioni dinamiche per ruolo,
+ * scorciatoie alle attività, impostazioni e logout.
  */
 @Composable
 fun ProfileScreen(
@@ -75,6 +81,12 @@ fun ProfileScreen(
     onToggleDarkMode: (Boolean) -> Unit,
     onChangePassword: () -> Unit,
     onLogout: () -> Unit,
+    // Callback Catalogo e Gestione
+    onCreaItinerarioClick: () -> Unit = {},
+    onCreaAttivitaClick: () -> Unit = {},
+    onLeMieOfferteClick: () -> Unit = {},
+    onGestioneOfferteAdminClick: () -> Unit = {},
+    onGestioneUtentiAdminClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     onPhotoMessageShown: () -> Unit = {}
 ) {
@@ -140,6 +152,58 @@ fun ProfileScreen(
                 onAddProfilePhoto = onAddProfilePhoto
             )
 
+            // Sezione specifica per ORGANIZZATORE
+            if (state.ruolo.equals("ORGANIZZATORE", ignoreCase = true) || state.ruolo.equals("ADMIN", ignoreCase = true)) {
+                SectionTitle(
+                    text = "Area Organizzatore",
+                    modifier = Modifier.padding(top = 14.dp)
+                )
+                ProfileMenuRow(
+                    icon = Icons.Default.AddCircle,
+                    title = "Crea nuovo itinerario",
+                    iconTint = IconBlue,
+                    badgeColor = BadgeBlue,
+                    onClick = onCreaItinerarioClick
+                )
+                ProfileMenuRow(
+                    icon = Icons.Default.AddCircle,
+                    title = "Crea singola attività",
+                    iconTint = IconTeal,
+                    badgeColor = BadgeTeal,
+                    onClick = onCreaAttivitaClick
+                )
+                ProfileMenuRow(
+                    icon = Icons.AutoMirrored.Filled.List,
+                    title = "Le mie offerte pubblicate",
+                    iconTint = IconPink,
+                    badgeColor = BadgePink,
+                    onClick = onLeMieOfferteClick
+                )
+            }
+
+            // Sezione specifica per ADMIN
+            if (state.ruolo.equals("ADMIN", ignoreCase = true)) {
+                SectionTitle(
+                    text = "Pannello Amministrazione",
+                    modifier = Modifier.padding(top = 14.dp)
+                )
+                ProfileMenuRow(
+                    icon = Icons.Default.Build,
+                    title = "Gestione globale offerte",
+                    iconTint = IconPurple,
+                    badgeColor = BadgePurple,
+                    onClick = onGestioneOfferteAdminClick
+                )
+                ProfileMenuRow(
+                    icon = Icons.Default.Person,
+                    title = "Gestione utenti registrati",
+                    iconTint = IconIndigo,
+                    badgeColor = BadgeIndigo,
+                    onClick = onGestioneUtentiAdminClick
+                )
+            }
+
+            // Sezione attività standard
             SectionTitle(
                 text = "Le mie attività",
                 modifier = Modifier.padding(top = 14.dp)
@@ -154,6 +218,7 @@ fun ProfileScreen(
                 )
             }
 
+            // Impostazioni
             SectionTitle(
                 text = "Impostazioni",
                 modifier = Modifier.padding(top = 14.dp)
@@ -199,6 +264,7 @@ private fun ProfileScreenPreview() {
             ProfileUiState(
                 name = "Mario Rossi",
                 email = "mario@example.it",
+                ruolo = "ORGANIZZATORE",
                 avatarUrl = null,
                 isDarkModeEnabled = false
             )
@@ -216,7 +282,12 @@ private fun ProfileScreenPreview() {
             onReviewsClick = {},
             onToggleDarkMode = { enabled -> state = state.copy(isDarkModeEnabled = enabled) },
             onChangePassword = {},
-            onLogout = {}
+            onLogout = {},
+            onCreaItinerarioClick = {},
+            onCreaAttivitaClick = {},
+            onLeMieOfferteClick = {},
+            onGestioneOfferteAdminClick = {},
+            onGestioneUtentiAdminClick = {}
         )
     }
 }

@@ -1,6 +1,7 @@
 package com.example.travelapp.data.repository
 
 import com.example.travelapp.data.remote.api.ItinerarioApi
+import com.example.travelapp.data.remote.dto.DisponibilitaItinerarioResponseDto
 import com.example.travelapp.data.remote.dto.ItinerarioRequestDto
 import com.example.travelapp.domain.model.Itinerario
 
@@ -28,6 +29,19 @@ class ItinerarioRepository(
                 Result.success(response.body()!!.toDomain())
             } else {
                 Result.failure(Exception("Itinerario non trovato: HTTP ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getDisponibilitaItinerario(id: Long): Result<List<DisponibilitaItinerarioResponseDto>> {
+        return try {
+            val response = api.getDisponibilitaByItinerario(id)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Errore recupero disponibilità: HTTP ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

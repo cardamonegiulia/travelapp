@@ -1,7 +1,9 @@
 package com.unical.travelapp.backend.catalog.service;
 
+import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
+import com.unical.travelapp.backend.catalog.repository.DisponibilitaItinerarioRepository;
 import com.unical.travelapp.backend.catalog.repository.ItinerarioRepository;
 import com.unical.travelapp.backend.experience.exeption.ImmagineNonTrovata;
 import com.unical.travelapp.backend.experience.mapper.ImmagineMapper;
@@ -13,6 +15,7 @@ import com.unical.travelapp.backend.identity.entity.Utente;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +28,9 @@ public class ItinerarioService {
 
     @Autowired
     private ItinerarioRepository itinerarioRepository;
+
+    @Autowired
+    private DisponibilitaItinerarioRepository disponibilitaRepository;
 
     @Autowired
     private ImmagineService immagineService;
@@ -40,6 +46,14 @@ public class ItinerarioService {
         return itinerarioRepository.findById(id);
     }
 
+
+    public List<DisponibilitaItinerario> getDisponibilitaByItinerarioId(Long itinerarioId) {
+        if (!itinerarioRepository.existsById(itinerarioId)) {
+            throw new ItinerarioNonTrovatoException("Itinerario non trovato: " + itinerarioId);
+        }
+        return disponibilitaRepository.findByItinerario_Id(itinerarioId);
+    }
+
     @Transactional
     public Itinerario saveItinerario(Itinerario itinerario) {
         if (itinerario.getTappe() != null) {
@@ -48,7 +62,6 @@ public class ItinerarioService {
         return itinerarioRepository.save(itinerario);
     }
 
-    // ownership nella query: l'organizzatore puo' modificare solo i propri itinerari, l'admin qualsiasi
     @Transactional
     public Itinerario updateItinerario(Long id, Itinerario datiAggiornati, Utente richiedente, boolean isAdmin) {
         Itinerario esistente;
@@ -71,14 +84,10 @@ public class ItinerarioService {
         return itinerarioRepository.save(esistente);
     }
 
-    // ownership nella query: l'organizzatore puo' cancellare solo i propri itinerari, l'admin qualsiasi
     @Transactional
     public void deleteItinerario(Long id, Utente richiedente, boolean isAdmin) {
         Itinerario itinerario = itinerarioModificabile(id, richiedente, isAdmin);
 
-        // Le immagini vanno cancellate qui: la cancellazione a cascata delle righe non
-        // tocca i file sullo storage, che resterebbero occupati per sempre. Valgono anche
-        // per le foto delle recensioni, che spariscono insieme all'itinerario.
         immagineService.eliminaTutte(itinerario.getImmagini());
         itinerario.getImmagini().clear();
 
@@ -92,13 +101,8 @@ public class ItinerarioService {
         itinerarioRepository.delete(itinerario);
     }
 
-
     // --- Immagini dell'itinerario ---------------------------------------------------------
 
-    /**
-     * Allega un'immagine all'itinerario. Per convenzione la prima immagine e' la copertina.
-     * Consentito all'organizzatore proprietario e agli amministratori.
-     */
     @Transactional
     public ImmagineResponse aggiungiImmagine(Long id, MultipartFile file, Utente richiedente, boolean isAdmin) {
         Itinerario itinerario = itinerarioModificabile(id, richiedente, isAdmin);
@@ -111,20 +115,16 @@ public class ItinerarioService {
         return immagineMapper.toResponse(immagine);
     }
 
-
     public List<ImmagineResponse> getImmagini(Long id) {
         Itinerario itinerario = itinerarioRepository.findById(id)
                 .orElseThrow(() -> new ItinerarioNonTrovatoException("Itinerario non trovato: " + id));
         return immagineMapper.toResponse(itinerario.getImmagini());
     }
 
-
     @Transactional
     public void rimuoviImmagine(Long id, Long immagineId, Utente richiedente, boolean isAdmin) {
         Itinerario itinerario = itinerarioModificabile(id, richiedente, isAdmin);
 
-        // l'immagine deve appartenere proprio a questo itinerario: senza il controllo un
-        // organizzatore potrebbe cancellare le foto degli itinerari altrui
         Immagine immagine = itinerario.getImmagini().stream()
                 .filter(i -> i.getId().equals(immagineId))
                 .findFirst()
@@ -137,9 +137,6 @@ public class ItinerarioService {
         immagineService.eliminaEntita(immagine);
     }
 
-
-    // Itinerario su cui il chiamante puo' intervenire: come nel resto del modulo, se non e'
-    // suo la risposta e' 404 e non 403, per non confermare l'esistenza dell'id.
     private Itinerario itinerarioModificabile(Long id, Utente richiedente, boolean isAdmin) {
         if (isAdmin) {
             return itinerarioRepository.findById(id)

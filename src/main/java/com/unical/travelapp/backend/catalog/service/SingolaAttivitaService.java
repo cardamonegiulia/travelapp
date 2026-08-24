@@ -20,12 +20,6 @@ import java.util.Optional;
 @Service
 public class SingolaAttivitaService {
 
-    /**
-     * Ampiezza massima dell'intervallo programmabile in una sola richiesta: un anno, con un
-     * giorno di margine per gli anni bisestili. Un'attivita' che si ripete piu' a lungo si
-     * programma con piu' chiamate, che e' un fastidio trascurabile rispetto a lasciare al
-     * chiamante la facolta' di decidere quanto lavoro deve fare il server.
-     */
     private static final long MASSIMO_GIORNI_PROGRAMMABILI = 366;
 
     @Autowired
@@ -42,6 +36,13 @@ public class SingolaAttivitaService {
         return singolaAttivitaRepository.findById(id);
     }
 
+    public List<SessioneSingolaAttivita> getSessioniByAttivitaId(Long attivitaId) {
+        if (!singolaAttivitaRepository.existsById(attivitaId)) {
+            throw new SingolaAttivitaNonTrovataException("Attività non trovata: " + attivitaId);
+        }
+        return sessioneRepository.findBySingolaAttivita_Id(attivitaId);
+    }
+
     @Transactional
     public SingolaAttivita saveAttivitaConSessioni(SingolaAttivita attivita, LocalDate dataInizio, LocalDate dataFine, List<Integer> giorniSettimana) {
 
@@ -49,11 +50,6 @@ public class SingolaAttivitaService {
             throw new IllegalArgumentException("La data di fine non può essere antecedente alla data di inizio");
         }
 
-        // Il ciclo qui sotto scrive una riga per ogni giorno dell'intervallo che ricade nei
-        // giorni scelti: senza un tetto, l'ampiezza dell'intervallo la decide il chiamante e
-        // una sola richiesta (inizio=0001-01-01, fine=9999-12-31) chiede milioni di insert in
-        // un'unica transazione. Il timeout di 10s la abortirebbe, ma solo dopo aver occupato
-        // per dieci secondi un thread e il database - ripetibile a ogni richiesta.
         if (ChronoUnit.DAYS.between(dataInizio, dataFine) > MASSIMO_GIORNI_PROGRAMMABILI) {
             throw new IllegalArgumentException(
                     "L'intervallo non può superare " + MASSIMO_GIORNI_PROGRAMMABILI + " giorni");
@@ -83,7 +79,6 @@ public class SingolaAttivitaService {
         return attivitaSalvata;
     }
 
-    // ownership nella query: l'organizzatore puo' modificare solo le proprie attivita', l'admin qualsiasi
     @Transactional
     public SingolaAttivita updateAttivita(Long id, SingolaAttivita datiAggiornati, Utente richiedente, boolean isAdmin) {
         SingolaAttivita esistente;
@@ -106,7 +101,6 @@ public class SingolaAttivitaService {
         return singolaAttivitaRepository.save(esistente);
     }
 
-    // ownership nella query: l'organizzatore puo' cancellare solo le proprie attivita', l'admin qualsiasi
     @Transactional
     public void deleteAttivita(Long id, Utente richiedente, boolean isAdmin) {
         if (isAdmin) {
