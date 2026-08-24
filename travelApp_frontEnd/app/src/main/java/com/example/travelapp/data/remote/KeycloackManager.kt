@@ -13,7 +13,7 @@ import net.openid.appauth.ResponseTypeValues
 
 object KeycloakManager {
 
-    private const val KEYCLOAK_BASE = "http://10.0.2.2:8090/realms/travelapp"
+    private const val KEYCLOAK_BASE = "http://localhost:8090/realms/travelapp"
     private const val REDIRECT_URI = "com.example.travelapp:/oauth2redirect"
 
     private val serviceConfig = AuthorizationServiceConfiguration(
@@ -21,24 +21,26 @@ object KeycloakManager {
         Uri.parse("$KEYCLOAK_BASE/protocol/openid-connect/token")
     )
 
-    // Configurazione che usa il nostro builder HTTP invece del default HTTPS
     private val appAuthConfig = AppAuthConfiguration.Builder()
         .setConnectionBuilder(LocalConnectionBuilder)
         .build()
 
-    fun creaIntentLogin(context: Context): Intent {
+    fun creaIntentLogin(context: Context, loginHint: String? = null): Intent {
         val authService = AuthorizationService(context, appAuthConfig)
 
-        val request = AuthorizationRequest.Builder(
+        val requestBuilder = AuthorizationRequest.Builder(
             serviceConfig,
             "travelapp-android",
             ResponseTypeValues.CODE,
             Uri.parse(REDIRECT_URI)
         )
             .setScopes("openid", "profile", "email")
-            .build()
 
-        return authService.getAuthorizationRequestIntent(request)
+        if (!loginHint.isNullOrBlank()) {
+            requestBuilder.setLoginHint(loginHint)
+        }
+
+        return authService.getAuthorizationRequestIntent(requestBuilder.build())
     }
 
     fun scambiaCodicePToken(

@@ -6,6 +6,8 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,8 +20,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.airbnb.lottie.compose.*
 import com.example.travelapp.R
+import com.example.travelapp.ui.components.CaricamentoLottie
 import com.example.travelapp.ui.theme.*
 
 @Composable
@@ -27,19 +29,10 @@ fun LoginScreen(
     onLoginSuccessViaggiatore: () -> Unit,
     onLoginSuccessOrganizzatore: () -> Unit,
     onVaiRegistrazione: () -> Unit,
+    emailPreCompilata: String? = null,
     viewModel: AuthViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
-    // Animazione aereo per il caricamento
-    val composizione by rememberLottieComposition(
-        LottieCompositionSpec.RawRes(R.raw.flight)
-    )
-    val progresso by animateLottieCompositionAsState(
-        composizione,
-        iterations = LottieConstants.IterateForever,
-        isPlaying = uiState is AuthUiState.Loading
-    )
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -60,6 +53,12 @@ fun LoginScreen(
                 viewModel.resetStato()
             }
             else -> {}
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (!emailPreCompilata.isNullOrBlank()) {
+            launcher.launch(viewModel.creaIntentLogin(emailPreCompilata))
         }
     }
 
@@ -90,13 +89,14 @@ fun LoginScreen(
             ) {
                 // Se sta caricando mostra l'animazione nel logo
                 if (uiState is AuthUiState.Loading) {
-                    LottieAnimation(
-                        composition = composizione,
-                        progress = { progresso },
-                        modifier = Modifier.size(70.dp)
-                    )
+                    CaricamentoLottie(dimensione = 70.dp, animazione = R.raw.flight)
                 } else {
-                    Text(text = "✈️", fontSize = 48.sp)
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
                 }
             }
 
@@ -160,7 +160,7 @@ fun LoginScreen(
                     // Pulsante login con animazione
                     Button(
                         onClick = {
-                            val intent = viewModel.creaIntentLogin()
+                            val intent = viewModel.creaIntentLogin(emailPreCompilata)
                             launcher.launch(intent)
                         },
                         modifier = Modifier
@@ -184,11 +184,7 @@ fun LoginScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    LottieAnimation(
-                                        composition = composizione,
-                                        progress = { progresso },
-                                        modifier = Modifier.size(28.dp)
-                                    )
+                                    CaricamentoLottie(dimensione = 28.dp, animazione = R.raw.flight)
                                     Text(
                                         text = "Accesso...",
                                         fontSize = 16.sp,

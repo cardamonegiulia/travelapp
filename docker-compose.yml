@@ -10,6 +10,9 @@ services:
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://travelapp-keycloak:8080/realms/travelapp
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://travelapp-keycloak:8080/realms/travelapp/protocol/openid-connect/certs
+      KEYCLOAK_BASE_URL: http://travelapp-keycloak:8080
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
       # cartella di destinazione degli upload: volume dedicato, separato dal filesystem
       # dell'applicazione, cosi' i file sopravvivono al riavvio del container e un upload
       # che riempie il volume non tocca la directory in cui gira l'applicazione
