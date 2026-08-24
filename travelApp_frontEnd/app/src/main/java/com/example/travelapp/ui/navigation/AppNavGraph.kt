@@ -8,13 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,13 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
-import com.example.travelapp.ui.catalog.AttivitaDetailScreen
-import com.example.travelapp.ui.catalog.CreaAttivitaScreen
-import com.example.travelapp.ui.catalog.CreaItinerarioScreen
-import com.example.travelapp.ui.catalog.GestioneUtentiAdminScreen
-import com.example.travelapp.ui.catalog.ItinerarioDetailScreen
-import com.example.travelapp.ui.catalog.OfferteManagementScreen
-import com.example.travelapp.ui.catalog.UtenteAdminItem
+import com.example.travelapp.ui.catalog.*
 import com.example.travelapp.ui.components.AppBottomBar
 import com.example.travelapp.ui.profilo.ProfiloViewModel
 import com.example.travelapp.ui.screens.BookingsScreen
@@ -40,9 +28,10 @@ import com.example.travelapp.ui.screens.FavoritesScreen
 import com.example.travelapp.ui.screens.ProfileScreen
 import com.example.travelapp.ui.screens.sampleFavoriteTrips
 import com.example.travelapp.ui.theme.BackgroundLavender
-import java.math.BigDecimal
 
 object CatalogRoutes {
+    const val ADMIN_HOME = "catalog/admin_home"
+    const val ORGANIZZATORE_HOME = "catalog/organizzatore_home"
     const val CREA_ITINERARIO = "catalog/crea_itinerario"
     const val CREA_ATTIVITA = "catalog/crea_attivita"
     const val MODIFICA_ITINERARIO = "catalog/modifica_itinerario"
@@ -58,70 +47,31 @@ object CatalogRoutes {
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
+    profiloViewModel: ProfiloViewModel = viewModel(),
     onExitApp: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val profiloState by profiloViewModel.state.collectAsState()
     val onBack: () -> Unit = { if (!navController.popBackStack()) onExitApp() }
 
-    val mockItinerari = remember {
-        mutableStateListOf(
-            Itinerario(
-                id = 1L,
-                organizzatoreId = 1L,
-                titolo = "Tour delle Cantine del Chianti",
-                descrizione = "Degustazione vini tipici toscani e visita ai vigneti storici.",
-                destinazionePrincipale = "Toscana",
-                prezzoBase = BigDecimal("120.00"),
-                durataGiorni = 3,
-                maxPartecipanti = 12,
-                stato = "ATTIVO"
-            ),
-            Itinerario(
-                id = 2L,
-                organizzatoreId = 1L,
-                titolo = "Escursione Vulcano Etna",
-                descrizione = "Trekking guidato ai crateri sommitali e sentieri naturalistici.",
-                destinazionePrincipale = "Sicilia",
-                prezzoBase = BigDecimal("85.00"),
-                durataGiorni = 1,
-                maxPartecipanti = 15,
-                stato = "ATTIVO"
-            )
-        )
-    }
+    val ruoloStr = profiloState.ruolo?.toString()?.uppercase() ?: ""
+    val isAdmin = ruoloStr.contains("ADMIN")
+    val isOrganizzatore = ruoloStr.contains("ORGANIZZATORE")
 
-    val mockAttivita = remember {
-        mutableStateListOf(
-            SingolaAttivita(
-                id = 101L,
-                organizzatoreId = 1L,
-                titolo = "Degustazione Olio EVO in Frantoio",
-                descrizione = "Visita e assaggio degli oli extravergine di oliva.",
-                luogo = "Firenze",
-                prezzo = BigDecimal("35.00"),
-                durataMinuti = 120,
-                maxPartecipanti = 10
-            ),
-            SingolaAttivita(
-                id = 102L,
-                organizzatoreId = 1L,
-                titolo = "Corso di Pasta Fresca Fatta a Mano",
-                descrizione = "Impara a preparare tagliatelle e ravioli tradizionali.",
-                luogo = "Bologna",
-                prezzo = BigDecimal("50.00"),
-                durataMinuti = 180,
-                maxPartecipanti = 8
-            )
-        )
-    }
-
-    val mockUtenti = remember {
-        listOf(
-            UtenteAdminItem(1L, "Mario Rossi", "mario@example.it", "VIAGGIATORE"),
-            UtenteAdminItem(2L, "Elena Bianchi", "elena@organizer.it", "ORGANIZZATORE"),
-            UtenteAdminItem(3L, "Luca Conti", "luca.c@example.it", "VIAGGIATORE"),
-            UtenteAdminItem(4L, "Alessandro Ricci", "a.ricci@organizer.it", "ORGANIZZATORE")
-        )
+    // Reindirizzamento reattivo all'arrivo del ruolo dal profilo
+    LaunchedEffect(profiloState.ruolo) {
+        when {
+            isAdmin -> {
+                navController.navigate(CatalogRoutes.ADMIN_HOME) {
+                    popUpTo(AppDestination.Explore.route) { inclusive = true }
+                }
+            }
+            isOrganizzatore -> {
+                navController.navigate(CatalogRoutes.ORGANIZZATORE_HOME) {
+                    popUpTo(AppDestination.Explore.route) { inclusive = true }
+                }
+            }
+        }
     }
 
     var itinerarioSelezionato by remember { mutableStateOf<Itinerario?>(null) }
@@ -129,18 +79,51 @@ fun AppNavGraph(
     var itinerarioInModifica by remember { mutableStateOf<Itinerario?>(null) }
     var attivitaInModifica by remember { mutableStateOf<SingolaAttivita?>(null) }
 
+    val mostraBottomBar = !isAdmin && !isOrganizzatore
+
     Scaffold(
         modifier = modifier,
         containerColor = BackgroundLavender,
-        bottomBar = { AppBottomBar(navController = navController) }
+        bottomBar = {
+            if (mostraBottomBar) {
+                AppBottomBar(navController = navController)
+            }
+        }
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = AppDestination.start.route,
+            startDestination = AppDestination.Explore.route,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            // --- HOME DEDICATA ADMIN ---
+            composable(CatalogRoutes.ADMIN_HOME) {
+                AdminDashboardScreen(
+                    onVaiOfferte = { navController.navigate(CatalogRoutes.OFFERTE_ADMIN) },
+                    onVaiUtenti = { navController.navigate(CatalogRoutes.GESTIONE_UTENTI_ADMIN) },
+                    onLogout = { onExitApp() }
+                )
+            }
+
+            // --- HOME DEDICATA ORGANIZZATORE ---
+            composable(CatalogRoutes.ORGANIZZATORE_HOME) {
+                OrganizzatoreHomeScreen(
+                    onCreaItinerario = { navController.navigate(CatalogRoutes.CREA_ITINERARIO) },
+                    onCreaAttivita = { navController.navigate(CatalogRoutes.CREA_ATTIVITA) },
+                    onModificaItinerario = { item ->
+                        itinerarioInModifica = item
+                        navController.navigate(CatalogRoutes.MODIFICA_ITINERARIO)
+                    },
+                    onModificaAttivita = { item ->
+                        attivitaInModifica = item
+                        navController.navigate(CatalogRoutes.MODIFICA_ATTIVITA)
+                    },
+                    onLogout = { onExitApp() }
+                )
+            }
+
+            // --- VIAGGIATORE EXPERIENCE ---
             composable(AppDestination.Explore.route) {
                 ExploreScreen(
                     onItinerarioClick = { itinerario ->
@@ -166,12 +149,12 @@ fun AppNavGraph(
                 ProfileRoute(
                     onBack = onBack,
                     onNavigateTo = { destination -> navController.navigate(destination.route) },
-                    onNavigateToRoute = { route -> navController.navigate(route) }
+                    onNavigateToRoute = { route -> navController.navigate(route) },
+                    viewModel = profiloViewModel
                 )
             }
 
             // --- Dettaglio con Date / Sessioni reali ---
-
             composable(CatalogRoutes.DETTAGLIO_ITINERARIO) {
                 itinerarioSelezionato?.let { item ->
                     ItinerarioDetailScreen(
@@ -198,12 +181,9 @@ fun AppNavGraph(
                 }
             }
 
-            // --- Creazione e Modifica Catalogo (API Reali) ---
-
+            // --- Creazione e Modifica Catalogo ---
             composable(CatalogRoutes.CREA_ITINERARIO) {
-                CreaItinerarioScreen(
-                    onBack = onBack
-                )
+                CreaItinerarioScreen(onBack = onBack)
             }
 
             composable(CatalogRoutes.MODIFICA_ITINERARIO) {
@@ -214,9 +194,7 @@ fun AppNavGraph(
             }
 
             composable(CatalogRoutes.CREA_ATTIVITA) {
-                CreaAttivitaScreen(
-                    onBack = onBack
-                )
+                CreaAttivitaScreen(onBack = onBack)
             }
 
             composable(CatalogRoutes.MODIFICA_ATTIVITA) {
@@ -227,28 +205,17 @@ fun AppNavGraph(
             }
 
             // --- Gestione Offerte e Admin ---
-
             composable(CatalogRoutes.LE_MIE_OFFERTE) {
                 OfferteManagementScreen(
                     isAdmin = false,
-                    itinerari = mockItinerari,
-                    attivita = mockAttivita,
                     onBack = onBack,
                     onModificaItinerario = { item ->
                         itinerarioInModifica = item
                         navController.navigate(CatalogRoutes.MODIFICA_ITINERARIO)
                     },
-                    onEliminaItinerario = { id ->
-                        mockItinerari.removeAll { it.id == id }
-                        Toast.makeText(context, "Itinerario eliminato!", Toast.LENGTH_SHORT).show()
-                    },
                     onModificaAttivita = { item ->
                         attivitaInModifica = item
                         navController.navigate(CatalogRoutes.MODIFICA_ATTIVITA)
-                    },
-                    onEliminaAttivita = { id ->
-                        mockAttivita.removeAll { it.id == id }
-                        Toast.makeText(context, "Attività eliminata!", Toast.LENGTH_SHORT).show()
                     }
                 )
             }
@@ -256,31 +223,12 @@ fun AppNavGraph(
             composable(CatalogRoutes.OFFERTE_ADMIN) {
                 OfferteManagementScreen(
                     isAdmin = true,
-                    itinerari = mockItinerari,
-                    attivita = mockAttivita,
-                    onBack = onBack,
-                    onModificaItinerario = { item ->
-                        itinerarioInModifica = item
-                        navController.navigate(CatalogRoutes.MODIFICA_ITINERARIO)
-                    },
-                    onEliminaItinerario = { id ->
-                        mockItinerari.removeAll { it.id == id }
-                        Toast.makeText(context, "[ADMIN] Itinerario eliminato!", Toast.LENGTH_SHORT).show()
-                    },
-                    onModificaAttivita = { item ->
-                        attivitaInModifica = item
-                        navController.navigate(CatalogRoutes.MODIFICA_ATTIVITA)
-                    },
-                    onEliminaAttivita = { id ->
-                        mockAttivita.removeAll { it.id == id }
-                        Toast.makeText(context, "[ADMIN] Attività eliminata!", Toast.LENGTH_SHORT).show()
-                    }
+                    onBack = onBack
                 )
             }
 
             composable(CatalogRoutes.GESTIONE_UTENTI_ADMIN) {
                 GestioneUtentiAdminScreen(
-                    utenti = mockUtenti,
                     onBack = onBack
                 )
             }

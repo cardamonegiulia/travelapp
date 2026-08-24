@@ -134,11 +134,14 @@ fun OfferteManagementScreen(
                                             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            IconButton(
-                                                onClick = { onModificaItinerario(item) },
-                                                modifier = Modifier.size(36.dp).background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(8.dp))
-                                            ) {
-                                                Icon(Icons.Default.Edit, contentDescription = "Modifica", tint = TravelBlue, modifier = Modifier.size(18.dp))
+                                            // Il tasto modifica compare SOLO se NON è Admin
+                                            if (!isAdmin) {
+                                                IconButton(
+                                                    onClick = { onModificaItinerario(item) },
+                                                    modifier = Modifier.size(36.dp).background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(8.dp))
+                                                ) {
+                                                    Icon(Icons.Default.Edit, contentDescription = "Modifica", tint = TravelBlue, modifier = Modifier.size(18.dp))
+                                                }
                                             }
 
                                             IconButton(
@@ -196,11 +199,14 @@ fun OfferteManagementScreen(
                                             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            IconButton(
-                                                onClick = { onModificaAttivita(item) },
-                                                modifier = Modifier.size(36.dp).background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(8.dp))
-                                            ) {
-                                                Icon(Icons.Default.Edit, contentDescription = "Modifica", tint = TravelBlue, modifier = Modifier.size(18.dp))
+                                            // Il tasto modifica compare SOLO se NON è Admin
+                                            if (!isAdmin) {
+                                                IconButton(
+                                                    onClick = { onModificaAttivita(item) },
+                                                    modifier = Modifier.size(36.dp).background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(8.dp))
+                                                ) {
+                                                    Icon(Icons.Default.Edit, contentDescription = "Modifica", tint = TravelBlue, modifier = Modifier.size(18.dp))
+                                                }
                                             }
 
                                             IconButton(

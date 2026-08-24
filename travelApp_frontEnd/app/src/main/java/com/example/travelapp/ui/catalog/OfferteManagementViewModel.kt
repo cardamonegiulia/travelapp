@@ -29,21 +29,30 @@ class OfferteManagementViewModel(
     private val _uiState = MutableStateFlow(OfferteUiState())
     val uiState: StateFlow<OfferteUiState> = _uiState.asStateFlow()
 
-    init {
-        caricaTutto()
-    }
-
-    fun caricaTutto() {
+    fun caricaOfferte(soloMie: Boolean = false) {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
         viewModelScope.launch {
             val resItinerari = itinerarioRepository.getAllItinerari()
             val resAttivita = attivitaRepository.getAllAttivita()
 
+            var listaItinerari = resItinerari.getOrDefault(emptyList())
+            var listaAttivita = resAttivita.getOrDefault(emptyList())
+
+            if (soloMie) {
+                // Recupera l'id dell'utente corrente dall'API sincronizzaProfilo
+                val profiloRes = runCatching { ApiClient.utenteApi.sincronizzaProfilo() }
+                val mioId = profiloRes.getOrNull()?.body()?.id
+                if (mioId != null) {
+                    listaItinerari = listaItinerari.filter { it.organizzatoreId == mioId }
+                    listaAttivita = listaAttivita.filter { it.organizzatoreId == mioId }
+                }
+            }
+
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    itinerari = resItinerari.getOrDefault(emptyList()),
-                    attivita = resAttivita.getOrDefault(emptyList())
+                    itinerari = listaItinerari,
+                    attivita = listaAttivita
                 )
             }
         }
