@@ -2,6 +2,7 @@ package com.unical.travelapp.backend.catalog.controller;
 
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaDTO;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaRequestDTO;
+import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
 import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
 import com.unical.travelapp.backend.catalog.mapper.SingolaAttivitaMapper;
 import com.unical.travelapp.backend.catalog.service.SingolaAttivitaService;
@@ -53,29 +54,24 @@ public class SingolaAttivitaController {
         return ResponseEntity.ok(attivitaMapper.toDTO(attivita));
     }
 
-    /**
-     * I parametri della query non erano validati, a differenza del corpo: l'endpoint genera
-     * una sessione per ogni giorno dell'intervallo che ricade nei giorni scelti, quindi
-     * {@code inizio}, {@code fine} e {@code giorni} decidono quanto lavoro fa il server. Il
-     * tetto sull'ampiezza dell'intervallo sta nel service, dov'e' la regola di dominio; qui
-     * restano i vincoli sulla forma dei valori.
-     */
+    // --- Endpoint per recuperare le sessioni (richiesto per il booking) ---
+    @GetMapping("/{id}/sessioni")
+    public ResponseEntity<List<SessioneSingolaAttivita>> getSessioniByAttivita(@PathVariable Long id) {
+        return ResponseEntity.ok(attivitaService.getSessioniByAttivitaId(id));
+    }
+
     @PostMapping("/con-sessioni")
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     public ResponseEntity<SingolaAttivitaDTO> createAttivitaConSessioni(
             @Valid @RequestBody SingolaAttivitaRequestDTO attivitaRequest,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inizio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fine,
-            // allow-list sui giorni della settimana: 1 (lunedi') .. 7 (domenica), come
-            // DayOfWeek.getValue(). Senza il tetto, una lista lunga a piacere veniva
-            // interrogata a ogni giorno dell'intervallo
             @RequestParam @NotEmpty(message = "Indicare almeno un giorno della settimana")
             @Size(max = 7, message = "I giorni della settimana sono al massimo 7")
             List<@Min(value = 1, message = "Giorno della settimana non valido")
-                 @Max(value = 7, message = "Giorno della settimana non valido") Integer> giorni) {
+            @Max(value = 7, message = "Giorno della settimana non valido") Integer> giorni) {
 
         SingolaAttivita entity = attivitaMapper.fromRequest(attivitaRequest);
-        // l'organizzatore e' sempre l'utente autenticato, mai un id passato dal client
         entity.setOrganizzatore(utenteService.getUtenteSessione());
         SingolaAttivita salvata = attivitaService.saveAttivitaConSessioni(entity, inizio, fine, giorni);
         auditLogger.success("ATTIVITA_CREATA", "SingolaAttivita", String.valueOf(salvata.getId()));

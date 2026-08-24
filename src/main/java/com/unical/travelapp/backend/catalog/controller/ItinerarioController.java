@@ -2,6 +2,7 @@ package com.unical.travelapp.backend.catalog.controller;
 
 import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
+import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.catalog.mapper.ItinerarioMapper;
 import com.unical.travelapp.backend.catalog.service.ItinerarioService;
@@ -50,11 +51,16 @@ public class ItinerarioController {
         return ResponseEntity.ok(itinerarioMapper.toDTO(itinerario));
     }
 
+    // --- Endpoint per recuperare le disponibilità (richiesto per il booking) ---
+    @GetMapping("/{id}/disponibilita")
+    public ResponseEntity<List<DisponibilitaItinerario>> getDisponibilitaByItinerario(@PathVariable Long id) {
+        return ResponseEntity.ok(itinerarioService.getDisponibilitaByItinerarioId(id));
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     public ResponseEntity<ItinerarioDTO> createItinerario(@Valid @RequestBody ItinerarioRequestDTO itinerarioRequest) {
         Itinerario entity = itinerarioMapper.fromRequest(itinerarioRequest);
-        // organizzatore e stato sono gestiti dal server, mai dal client
         entity.setOrganizzatore(utenteService.getUtenteSessione());
         entity.setStato("BOZZA");
         Itinerario salvato = itinerarioService.saveItinerario(entity);
@@ -82,10 +88,7 @@ public class ItinerarioController {
         return ResponseEntity.noContent().build();
     }
 
-
     // --- Immagini dell'itinerario ---------------------------------------------------------
-    // La copertina e' la prima immagine della lista: caricarne una su un itinerario senza
-    // foto equivale a impostarne la copertina.
 
     @PostMapping(value = "/{id}/immagini", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
@@ -98,13 +101,10 @@ public class ItinerarioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(immagine);
     }
 
-
-    // in lettura basta essere autenticati: le foto di un itinerario sono parte del catalogo
     @GetMapping("/{id}/immagini")
     public ResponseEntity<List<ImmagineResponse>> getImmagini(@PathVariable Long id) {
         return ResponseEntity.ok(itinerarioService.getImmagini(id));
     }
-
 
     @DeleteMapping("/{id}/immagini/{immagineId}")
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
