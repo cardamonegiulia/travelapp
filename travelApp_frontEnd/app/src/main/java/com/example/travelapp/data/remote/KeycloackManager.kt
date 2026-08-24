@@ -25,8 +25,12 @@ object KeycloakManager {
         .setConnectionBuilder(LocalConnectionBuilder)
         .build()
 
-    fun creaIntentLogin(context: Context, loginHint: String? = null): Intent {
-        val authService = AuthorizationService(context, appAuthConfig)
+    private var authService: AuthorizationService? = null
+
+    fun creaIntentLogin(context: Context, loginHint: String? = null, forzaLogin: Boolean = false): Intent {
+        authService?.dispose()
+        val servizio = AuthorizationService(context, appAuthConfig)
+        authService = servizio
 
         val requestBuilder = AuthorizationRequest.Builder(
             serviceConfig,
@@ -40,7 +44,11 @@ object KeycloakManager {
             requestBuilder.setLoginHint(loginHint)
         }
 
-        return authService.getAuthorizationRequestIntent(requestBuilder.build())
+        if (forzaLogin) {
+            requestBuilder.setPrompt("login")
+        }
+
+        return servizio.getAuthorizationRequestIntent(requestBuilder.build())
     }
 
     fun scambiaCodicePToken(
@@ -49,23 +57,28 @@ object KeycloakManager {
         onSuccess: (accessToken: String) -> Unit,
         onError: (String) -> Unit
     ) {
-        // Usa appAuthConfig con LocalConnectionBuilder
-        val authService = AuthorizationService(context, appAuthConfig)
+        val servizio = authService ?: AuthorizationService(context, appAuthConfig)
 
         val response = AuthorizationResponse.fromIntent(intent)
         val error = AuthorizationException.fromIntent(intent)
 
         if (error != null) {
+            servizio.dispose()
+            authService = null
             onError("Errore login: ${error.message}")
             return
         }
 
         if (response == null) {
+            servizio.dispose()
+            authService = null
             onError("Risposta Keycloak vuota")
             return
         }
 
-        authService.performTokenRequest(response.createTokenExchangeRequest()) { tokenResponse, ex ->
+        servizio.performTokenRequest(response.createTokenExchangeRequest()) { tokenResponse, ex ->
+            servizio.dispose()
+            authService = null
             if (ex != null) {
                 onError("Errore token: ${ex.message}")
                 return@performTokenRequest

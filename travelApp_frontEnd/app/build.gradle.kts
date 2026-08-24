@@ -86,13 +86,14 @@ tasks.register("adbReversePortauto") {
             logger.warn("adb non trovato in ${adb.path}, salto adb reverse")
             return@doLast
         }
+
         for (port in listOf(8081, 8090)) {
             val risultato = project.exec {
                 commandLine(adb.path, "reverse", "tcp:$port", "tcp:$port")
                 isIgnoreExitValue = true
             }
             if (risultato.exitValue != 0) {
-                logger.lifecycle("adb reverse per la porta $port non applicato (nessun dispositivo fisico collegato?)")
+                logger.lifecycle("adb reverse per la porta $port non applicato (nessun dispositivo collegato, o piu' di uno)")
             }
         }
     }
@@ -100,4 +101,5 @@ tasks.register("adbReversePortauto") {
 
 afterEvaluate {
     tasks.findByName("installDebug")?.dependsOn("adbReversePortauto")
+    tasks.findByName("assembleDebug")?.dependsOn("adbReversePortauto")
 }
