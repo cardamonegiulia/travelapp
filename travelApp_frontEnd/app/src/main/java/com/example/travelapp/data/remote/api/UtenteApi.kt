@@ -1,40 +1,39 @@
 package com.example.travelapp.data.remote.api
 
+import com.example.travelapp.data.remote.dto.PageResponse
 import com.example.travelapp.data.remote.dto.UtenteResponseDto
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.DELETE
+import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
+import retrofit2.http.Path
+import retrofit2.http.Query
 
-/** Endpoint del contesto identity usati dal profilo. */
 interface UtenteApi {
 
-    /**
-     * Profilo dell'utente del token, creandone il record locale se è il primo accesso.
-     *
-     * È una POST e non una GET perché può scrivere (provisioning just-in-time), ed è
-     * l'unica rotta da cui il client ricava il proprio profilo: non esiste un
-     * `GET /api/utenti/me`, e `GET /api/utenti/{id}` richiede di conoscere già l'id.
-     */
     @POST("api/utenti/me")
     suspend fun sincronizzaProfilo(): Response<UtenteResponseDto>
 
-    /**
-     * Imposta o sostituisce la foto profilo. Il nome del campo — `file` — e quello del
-     * file devono rispettare quanto si aspetta il backend: l'estensione dichiarata deve
-     * essere `.jpg`/`.jpeg`/`.png` **e** coincidere col contenuto reale, che il server
-     * riconosce dai primi byte.
-     *
-     * Restituisce il profilo aggiornato, così basta una chiamata sola per mostrare il
-     * nuovo avatar.
-     */
     @Multipart
     @PUT("api/utenti/me/foto-profilo")
     suspend fun impostaFotoProfilo(@Part file: MultipartBody.Part): Response<UtenteResponseDto>
 
     @DELETE("api/utenti/me/foto-profilo")
     suspend fun rimuoviFotoProfilo(): Response<Unit>
+
+    @GET("api/utenti")
+    suspend fun getTuttiGliUtenti(
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 50
+    ): Response<PageResponse<UtenteResponseDto>>
+
+    @PUT("api/utenti/{id}/ruolo/admin")
+    suspend fun promuoviAdAdmin(@Path("id") id: Long): Response<UtenteResponseDto>
+
+    @DELETE("api/utenti/{id}")
+    suspend fun eliminaUtente(@Path("id") id: Long): Response<Unit>
 }

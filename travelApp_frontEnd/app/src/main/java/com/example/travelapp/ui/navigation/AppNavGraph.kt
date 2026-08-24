@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -28,13 +27,14 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
+import com.example.travelapp.ui.catalog.AdminDashboardScreen
 import com.example.travelapp.ui.catalog.AttivitaDetailScreen
 import com.example.travelapp.ui.catalog.CreaAttivitaScreen
 import com.example.travelapp.ui.catalog.CreaItinerarioScreen
 import com.example.travelapp.ui.catalog.GestioneUtentiAdminScreen
 import com.example.travelapp.ui.catalog.ItinerarioDetailScreen
 import com.example.travelapp.ui.catalog.OfferteManagementScreen
-import com.example.travelapp.ui.catalog.UtenteAdminItem
+import com.example.travelapp.ui.catalog.OrganizzatoreHomeScreen
 import com.example.travelapp.ui.components.AppBottomBar
 import com.example.travelapp.ui.pagamenti.PaymentsScreen
 import com.example.travelapp.ui.pagamenti.PaymentsViewModel
@@ -52,19 +52,42 @@ import com.example.travelapp.ui.screens.FavoritesScreen
 import com.example.travelapp.ui.screens.ProfileScreen
 import com.example.travelapp.ui.screens.sampleFavoriteTrips
 import com.example.travelapp.ui.theme.BackgroundLavender
-import java.math.BigDecimal
 
 
 object CatalogRoutes {
-    const val CREA_ITINERARIO = "catalog/crea_itinerario"
-    const val CREA_ATTIVITA = "catalog/crea_attivita"
-    const val MODIFICA_ITINERARIO = "catalog/modifica_itinerario"
-    const val MODIFICA_ATTIVITA = "catalog/modifica_attivita"
-    const val LE_MIE_OFFERTE = "catalog/le_mie_offerte"
-    const val OFFERTE_ADMIN = "catalog/offerte_admin"
-    const val GESTIONE_UTENTI_ADMIN = "catalog/gestione_utenti_admin"
-    const val DETTAGLIO_ITINERARIO = "catalog/dettaglio_itinerario"
-    const val DETTAGLIO_ATTIVITA = "catalog/dettaglio_attivita"
+
+    const val ADMIN_HOME =
+        "catalog/admin_home"
+
+    const val ORGANIZZATORE_HOME =
+        "catalog/organizzatore_home"
+
+    const val CREA_ITINERARIO =
+        "catalog/crea_itinerario"
+
+    const val CREA_ATTIVITA =
+        "catalog/crea_attivita"
+
+    const val MODIFICA_ITINERARIO =
+        "catalog/modifica_itinerario"
+
+    const val MODIFICA_ATTIVITA =
+        "catalog/modifica_attivita"
+
+    const val LE_MIE_OFFERTE =
+        "catalog/le_mie_offerte"
+
+    const val OFFERTE_ADMIN =
+        "catalog/offerte_admin"
+
+    const val GESTIONE_UTENTI_ADMIN =
+        "catalog/gestione_utenti_admin"
+
+    const val DETTAGLIO_ITINERARIO =
+        "catalog/dettaglio_itinerario"
+
+    const val DETTAGLIO_ATTIVITA =
+        "catalog/dettaglio_attivita"
 }
 
 
@@ -72,10 +95,20 @@ object CatalogRoutes {
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
+    profiloViewModel: ProfiloViewModel = viewModel(),
     onExitApp: () -> Unit = {}
 ) {
 
-    val context = LocalContext.current
+    val context =
+        LocalContext.current
+
+    /*
+     * Utilizziamo la stessa istanza del ProfiloViewModel
+     * sia per il profilo sia per determinare il ruolo
+     * dell'utente e quindi la relativa home.
+     */
+    val profiloState by
+    profiloViewModel.state.collectAsState()
 
     val onBack: () -> Unit = {
         if (!navController.popBackStack()) {
@@ -84,103 +117,24 @@ fun AppNavGraph(
     }
 
     /*
-     * La bottom bar viene nascosta durante il wizard di prenotazione
-     * per evitare che l'utente abbandoni accidentalmente il flusso.
+     * Determinazione del ruolo.
      */
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val ruoloStr =
+        profiloState.ruolo
+            ?.toString()
+            ?.uppercase()
+            ?: ""
 
-    val mostraBottomBar = currentRoute !in setOf(
-        AppDestination.BookingStep1.route,
-        AppDestination.BookingStep2.route,
-        AppDestination.BookingSuccess.route
-    )
+    val isAdmin =
+        ruoloStr.contains("ADMIN")
+
+    val isOrganizzatore =
+        ruoloStr.contains("ORGANIZZATORE")
+
 
     /*
-     * Dati temporanei usati dalle schermate di gestione Catalog.
-     * Potranno essere sostituiti dai dati reali del backend.
+     * Elementi selezionati nel Catalog.
      */
-    val mockItinerari = remember {
-        mutableStateListOf(
-            Itinerario(
-                id = 1L,
-                organizzatoreId = 1L,
-                titolo = "Tour delle Cantine del Chianti",
-                descrizione = "Degustazione vini tipici toscani e visita ai vigneti storici.",
-                destinazionePrincipale = "Toscana",
-                prezzoBase = BigDecimal("120.00"),
-                durataGiorni = 3,
-                maxPartecipanti = 12,
-                stato = "ATTIVO"
-            ),
-            Itinerario(
-                id = 2L,
-                organizzatoreId = 1L,
-                titolo = "Escursione Vulcano Etna",
-                descrizione = "Trekking guidato ai crateri sommitali e sentieri naturalistici.",
-                destinazionePrincipale = "Sicilia",
-                prezzoBase = BigDecimal("85.00"),
-                durataGiorni = 1,
-                maxPartecipanti = 15,
-                stato = "ATTIVO"
-            )
-        )
-    }
-
-    val mockAttivita = remember {
-        mutableStateListOf(
-            SingolaAttivita(
-                id = 101L,
-                organizzatoreId = 1L,
-                titolo = "Degustazione Olio EVO in Frantoio",
-                descrizione = "Visita e assaggio degli oli extravergine di oliva.",
-                luogo = "Firenze",
-                prezzo = BigDecimal("35.00"),
-                durataMinuti = 120,
-                maxPartecipanti = 10
-            ),
-            SingolaAttivita(
-                id = 102L,
-                organizzatoreId = 1L,
-                titolo = "Corso di Pasta Fresca Fatta a Mano",
-                descrizione = "Impara a preparare tagliatelle e ravioli tradizionali.",
-                luogo = "Bologna",
-                prezzo = BigDecimal("50.00"),
-                durataMinuti = 180,
-                maxPartecipanti = 8
-            )
-        )
-    }
-
-    val mockUtenti = remember {
-        listOf(
-            UtenteAdminItem(
-                1L,
-                "Mario Rossi",
-                "mario@example.it",
-                "VIAGGIATORE"
-            ),
-            UtenteAdminItem(
-                2L,
-                "Elena Bianchi",
-                "elena@organizer.it",
-                "ORGANIZZATORE"
-            ),
-            UtenteAdminItem(
-                3L,
-                "Luca Conti",
-                "luca.c@example.it",
-                "VIAGGIATORE"
-            ),
-            UtenteAdminItem(
-                4L,
-                "Alessandro Ricci",
-                "a.ricci@organizer.it",
-                "ORGANIZZATORE"
-            )
-        )
-    }
-
     var itinerarioSelezionato by remember {
         mutableStateOf<Itinerario?>(null)
     }
@@ -198,11 +152,86 @@ fun AppNavGraph(
     }
 
 
+    /*
+     * Quando il ruolo viene caricato dal profilo,
+     * Admin e Organizzatore vengono reindirizzati
+     * verso la rispettiva home dedicata.
+     */
+    LaunchedEffect(profiloState.ruolo) {
+
+        when {
+
+            isAdmin -> {
+
+                navController.navigate(
+                    CatalogRoutes.ADMIN_HOME
+                ) {
+
+                    popUpTo(
+                        AppDestination.Explore.route
+                    ) {
+                        inclusive = true
+                    }
+
+                    launchSingleTop = true
+                }
+            }
+
+            isOrganizzatore -> {
+
+                navController.navigate(
+                    CatalogRoutes.ORGANIZZATORE_HOME
+                ) {
+
+                    popUpTo(
+                        AppDestination.Explore.route
+                    ) {
+                        inclusive = true
+                    }
+
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
+
+    /*
+     * La bottom bar:
+     *
+     * - non viene mostrata ad ADMIN;
+     * - non viene mostrata a ORGANIZZATORE;
+     * - viene nascosta durante il wizard Booking.
+     */
+    val navBackStackEntry by
+    navController.currentBackStackEntryAsState()
+
+    val currentRoute =
+        navBackStackEntry
+            ?.destination
+            ?.route
+
+    val isBookingWizard =
+        currentRoute in setOf(
+            AppDestination.BookingStep1.route,
+            AppDestination.BookingStep2.route,
+            AppDestination.BookingSuccess.route
+        )
+
+    val mostraBottomBar =
+        !isAdmin &&
+                !isOrganizzatore &&
+                !isBookingWizard
+
+
     Scaffold(
         modifier = modifier,
         containerColor = BackgroundLavender,
+
         bottomBar = {
+
             if (mostraBottomBar) {
+
                 AppBottomBar(
                     navController = navController
                 )
@@ -210,23 +239,118 @@ fun AppNavGraph(
         }
     ) { innerPadding ->
 
+
         NavHost(
             navController = navController,
-            startDestination = AppDestination.start.route,
+            startDestination =
+            AppDestination.Explore.route,
+
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
 
+
             /*
-             * DESTINAZIONI PRINCIPALI
+             * ============================================================
+             * ADMIN
+             * ============================================================
              */
 
-            composable(AppDestination.Explore.route) {
+            composable(
+                CatalogRoutes.ADMIN_HOME
+            ) {
+
+                AdminDashboardScreen(
+
+                    onVaiOfferte = {
+
+                        navController.navigate(
+                            CatalogRoutes.OFFERTE_ADMIN
+                        )
+                    },
+
+                    onVaiUtenti = {
+
+                        navController.navigate(
+                            CatalogRoutes.GESTIONE_UTENTI_ADMIN
+                        )
+                    },
+
+                    onLogout = {
+                        onExitApp()
+                    }
+                )
+            }
+
+
+            /*
+             * ============================================================
+             * ORGANIZZATORE
+             * ============================================================
+             */
+
+            composable(
+                CatalogRoutes.ORGANIZZATORE_HOME
+            ) {
+
+                OrganizzatoreHomeScreen(
+
+                    onCreaItinerario = {
+
+                        navController.navigate(
+                            CatalogRoutes.CREA_ITINERARIO
+                        )
+                    },
+
+                    onCreaAttivita = {
+
+                        navController.navigate(
+                            CatalogRoutes.CREA_ATTIVITA
+                        )
+                    },
+
+                    onModificaItinerario = { item ->
+
+                        itinerarioInModifica = item
+
+                        navController.navigate(
+                            CatalogRoutes.MODIFICA_ITINERARIO
+                        )
+                    },
+
+                    onModificaAttivita = { item ->
+
+                        attivitaInModifica = item
+
+                        navController.navigate(
+                            CatalogRoutes.MODIFICA_ATTIVITA
+                        )
+                    },
+
+                    onLogout = {
+                        onExitApp()
+                    }
+                )
+            }
+
+
+            /*
+             * ============================================================
+             * VIAGGIATORE / NAVIGAZIONE PRINCIPALE
+             * ============================================================
+             */
+
+            composable(
+                AppDestination.Explore.route
+            ) {
 
                 ExploreScreen(
+
                     onItinerarioClick = { itinerario ->
-                        itinerarioSelezionato = itinerario
+
+                        itinerarioSelezionato =
+                            itinerario
 
                         navController.navigate(
                             CatalogRoutes.DETTAGLIO_ITINERARIO
@@ -234,7 +358,9 @@ fun AppNavGraph(
                     },
 
                     onAttivitaClick = { attivita ->
-                        attivitaSelezionata = attivita
+
+                        attivitaSelezionata =
+                            attivita
 
                         navController.navigate(
                             CatalogRoutes.DETTAGLIO_ATTIVITA
@@ -244,12 +370,25 @@ fun AppNavGraph(
             }
 
 
-            composable(AppDestination.Bookings.route) {
+            /*
+             * BOOKING LIST
+             */
+
+            composable(
+                AppDestination.Bookings.route
+            ) {
+
                 BookingsRoute()
             }
 
 
-            composable(AppDestination.Payments.route) {
+            /*
+             * PAGAMENTI
+             */
+
+            composable(
+                AppDestination.Payments.route
+            ) {
 
                 PaymentsRoute(
                     onBack = {
@@ -259,33 +398,55 @@ fun AppNavGraph(
             }
 
 
-            composable(AppDestination.Favorites.route) {
+            /*
+             * PREFERITI
+             */
+
+            composable(
+                AppDestination.Favorites.route
+            ) {
+
                 FavoritesRoute(
                     onBack = onBack
                 )
             }
 
 
-            composable(AppDestination.Profile.route) {
+            /*
+             * PROFILO
+             */
+
+            composable(
+                AppDestination.Profile.route
+            ) {
 
                 ProfileRoute(
                     onBack = onBack,
 
                     onNavigateTo = { destination ->
+
                         navController.navigate(
                             destination.route
                         )
                     },
 
                     onNavigateToRoute = { route ->
-                        navController.navigate(route)
-                    }
+
+                        navController.navigate(
+                            route
+                        )
+                    },
+
+                    viewModel =
+                    profiloViewModel
                 )
             }
 
 
             /*
-             * DETTAGLIO CATALOGO
+             * ============================================================
+             * DETTAGLI CATALOGO
+             * ============================================================
              */
 
             composable(
@@ -307,9 +468,9 @@ fun AppNavGraph(
                             ).show()
 
                             /*
-                             * TODO booking:
-                             * invece di andare direttamente a Bookings,
-                             * qui collegheremo l'ID reale al booking_graph.
+                             * TODO Booking:
+                             * collegare disponibilitaId
+                             * al booking_graph.
                              */
                             navController.navigate(
                                 AppDestination.Bookings.route
@@ -339,8 +500,9 @@ fun AppNavGraph(
                             ).show()
 
                             /*
-                             * TODO booking:
-                             * qui collegheremo sessioneId al booking_graph.
+                             * TODO Booking:
+                             * collegare sessioneId
+                             * al booking_graph.
                              */
                             navController.navigate(
                                 AppDestination.Bookings.route
@@ -352,7 +514,9 @@ fun AppNavGraph(
 
 
             /*
-             * CREAZIONE E MODIFICA CATALOGO
+             * ============================================================
+             * CREAZIONE / MODIFICA CATALOGO
+             * ============================================================
              */
 
             composable(
@@ -372,6 +536,7 @@ fun AppNavGraph(
                 CreaItinerarioScreen(
                     itinerarioDaModificare =
                     itinerarioInModifica,
+
                     onBack = onBack
                 )
             }
@@ -394,13 +559,16 @@ fun AppNavGraph(
                 CreaAttivitaScreen(
                     attivitaDaModificare =
                     attivitaInModifica,
+
                     onBack = onBack
                 )
             }
 
 
             /*
-             * GESTIONE OFFERTE
+             * ============================================================
+             * OFFERTE ORGANIZZATORE
+             * ============================================================
              */
 
             composable(
@@ -409,59 +577,35 @@ fun AppNavGraph(
 
                 OfferteManagementScreen(
                     isAdmin = false,
-                    itinerari = mockItinerari,
-                    attivita = mockAttivita,
                     onBack = onBack,
 
                     onModificaItinerario = { item ->
 
-                        itinerarioInModifica = item
+                        itinerarioInModifica =
+                            item
 
                         navController.navigate(
                             CatalogRoutes.MODIFICA_ITINERARIO
                         )
                     },
 
-                    onEliminaItinerario = { id ->
-
-                        mockItinerari.removeAll {
-                            it.id == id
-                        }
-
-                        Toast.makeText(
-                            context,
-                            "Itinerario eliminato!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    },
-
                     onModificaAttivita = { item ->
 
-                        attivitaInModifica = item
+                        attivitaInModifica =
+                            item
 
                         navController.navigate(
                             CatalogRoutes.MODIFICA_ATTIVITA
                         )
-                    },
-
-                    onEliminaAttivita = { id ->
-
-                        mockAttivita.removeAll {
-                            it.id == id
-                        }
-
-                        Toast.makeText(
-                            context,
-                            "Attività eliminata!",
-                            Toast.LENGTH_SHORT
-                        ).show()
                     }
                 )
             }
 
 
             /*
-             * GESTIONE OFFERTE ADMIN
+             * ============================================================
+             * OFFERTE ADMIN
+             * ============================================================
              */
 
             composable(
@@ -470,72 +614,33 @@ fun AppNavGraph(
 
                 OfferteManagementScreen(
                     isAdmin = true,
-                    itinerari = mockItinerari,
-                    attivita = mockAttivita,
-                    onBack = onBack,
-
-                    onModificaItinerario = { item ->
-
-                        itinerarioInModifica = item
-
-                        navController.navigate(
-                            CatalogRoutes.MODIFICA_ITINERARIO
-                        )
-                    },
-
-                    onEliminaItinerario = { id ->
-
-                        mockItinerari.removeAll {
-                            it.id == id
-                        }
-
-                        Toast.makeText(
-                            context,
-                            "[ADMIN] Itinerario eliminato!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    },
-
-                    onModificaAttivita = { item ->
-
-                        attivitaInModifica = item
-
-                        navController.navigate(
-                            CatalogRoutes.MODIFICA_ATTIVITA
-                        )
-                    },
-
-                    onEliminaAttivita = { id ->
-
-                        mockAttivita.removeAll {
-                            it.id == id
-                        }
-
-                        Toast.makeText(
-                            context,
-                            "[ADMIN] Attività eliminata!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                )
-            }
-
-
-            composable(
-                CatalogRoutes.GESTIONE_UTENTI_ADMIN
-            ) {
-
-                GestioneUtentiAdminScreen(
-                    utenti = mockUtenti,
                     onBack = onBack
                 )
             }
 
 
             /*
+             * ============================================================
+             * GESTIONE UTENTI ADMIN
+             * ============================================================
+             */
+
+            composable(
+                CatalogRoutes.GESTIONE_UTENTI_ADMIN
+            ) {
+
+                GestioneUtentiAdminScreen(
+                    onBack = onBack
+                )
+            }
+
+
+            /*
+             * ============================================================
              * BOOKING WIZARD
+             * ============================================================
              *
-             * Tutti gli step condividono la stessa istanza
+             * I tre step condividono la stessa istanza
              * di PrenotazioniViewModel tramite booking_graph.
              */
 
@@ -557,9 +662,11 @@ fun AppNavGraph(
 
                     val parentEntry =
                         remember(backStackEntry) {
-                            navController.getBackStackEntry(
-                                "booking_graph"
-                            )
+
+                            navController
+                                .getBackStackEntry(
+                                    "booking_graph"
+                                )
                         }
 
                     val bookingContext =
@@ -578,7 +685,8 @@ fun AppNavGraph(
                         )
 
                     val state by
-                    bookingViewModel.uiState
+                    bookingViewModel
+                        .uiState
                         .collectAsState()
 
 
@@ -601,6 +709,7 @@ fun AppNavGraph(
 
                     PrenotazionePasso1Screen(
                         uiState = state,
+
                         extraDisponibili =
                         emptyList(),
 
@@ -617,10 +726,14 @@ fun AppNavGraph(
                         toggleExtra,
 
                         onContinua = {
+
                             /*
-                             * Verrà collegato agli ID reali
-                             * disponibilitaItinerarioId /
-                             * sessioneSingolaAttivitaId.
+                             * TODO:
+                             * collegare l'ID reale di:
+                             *
+                             * disponibilitaItinerarioId
+                             * oppure
+                             * sessioneSingolaAttivitaId
                              */
                         }
                     )
@@ -660,7 +773,8 @@ fun AppNavGraph(
                         )
 
                     val state by
-                    bookingViewModel.uiState
+                    bookingViewModel
+                        .uiState
                         .collectAsState()
 
 
@@ -669,8 +783,7 @@ fun AppNavGraph(
                     ) {
 
                         if (
-                            state.pagamentoCompletato !=
-                            null
+                            state.pagamentoCompletato != null
                         ) {
 
                             navController.navigate(
@@ -690,6 +803,7 @@ fun AppNavGraph(
                         selezionaMetodoPagamento,
 
                         onConfermaEPaga = {
+
                             bookingViewModel
                                 .pagaPrenotazione()
                         }
@@ -730,7 +844,8 @@ fun AppNavGraph(
                         )
 
                     val state by
-                    bookingViewModel.uiState
+                    bookingViewModel
+                        .uiState
                         .collectAsState()
 
 
@@ -764,7 +879,9 @@ fun AppNavGraph(
 
 
 /*
+ * ================================================================
  * FAVORITES
+ * ================================================================
  */
 
 @Composable
@@ -784,17 +901,21 @@ private fun FavoritesRoute(
 
         onToggleFavorite = { id ->
 
-            trips = trips.map { trip ->
+            trips =
+                trips.map { trip ->
 
-                if (trip.id == id) {
-                    trip.copy(
-                        isFavorite =
-                        !trip.isFavorite
-                    )
-                } else {
-                    trip
+                    if (trip.id == id) {
+
+                        trip.copy(
+                            isFavorite =
+                            !trip.isFavorite
+                        )
+
+                    } else {
+
+                        trip
+                    }
                 }
-            }
         },
 
         onLoadMore = {},
@@ -804,7 +925,9 @@ private fun FavoritesRoute(
 
 
 /*
+ * ================================================================
  * PROFILE
+ * ================================================================
  */
 
 @Composable
@@ -816,7 +939,9 @@ private fun ProfileRoute(
 ) {
 
     val state by
-    viewModel.state.collectAsState()
+    viewModel
+        .state
+        .collectAsState()
 
 
     val photoPicker =
@@ -827,8 +952,11 @@ private fun ProfileRoute(
         ) { uri ->
 
             if (uri != null) {
+
                 viewModel
-                    .cambiaFotoProfilo(uri)
+                    .cambiaFotoProfilo(
+                        uri
+                    )
             }
         }
 
@@ -838,12 +966,14 @@ private fun ProfileRoute(
         onBack = onBack,
 
         onBookingsClick = {
+
             onNavigateTo(
                 AppDestination.Bookings
             )
         },
 
         onFavoritesClick = {
+
             onNavigateTo(
                 AppDestination.Favorites
             )
@@ -865,34 +995,39 @@ private fun ProfileRoute(
 
 
         /*
-         * CATALOGO / ORGANIZZATORE / ADMIN
+         * CATALOGO
          */
 
         onCreaItinerarioClick = {
+
             onNavigateToRoute(
                 CatalogRoutes.CREA_ITINERARIO
             )
         },
 
         onCreaAttivitaClick = {
+
             onNavigateToRoute(
                 CatalogRoutes.CREA_ATTIVITA
             )
         },
 
         onLeMieOfferteClick = {
+
             onNavigateToRoute(
                 CatalogRoutes.LE_MIE_OFFERTE
             )
         },
 
         onGestioneOfferteAdminClick = {
+
             onNavigateToRoute(
                 CatalogRoutes.OFFERTE_ADMIN
             )
         },
 
         onGestioneUtentiAdminClick = {
+
             onNavigateToRoute(
                 CatalogRoutes
                     .GESTIONE_UTENTI_ADMIN
@@ -905,6 +1040,7 @@ private fun ProfileRoute(
          */
 
         onPaymentsClick = {
+
             onNavigateTo(
                 AppDestination.Payments
             )
@@ -923,7 +1059,9 @@ private fun ProfileRoute(
 
 
 /*
+ * ================================================================
  * BOOKINGS
+ * ================================================================
  */
 
 @Composable
@@ -933,7 +1071,9 @@ private fun BookingsRoute(
 ) {
 
     val state by
-    viewModel.uiState.collectAsState()
+    viewModel
+        .uiState
+        .collectAsState()
 
     val prenotazioneSelezionata =
         state.prenotazioneSelezionata
@@ -948,11 +1088,13 @@ private fun BookingsRoute(
             prenotazioneSelezionata,
 
             onBack = {
+
                 viewModel
                     .chiudiDettaglio()
             },
 
             onAnnulla = {
+
                 viewModel
                     .annullaPrenotazione()
             },
@@ -974,13 +1116,17 @@ private fun BookingsRoute(
             state.errore,
 
             onRiprova = {
+
                 viewModel
                     .caricaPrenotazioni()
             },
 
             onPrenotazioneClick = {
+
                 viewModel
-                    .selezionaPrenotazione(it)
+                    .selezionaPrenotazione(
+                        it
+                    )
             }
         )
     }
@@ -988,7 +1134,9 @@ private fun BookingsRoute(
 
 
 /*
+ * ================================================================
  * PAYMENTS
+ * ================================================================
  */
 
 @Composable
@@ -999,7 +1147,10 @@ private fun PaymentsRoute(
 ) {
 
     val state by
-    viewModel.uiState.collectAsState()
+    viewModel
+        .uiState
+        .collectAsState()
+
 
     PaymentsScreen(
         pagamenti =
@@ -1012,6 +1163,7 @@ private fun PaymentsRoute(
         state.errore,
 
         onRiprova = {
+
             viewModel
                 .caricaPagamenti()
         },
@@ -1030,6 +1182,7 @@ private fun PaymentsRoute(
 private fun AppNavGraphPreview() {
 
     MaterialTheme {
+
         AppNavGraph()
     }
 }

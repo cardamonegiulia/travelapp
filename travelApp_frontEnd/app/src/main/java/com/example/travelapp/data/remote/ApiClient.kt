@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
  * Configurazione centralizzata del client HTTP.
  *
  * Gestisce:
- * - base URL del backend, letto dalla configurazione locale a build time;
+ * - base URL del backend, letta dalla configurazione locale a build time;
  * - timeout;
  * - API REST autenticate tramite JWT.
  */
@@ -74,7 +74,6 @@ object ApiClient {
 
     /**
      * Compatibilità con le classi che usano ancora ApiClient.getClient(context).
-     * Restituisce comunque il Retrofit autenticato condiviso.
      */
     fun getClient(context: Context): Retrofit =
         getClientAutenticato(context)
@@ -92,9 +91,7 @@ object ApiClient {
             .create(SingolaAttivitaApi::class.java)
 
     /**
-     * Gli endpoint /api/utenti/me identificano l'utente
-     * tramite JWT, quindi anche UtenteApi deve usare
-     * necessariamente il client autenticato.
+     * Gli endpoint /api/utenti/me identificano l'utente tramite JWT.
      */
     fun getUtenteApi(
         context: Context

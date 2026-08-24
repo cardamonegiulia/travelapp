@@ -21,7 +21,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,7 +36,6 @@ import com.example.travelapp.ui.catalog.CreaAttivitaScreen
 import com.example.travelapp.ui.catalog.CreaItinerarioScreen
 import com.example.travelapp.ui.catalog.GestioneUtentiAdminScreen
 import com.example.travelapp.ui.catalog.OfferteManagementScreen
-import com.example.travelapp.ui.catalog.UtenteAdminItem
 import com.example.travelapp.ui.navigation.AppNavGraph
 import com.example.travelapp.ui.theme.TravelAppTheme
 import com.example.travelapp.ui.theme.TravelBg
@@ -45,7 +43,6 @@ import com.example.travelapp.ui.theme.TravelBlue
 import com.example.travelapp.ui.theme.TravelBlueDark
 import com.example.travelapp.ui.theme.TravelOrange
 import com.example.travelapp.ui.theme.TravelTextDark
-import java.math.BigDecimal
 
 
 enum class TestScreen {
@@ -95,8 +92,8 @@ fun AppNavigation(
     }
 
     /*
-     * Dopo una registrazione riuscita conserviamo temporaneamente
-     * l'email per riproporla nella schermata di login.
+     * Dopo una registrazione riuscita conserviamo l'email
+     * per riproporla nella schermata di login.
      */
     var emailAppenaRegistrata by remember {
         mutableStateOf<String?>(null)
@@ -131,8 +128,6 @@ fun AppNavigation(
                 onRegistrazioneSuccess = { email ->
 
                     emailAppenaRegistrata = email
-
-                    // Dopo la registrazione si torna al login.
                     schermataCorrente = "login"
                 },
 
@@ -178,103 +173,16 @@ private fun MainTestHub(
     }
 
 
-    val mockItinerari = remember {
-        mutableStateListOf(
-            Itinerario(
-                id = 1L,
-                organizzatoreId = 1L,
-                titolo = "Tour delle Cantine del Chianti",
-                descrizione = "Degustazione vini tipici toscani e visita ai vigneti storici.",
-                destinazionePrincipale = "Toscana",
-                prezzoBase = BigDecimal("120.00"),
-                durataGiorni = 3,
-                maxPartecipanti = 12,
-                stato = "ATTIVO"
-            ),
-
-            Itinerario(
-                id = 2L,
-                organizzatoreId = 1L,
-                titolo = "Escursione Vulcano Etna",
-                descrizione = "Trekking guidato ai crateri sommitali e sentieri naturalistici.",
-                destinazionePrincipale = "Sicilia",
-                prezzoBase = BigDecimal("85.00"),
-                durataGiorni = 1,
-                maxPartecipanti = 15,
-                stato = "ATTIVO"
-            )
-        )
-    }
-
-
-    val mockAttivita = remember {
-        mutableStateListOf(
-            SingolaAttivita(
-                id = 101L,
-                organizzatoreId = 1L,
-                titolo = "Degustazione Olio EVO in Frantoio",
-                descrizione = "Visita e assaggio degli oli extravergine di oliva.",
-                luogo = "Firenze",
-                prezzo = BigDecimal("35.00"),
-                durataMinuti = 120,
-                maxPartecipanti = 10
-            ),
-
-            SingolaAttivita(
-                id = 102L,
-                organizzatoreId = 1L,
-                titolo = "Corso di Pasta Fresca Fatta a Mano",
-                descrizione = "Impara a preparare tagliatelle e ravioli tradizionali.",
-                luogo = "Bologna",
-                prezzo = BigDecimal("50.00"),
-                durataMinuti = 180,
-                maxPartecipanti = 8
-            )
-        )
-    }
-
-
-    val mockUtenti = remember {
-        listOf(
-            UtenteAdminItem(
-                1L,
-                "Mario Rossi",
-                "mario@example.it",
-                "VIAGGIATORE"
-            ),
-
-            UtenteAdminItem(
-                2L,
-                "Elena Bianchi",
-                "elena@organizer.it",
-                "ORGANIZZATORE"
-            ),
-
-            UtenteAdminItem(
-                3L,
-                "Luca Conti",
-                "luca.c@example.it",
-                "VIAGGIATORE"
-            ),
-
-            UtenteAdminItem(
-                4L,
-                "Alessandro Ricci",
-                "a.ricci@organizer.it",
-                "ORGANIZZATORE"
-            )
-        )
-    }
-
-
     when (currentScreen) {
 
         TestScreen.MENU -> {
 
             Scaffold(
                 topBar = {
+
                     TopAppBar(
                         title = {
+
                             Text(
                                 text = "Hub Test Generale",
                                 fontWeight = FontWeight.Bold,
@@ -282,7 +190,8 @@ private fun MainTestHub(
                             )
                         },
 
-                        colors = TopAppBarDefaults.topAppBarColors(
+                        colors =
+                        TopAppBarDefaults.topAppBarColors(
                             containerColor = Color.White
                         )
                     )
@@ -296,7 +205,8 @@ private fun MainTestHub(
                         .background(TravelBg)
                         .padding(20.dp),
 
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement =
+                    Arrangement.spacedBy(12.dp)
                 ) {
 
                     Button(
@@ -305,11 +215,14 @@ private fun MainTestHub(
                                 TestScreen.APP_NAV_GRAPH
                         },
 
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = TravelBlueDark
+                        colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                            TravelBlueDark
                         ),
 
-                        shape = RoundedCornerShape(10.dp),
+                        shape =
+                        RoundedCornerShape(10.dp),
 
                         modifier = Modifier
                             .fillMaxWidth()
@@ -317,8 +230,10 @@ private fun MainTestHub(
                     ) {
 
                         Text(
-                            text = "0. Avvia App Completa (Profilo / NavGraph)",
-                            fontWeight = FontWeight.Bold
+                            text =
+                            "0. Avvia App Completa (Profilo / NavGraph)",
+                            fontWeight =
+                            FontWeight.Bold
                         )
                     }
 
@@ -329,11 +244,14 @@ private fun MainTestHub(
                                 TestScreen.CREA_ITINERARIO
                         },
 
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = TravelBlue
+                        colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                            TravelBlue
                         ),
 
-                        shape = RoundedCornerShape(10.dp),
+                        shape =
+                        RoundedCornerShape(10.dp),
 
                         modifier = Modifier
                             .fillMaxWidth()
@@ -341,8 +259,10 @@ private fun MainTestHub(
                     ) {
 
                         Text(
-                            text = "1. Crea Itinerario (Organizzatore)",
-                            fontWeight = FontWeight.Bold
+                            text =
+                            "1. Crea Itinerario (Organizzatore)",
+                            fontWeight =
+                            FontWeight.Bold
                         )
                     }
 
@@ -353,11 +273,14 @@ private fun MainTestHub(
                                 TestScreen.CREA_ATTIVITA
                         },
 
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = TravelBlue
+                        colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                            TravelBlue
                         ),
 
-                        shape = RoundedCornerShape(10.dp),
+                        shape =
+                        RoundedCornerShape(10.dp),
 
                         modifier = Modifier
                             .fillMaxWidth()
@@ -365,8 +288,10 @@ private fun MainTestHub(
                     ) {
 
                         Text(
-                            text = "2. Crea Attività Singola (Organizzatore)",
-                            fontWeight = FontWeight.Bold
+                            text =
+                            "2. Crea Attività Singola (Organizzatore)",
+                            fontWeight =
+                            FontWeight.Bold
                         )
                     }
 
@@ -377,11 +302,14 @@ private fun MainTestHub(
                                 TestScreen.LE_MIE_OFFERTE
                         },
 
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = TravelOrange
+                        colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                            TravelOrange
                         ),
 
-                        shape = RoundedCornerShape(10.dp),
+                        shape =
+                        RoundedCornerShape(10.dp),
 
                         modifier = Modifier
                             .fillMaxWidth()
@@ -389,8 +317,10 @@ private fun MainTestHub(
                     ) {
 
                         Text(
-                            text = "3. Le Mie Offerte (Organizzatore)",
-                            fontWeight = FontWeight.Bold
+                            text =
+                            "3. Le Mie Offerte (Organizzatore)",
+                            fontWeight =
+                            FontWeight.Bold
                         )
                     }
 
@@ -401,11 +331,14 @@ private fun MainTestHub(
                                 TestScreen.OFFERTE_ADMIN
                         },
 
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = TravelOrange
+                        colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                            TravelOrange
                         ),
 
-                        shape = RoundedCornerShape(10.dp),
+                        shape =
+                        RoundedCornerShape(10.dp),
 
                         modifier = Modifier
                             .fillMaxWidth()
@@ -413,8 +346,10 @@ private fun MainTestHub(
                     ) {
 
                         Text(
-                            text = "4. Gestione Globale Offerte (Admin)",
-                            fontWeight = FontWeight.Bold
+                            text =
+                            "4. Gestione Globale Offerte (Admin)",
+                            fontWeight =
+                            FontWeight.Bold
                         )
                     }
 
@@ -425,11 +360,14 @@ private fun MainTestHub(
                                 TestScreen.GESTIONE_UTENTI_ADMIN
                         },
 
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF0F172A)
+                        colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                            Color(0xFF0F172A)
                         ),
 
-                        shape = RoundedCornerShape(10.dp),
+                        shape =
+                        RoundedCornerShape(10.dp),
 
                         modifier = Modifier
                             .fillMaxWidth()
@@ -437,8 +375,10 @@ private fun MainTestHub(
                     ) {
 
                         Text(
-                            text = "5. Gestione Utenti (Admin)",
-                            fontWeight = FontWeight.Bold
+                            text =
+                            "5. Gestione Utenti (Admin)",
+                            fontWeight =
+                            FontWeight.Bold
                         )
                     }
                 }
@@ -446,72 +386,97 @@ private fun MainTestHub(
         }
 
 
+        /*
+         * APP COMPLETA
+         */
         TestScreen.APP_NAV_GRAPH -> {
 
             AppNavGraph(
                 onExitApp = {
-                    currentScreen = TestScreen.MENU
+                    currentScreen =
+                        TestScreen.MENU
                 }
             )
         }
 
 
+        /*
+         * CREAZIONE ITINERARIO
+         */
         TestScreen.CREA_ITINERARIO -> {
 
             CreaItinerarioScreen(
                 onBack = {
-                    currentScreen = TestScreen.MENU
+                    currentScreen =
+                        TestScreen.MENU
                 }
             )
         }
 
 
+        /*
+         * CREAZIONE ATTIVITÀ
+         */
         TestScreen.CREA_ATTIVITA -> {
 
             CreaAttivitaScreen(
                 onBack = {
-                    currentScreen = TestScreen.MENU
+                    currentScreen =
+                        TestScreen.MENU
                 }
             )
         }
 
 
+        /*
+         * MODIFICA ITINERARIO
+         */
         TestScreen.MODIFICA_ITINERARIO -> {
 
             CreaItinerarioScreen(
                 itinerarioDaModificare =
-                    itinerarioInModifica,
+                itinerarioInModifica,
 
                 onBack = {
-                    currentScreen = previousScreen
+                    currentScreen =
+                        previousScreen
                 }
             )
         }
 
 
+        /*
+         * MODIFICA ATTIVITÀ
+         */
         TestScreen.MODIFICA_ATTIVITA -> {
 
             CreaAttivitaScreen(
                 attivitaDaModificare =
-                    attivitaInModifica,
+                attivitaInModifica,
 
                 onBack = {
-                    currentScreen = previousScreen
+                    currentScreen =
+                        previousScreen
                 }
             )
         }
 
 
+        /*
+         * OFFERTE ORGANIZZATORE
+         *
+         * Ora la schermata recupera i dati tramite
+         * la propria logica/API, quindi non passiamo più
+         * le vecchie liste mock.
+         */
         TestScreen.LE_MIE_OFFERTE -> {
 
             OfferteManagementScreen(
                 isAdmin = false,
 
-                itinerari = mockItinerari,
-                attivita = mockAttivita,
-
                 onBack = {
-                    currentScreen = TestScreen.MENU
+                    currentScreen =
+                        TestScreen.MENU
                 },
 
                 onModificaItinerario = { item ->
@@ -525,17 +490,6 @@ private fun MainTestHub(
                         TestScreen.MODIFICA_ITINERARIO
                 },
 
-                onEliminaItinerario = { id ->
-
-                    mockItinerari.removeAll {
-                        it.id == id
-                    }
-
-                    showToast(
-                        "Itinerario #$id eliminato!"
-                    )
-                },
-
                 onModificaAttivita = { item ->
 
                     attivitaInModifica = item
@@ -545,88 +499,36 @@ private fun MainTestHub(
 
                     currentScreen =
                         TestScreen.MODIFICA_ATTIVITA
-                },
-
-                onEliminaAttivita = { id ->
-
-                    mockAttivita.removeAll {
-                        it.id == id
-                    }
-
-                    showToast(
-                        "Attività #$id eliminata!"
-                    )
                 }
             )
         }
 
 
+        /*
+         * OFFERTE ADMIN
+         */
         TestScreen.OFFERTE_ADMIN -> {
 
             OfferteManagementScreen(
                 isAdmin = true,
 
-                itinerari = mockItinerari,
-                attivita = mockAttivita,
-
                 onBack = {
-                    currentScreen = TestScreen.MENU
-                },
-
-                onModificaItinerario = { item ->
-
-                    itinerarioInModifica = item
-
-                    previousScreen =
-                        TestScreen.OFFERTE_ADMIN
-
                     currentScreen =
-                        TestScreen.MODIFICA_ITINERARIO
-                },
-
-                onEliminaItinerario = { id ->
-
-                    mockItinerari.removeAll {
-                        it.id == id
-                    }
-
-                    showToast(
-                        "[ADMIN] Itinerario #$id eliminato!"
-                    )
-                },
-
-                onModificaAttivita = { item ->
-
-                    attivitaInModifica = item
-
-                    previousScreen =
-                        TestScreen.OFFERTE_ADMIN
-
-                    currentScreen =
-                        TestScreen.MODIFICA_ATTIVITA
-                },
-
-                onEliminaAttivita = { id ->
-
-                    mockAttivita.removeAll {
-                        it.id == id
-                    }
-
-                    showToast(
-                        "[ADMIN] Attività #$id eliminata!"
-                    )
+                        TestScreen.MENU
                 }
             )
         }
 
 
+        /*
+         * GESTIONE UTENTI ADMIN
+         */
         TestScreen.GESTIONE_UTENTI_ADMIN -> {
 
             GestioneUtentiAdminScreen(
-                utenti = mockUtenti,
-
                 onBack = {
-                    currentScreen = TestScreen.MENU
+                    currentScreen =
+                        TestScreen.MENU
                 }
             )
         }

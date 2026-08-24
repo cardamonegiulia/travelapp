@@ -12,7 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MailOutline
@@ -58,7 +57,7 @@ data class ProfileUiState(
     val name: String = "",
     val email: String = "",
     /** Ruolo utente: "VIAGGIATORE", "ORGANIZZATORE" o "ADMIN" */
-    val ruolo: String = "ORGANIZZATORE",
+    val ruolo: String = "VIAGGIATORE",
     val avatarUrl: String? = null,
     val isDarkModeEnabled: Boolean = false,
     val isPhotoUploading: Boolean = false,
@@ -129,6 +128,9 @@ fun ProfileScreen(
         }
     }
 
+    val isOrganizzatore = state.ruolo.equals("ORGANIZZATORE", ignoreCase = true)
+    val isAdmin = state.ruolo.equals("ADMIN", ignoreCase = true)
+
     Scaffold(
         modifier = modifier,
         containerColor = BackgroundLavender,
@@ -152,8 +154,8 @@ fun ProfileScreen(
                 onAddProfilePhoto = onAddProfilePhoto
             )
 
-            // Sezione specifica per ORGANIZZATORE
-            if (state.ruolo.equals("ORGANIZZATORE", ignoreCase = true) || state.ruolo.equals("ADMIN", ignoreCase = true)) {
+            // Sezione visibile SOLO a ORGANIZZATORE
+            if (isOrganizzatore) {
                 SectionTitle(
                     text = "Area Organizzatore",
                     modifier = Modifier.padding(top = 14.dp)
@@ -181,15 +183,15 @@ fun ProfileScreen(
                 )
             }
 
-            // Sezione specifica per ADMIN
-            if (state.ruolo.equals("ADMIN", ignoreCase = true)) {
+            // Sezione visibile SOLO ad ADMIN
+            if (isAdmin) {
                 SectionTitle(
                     text = "Pannello Amministrazione",
                     modifier = Modifier.padding(top = 14.dp)
                 )
                 ProfileMenuRow(
-                    icon = Icons.Default.Build,
-                    title = "Gestione globale offerte",
+                    icon = Icons.AutoMirrored.Filled.List,
+                    title = "Tutte le offerte della piattaforma",
                     iconTint = IconPurple,
                     badgeColor = BadgePurple,
                     onClick = onGestioneOfferteAdminClick
@@ -203,7 +205,7 @@ fun ProfileScreen(
                 )
             }
 
-            // Sezione attività standard
+            // Sezione attività standard (Per tutti gli utenti)
             SectionTitle(
                 text = "Le mie attività",
                 modifier = Modifier.padding(top = 14.dp)
@@ -264,7 +266,7 @@ private fun ProfileScreenPreview() {
             ProfileUiState(
                 name = "Mario Rossi",
                 email = "mario@example.it",
-                ruolo = "ORGANIZZATORE",
+                ruolo = "VIAGGIATORE",
                 avatarUrl = null,
                 isDarkModeEnabled = false
             )
