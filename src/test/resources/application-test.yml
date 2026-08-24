@@ -44,6 +44,8 @@ app:
       max-lato-pixel: 10000
       max-per-risorsa: 10
       base-url: /api/immagini
+      # nei test lo storage e' su disco locale: non serve il margine che serve alla rete
+      upload-timeout-secondi: 10
   ratelimit:
     # capienza alta di default: il rate limiting non deve interferire con i test
     # funzionali. Le classi che lo collaudano abbassano il valore con @TestPropertySource

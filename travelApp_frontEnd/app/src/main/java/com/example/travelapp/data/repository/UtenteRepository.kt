@@ -7,6 +7,8 @@ import com.example.travelapp.data.remote.CorpoImmagine
 import com.example.travelapp.data.remote.ImmagineNonCaricabile
 import com.example.travelapp.data.remote.api.UtenteApi
 import com.example.travelapp.domain.model.Utente
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import retrofit2.Response
 
 /** Profilo dell'utente corrente e aggiornamento dei suoi dati. */
@@ -32,10 +34,12 @@ class UtenteRepository(
      */
     suspend fun impostaFotoProfilo(uri: Uri): Result<Utente> {
         val parte = try {
-            CorpoImmagine.da(context, uri)
+            // decodifica, ridimensionamento e ricompressione sono lavoro di CPU su qualche
+            // megabyte: il chiamante è il viewModelScope, cioè il thread principale
+            withContext(Dispatchers.IO) { CorpoImmagine.da(context, uri) }
         } catch (e: ImmagineNonCaricabile) {
-            // formato o dimensione sbagliati: è un errore da mostrare all'utente, non un
-            // guasto, e non vale la pena disturbare il backend per farselo dire
+            // file illeggibile o non decodificabile: è un errore da mostrare all'utente, non
+            // un guasto, e non vale la pena disturbare il backend per farselo dire
             return Result.failure(e)
         }
 
