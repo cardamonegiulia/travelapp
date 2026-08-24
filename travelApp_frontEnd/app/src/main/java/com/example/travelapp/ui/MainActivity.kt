@@ -3,64 +3,88 @@ package com.example.travelapp.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.example.travelapp.ui.screens.ProfileScreen
-import com.example.travelapp.ui.screens.ProfileTab
-import com.example.travelapp.ui.screens.ProfileUiState
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.travelapp.ui.theme.SuccessGreen
+import com.example.travelapp.ui.auth.LoginScreen
+import com.example.travelapp.ui.auth.RegistrazioneScreen
+import com.example.travelapp.ui.theme.TravelAppTheme
 
-// Unica Activity dell'app: per ora mostra direttamente la schermata Profilo.
-// Quando arriveranno le altre schermate, qui andrà il NavHost (o il FragmentContainer)
-// e la bottom navigation passerà a pilotare la navigazione vera.
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
-                ProfileRoute(onBack = { finish() })
+            TravelAppTheme {
+                AppNavigation()
             }
         }
     }
 }
 
-/**
- * Collega [ProfileScreen] a una sorgente di stato.
- *
- * Lo stato è tenuto in memoria e i dati dell'utente sono ancora segnaposto:
- * il punto di innesto naturale è `ProfiloViewModel`, che dovrà esporre un
- * `ProfileUiState` alimentato da `UtenteRepository`.
- */
 @Composable
-private fun ProfileRoute(onBack: () -> Unit) {
-    var state by remember {
-        mutableStateOf(
-            ProfileUiState(
-                name = "Mario Rossi",
-                email = "mario@example.it",
-                avatarUrl = null,
-                isDarkModeEnabled = false,
-                selectedTab = ProfileTab.PROFILE
-            )
-        )
-    }
+fun AppNavigation() {
+    var schermataCorrente by remember { mutableStateOf("login") }
+    var ruoloUtente by remember { mutableStateOf("") }
+    var emailAppenaRegistrata by remember { mutableStateOf<String?>(null) }
 
-    ProfileScreen(
-        state = state,
-        onBack = onBack,
-        // TODO: agganciare le destinazioni quando esisterà la navigazione.
-        onEditProfile = {},
-        onBookingsClick = {},
-        onPaymentsClick = {},
-        onFavoritesClick = {},
-        onReviewsClick = {},
-        onToggleDarkMode = { enabled -> state = state.copy(isDarkModeEnabled = enabled) },
-        onChangePassword = {},
-        onLogout = {},
-        onNavigate = { tab -> state = state.copy(selectedTab = tab) }
-    )
+    when (schermataCorrente) {
+        "login" -> LoginScreen(
+            onLoginSuccessViaggiatore = {
+                ruoloUtente = "VIAGGIATORE"
+                schermataCorrente = "home"
+            },
+            onLoginSuccessOrganizzatore = {
+                ruoloUtente = "ORGANIZZATORE"
+                schermataCorrente = "home"
+            },
+            onVaiRegistrazione = {
+                emailAppenaRegistrata = null
+                schermataCorrente = "registrazione"
+            },
+            emailPreCompilata = emailAppenaRegistrata
+        )
+
+        "registrazione" -> RegistrazioneScreen(
+            onRegistrazioneSuccess = { email ->
+                emailAppenaRegistrata = email
+                schermataCorrente = "login"
+            },
+            onVaiLogin = {
+                schermataCorrente = "login"
+            }
+        )
+
+        "home" -> {
+            // Schermata temporanea per verificare il login
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    tint = SuccessGreen,
+                    modifier = Modifier.size(40.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Login riuscito!",
+                    fontSize = 24.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Ruolo: $ruoloUtente",
+                    fontSize = 18.sp
+                )
+            }
+        }
+    }
 }

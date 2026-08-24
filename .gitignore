@@ -43,3 +43,10 @@ logs/
 storage-immagini/
 docs/
 CLAUDE.md
+
+### Variabili d'ambiente locali per docker-compose: credenziali DB e secret Keycloak reali
+.env
+
+### Android: path dell'SDK locale e cache di Gradle, specifici di ogni macchina/sviluppatore
+travelApp_frontEnd/local.properties
+travelApp_frontEnd/.gradle/
