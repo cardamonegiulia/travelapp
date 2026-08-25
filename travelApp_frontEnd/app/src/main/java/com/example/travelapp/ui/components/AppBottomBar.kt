@@ -93,14 +93,20 @@ fun AppBottomBar(
 }
 
 /**
- * Passa a una sezione principale con il comportamento standard della bottom
- * navigation: un solo livello nel back stack e stato di ogni sezione
- * conservato tra un cambio di scheda e l'altro.
+ * Passa a una sezione principale tenendo un solo livello nel back stack.
+ *
+ * Se la sezione e' gia' aperta piu' in basso nella pila - ci siamo entrati e poi
+ * abbiamo aperto un'altra schermata da un suo bottone, per esempio i Preferiti dal
+ * Profilo - il tap sulla scheda torna a quella schermata invece di impilarne una
+ * copia: premere Profilo riporta sempre al Profilo.
  */
 private fun NavController.navigateToTopLevel(destination: AppDestination) {
+    if (popBackStack(destination.route, inclusive = false)) {
+        return
+    }
+
     navigate(destination.route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
+        popUpTo(graph.findStartDestination().id)
         launchSingleTop = true
-        restoreState = true
     }
 }
