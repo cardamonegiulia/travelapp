@@ -48,9 +48,14 @@ private val TripCardShape = RoundedCornerShape(16.dp)
 private val CoverShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
 private val CoverHeight = 140.dp
 
-/** Viaggio mostrato nell'elenco dei preferiti. */
+/**
+ * Viaggio mostrato nell'elenco dei preferiti.
+ *
+ * [id] e' l'id dell'itinerario sul backend: le azioni della card (aprire il dettaglio,
+ * toglierlo dalla lista) finiscono tutte in una chiamata REST che quell'id se lo aspetta.
+ */
 data class FavoriteTrip(
-    val id: String,
+    val id: Long,
     val title: String,
     val imageUrl: String?,
     val days: Int,
@@ -69,9 +74,10 @@ data class FavoriteTrip(
 @Composable
 fun FavoriteTripCard(
     trip: FavoriteTrip,
-    onToggleFavorite: (String) -> Unit,
-    onClick: (String) -> Unit,
-    modifier: Modifier = Modifier
+    onToggleFavorite: (Long) -> Unit,
+    onClick: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    showFavoriteBadge: Boolean = true
 ) {
     Card(
         onClick = { onClick(trip.id) },
@@ -82,13 +88,17 @@ fun FavoriteTripCard(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             TripCover(imageUrl = trip.imageUrl)
-            FavoriteBadge(
-                isFavorite = trip.isFavorite,
-                onClick = { onToggleFavorite(trip.id) },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(10.dp)
-            )
+            // Nascosto quando la card sta in una lista che l'utente puo' solo consultare
+            // (una lista condivisa con lui): un cuore che non fa nulla e' peggio di niente.
+            if (showFavoriteBadge) {
+                FavoriteBadge(
+                    isFavorite = trip.isFavorite,
+                    onClick = { onToggleFavorite(trip.id) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                )
+            }
         }
 
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {

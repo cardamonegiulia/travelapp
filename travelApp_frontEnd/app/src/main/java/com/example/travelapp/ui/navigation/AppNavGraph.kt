@@ -45,12 +45,12 @@ import com.example.travelapp.ui.prenotazioni.PrenotazionePasso2Screen
 import com.example.travelapp.ui.prenotazioni.PrenotazioneSuccessoScreen
 import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModel
 import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModelFactory
+import com.example.travelapp.ui.preferiti.PreferitiViewModel
 import com.example.travelapp.ui.profilo.ProfiloViewModel
 import com.example.travelapp.ui.screens.BookingsScreen
 import com.example.travelapp.ui.screens.ExploreScreen
 import com.example.travelapp.ui.screens.FavoritesScreen
 import com.example.travelapp.ui.screens.ProfileScreen
-import com.example.travelapp.ui.screens.sampleFavoriteTrips
 import com.example.travelapp.ui.theme.BackgroundLavender
 
 
@@ -407,7 +407,17 @@ fun AppNavGraph(
             ) {
 
                 FavoritesRoute(
-                    onBack = onBack
+                    onBack = onBack,
+
+                    onItinerarioClick = { itinerario ->
+
+                        itinerarioSelezionato =
+                            itinerario
+
+                        navController.navigate(
+                            CatalogRoutes.DETTAGLIO_ITINERARIO
+                        )
+                    }
                 )
             }
 
@@ -886,40 +896,66 @@ fun AppNavGraph(
 
 @Composable
 private fun FavoritesRoute(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onItinerarioClick: (Itinerario) -> Unit,
+    viewModel: PreferitiViewModel = viewModel()
 ) {
 
-    var trips by remember {
-        mutableStateOf(
-            sampleFavoriteTrips
-        )
-    }
+    val state by
+    viewModel
+        .state
+        .collectAsState()
+
 
     FavoritesScreen(
-        trips = trips,
+        state = state,
         onBack = onBack,
 
-        onToggleFavorite = { id ->
+        onSectionChange =
+        viewModel::cambiaSezione,
 
-            trips =
-                trips.map { trip ->
+        onOpenList =
+        viewModel::apriLista,
 
-                    if (trip.id == id) {
+        onCloseList =
+        viewModel::chiudiLista,
 
-                        trip.copy(
-                            isFavorite =
-                            !trip.isFavorite
-                        )
+        onCreateList =
+        viewModel::creaLista,
 
-                    } else {
+        onChangeVisibility =
+        viewModel::cambiaVisibilita,
 
-                        trip
-                    }
+        onDeleteList =
+        viewModel::eliminaLista,
+
+        onRemoveTrip =
+        viewModel::rimuoviItinerario,
+
+        onShareWithEmail =
+        viewModel::condividiConEmail,
+
+        onRevokeShare =
+        viewModel::revocaCondivisione,
+
+        /*
+         * Il dettaglio della lista conosce solo l'id:
+         * l'Itinerario completo, che serve alla schermata
+         * di dettaglio, e' quello gia' caricato nella
+         * lista aperta.
+         */
+        onTripClick = { itinerarioId ->
+
+            state.listaAperta
+                ?.itinerari
+                ?.firstOrNull { itinerario ->
+                    itinerario.id == itinerarioId
                 }
+                ?.let(onItinerarioClick)
         },
 
-        onLoadMore = {},
-        onTripClick = {}
+        onMessageShown =
+        viewModel::messaggioMostrato
     )
 }
 

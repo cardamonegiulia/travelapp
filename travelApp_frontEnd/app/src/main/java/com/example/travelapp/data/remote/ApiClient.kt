@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.travelapp.BuildConfig
 import com.example.travelapp.data.remote.api.ItinerarioApi
 import com.example.travelapp.data.remote.api.PagamentoApi
+import com.example.travelapp.data.remote.api.PreferitiApi
 import com.example.travelapp.data.remote.api.PrenotazioneApi
 import com.example.travelapp.data.remote.api.SingolaAttivitaApi
 import com.example.travelapp.data.remote.api.UtenteApi
@@ -71,6 +72,9 @@ object ApiClient {
             .also {
                 retrofitAutenticato = it
             }
+
+    fun getPreferitiApi(context: Context): PreferitiApi =
+        getClientAutenticato(context).create(PreferitiApi::class.java)
 
     /**
      * Compatibilità con le classi che usano ancora ApiClient.getClient(context).

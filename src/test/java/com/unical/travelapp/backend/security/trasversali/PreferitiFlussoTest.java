@@ -1,6 +1,7 @@
 package com.unical.travelapp.backend.security.trasversali;
 
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
+import com.unical.travelapp.backend.experience.models.ListaPreferiti;
 import com.unical.travelapp.backend.identity.entity.Ruolo;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.security.support.NessunLeak;
@@ -19,15 +20,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Regressione per il finding F-06: il primo preferito di un utente andava in
- * NullPointerException perche' {@code Preferito.itinerario} non era inizializzata.
+ * Flusso completo delle liste di itinerari preferiti: quelle private e quelle condivise
+ * con utenti specifici.
  *
- * <p>Il caso critico e' proprio il PRIMO inserimento, quando la riga Preferito non esiste
- * ancora e il service ne costruisce una nuova con {@code new Preferito()}.
+ * <p>Copre due cose insieme.
+ * <ul>
+ *   <li>La regressione del finding F-06: il primo preferito di un utente andava in
+ *       NullPointerException perche' la collection degli itinerari non era inizializzata.
+ *       Il caso critico e' proprio il PRIMO inserimento, quando la riga non esiste ancora
+ *       e il service ne costruisce una nuova.</li>
+ *   <li>Le regole di visibilita': una lista privata non deve essere raggiungibile da
+ *       nessun altro, una condivisa deve esserlo dai soli destinatari e comunque in sola
+ *       lettura.</li>
+ * </ul>
  */
 class PreferitiFlussoTest extends SecurityIntegrationTestBase {
 
@@ -37,16 +47,17 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
     private Itinerario secondo;
 
     /**
-     * Legge gli id degli itinerari preferiti di un utente dentro una transazione: la
-     * @ManyToMany e' LAZY e fuori da una sessione Hibernate non sarebbe inizializzabile.
+     * Legge gli id degli itinerari salvati nelle liste di un utente, dentro una
+     * transazione: le @ManyToMany sono LAZY e fuori da una sessione Hibernate non sarebbero
+     * inizializzabili.
      */
     private List<Long> itinerariPreferitiA(String subject) {
         return transazione.execute(stato -> {
             Utente utente = utenteRepository.findByKeycloakId(subject).orElseThrow();
-            var preferito = preferitoRepository.findByUtente(utente);
-            return preferito == null
-                    ? List.<Long>of()
-                    : preferito.getItinerario().stream().map(Itinerario::getId).toList();
+            return listaPreferitiRepository.findByUtenteOrderByIdDesc(utente).stream()
+                    .flatMap(lista -> lista.getItinerari().stream())
+                    .map(Itinerario::getId)
+                    .toList();
         });
     }
 
@@ -59,12 +70,40 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
         secondo = itinerario(organizzatore);
     }
 
+    // --- helper HTTP ------------------------------------------------------------------
+
+    /** Salvataggio rapido: nessuna lista scelta, finisce in quella predefinita. */
     private MvcResult aggiungi(String subject, long itinerarioId) throws Exception {
-        return mockMvc.perform(post("/api/preferiti")
+        return mockMvc.perform(post("/api/preferiti/itinerari")
                 .with(TestJwt.conRuoliRealm(subject, "VIAGGIATORE"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"itinerarioId\":" + itinerarioId + "}")).andReturn();
     }
+
+    private long creaLista(String subject, String nome, String visibilita) throws Exception {
+        MvcResult risultato = mockMvc.perform(post("/api/preferiti")
+                        .with(TestJwt.conRuoliRealm(subject, "VIAGGIATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"" + nome + "\",\"visibilita\":\"" + visibilita + "\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        return objectMapper.readTree(risultato.getResponse().getContentAsString()).get("id").asLong();
+    }
+
+    private void condividi(String subject, long listaId, long utenteId) throws Exception {
+        mockMvc.perform(post("/api/preferiti/" + listaId + "/condivisioni")
+                        .with(TestJwt.conRuoliRealm(subject, "VIAGGIATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"utenteId\":" + utenteId + "}"))
+                .andExpect(status().isOk());
+    }
+
+    private long idUtente(String subject) {
+        return utenteRepository.findByKeycloakId(subject).orElseThrow().getId();
+    }
+
+    // --- salvataggio rapido (lista predefinita) ---------------------------------------
 
     @Test
     void ilPrimoPreferitoDiUnUtenteVieneCreatoSenzaErroreInterno() throws Exception {
@@ -75,34 +114,57 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
                 .isEqualTo(201);
         NessunLeak.verifica(risultato);
 
-        assertThat(preferitoRepository.count()).isEqualTo(1);
+        assertThat(listaPreferitiRepository.count()).isEqualTo(1);
         assertThat(itinerariPreferitiA(SUB_UTENTE_A)).containsExactly(primo.getId());
     }
 
     @Test
-    void ilSecondoPreferitoSiAggiungeAllaListaEsistente() throws Exception {
+    void ilSecondoPreferitoSiAggiungeAllaListaPredefinitaEsistente() throws Exception {
         aggiungi(SUB_UTENTE_A, primo.getId());
         MvcResult risultato = aggiungi(SUB_UTENTE_A, secondo.getId());
 
         assertThat(risultato.getResponse().getStatus()).isEqualTo(201);
-        assertThat(preferitoRepository.count())
-                .as("una sola lista per utente")
+        assertThat(listaPreferitiRepository.count())
+                .as("il salvataggio rapido riusa sempre la stessa lista predefinita")
                 .isEqualTo(1);
         assertThat(itinerariPreferitiA(SUB_UTENTE_A))
                 .containsExactlyInAnyOrder(primo.getId(), secondo.getId());
     }
 
     @Test
-    void laListaDeiPreferitiVieneRestituitaDopoIlPrimoInserimento() throws Exception {
+    void loStessoItinerarioNonFinisceDueVolteNellaStessaLista() throws Exception {
+        aggiungi(SUB_UTENTE_A, primo.getId());
         aggiungi(SUB_UTENTE_A, primo.getId());
 
-        Utente utenteA = utenteRepository.findByKeycloakId(SUB_UTENTE_A).orElseThrow();
+        assertThat(itinerariPreferitiA(SUB_UTENTE_A)).containsExactly(primo.getId());
+    }
+
+    @Test
+    void laListaPredefinitaNascePrivata() throws Exception {
+        aggiungi(SUB_UTENTE_A, primo.getId());
+
         mockMvc.perform(get("/api/preferiti")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.utenteId").value(utenteA.getId().intValue()))
-                .andExpect(jsonPath("$.itinerariList.length()").value(1))
-                .andExpect(jsonPath("$.itinerariList[0].id").value(primo.getId().intValue()));
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].nome").value(ListaPreferiti.NOME_LISTA_PREDEFINITA))
+                .andExpect(jsonPath("$[0].visibilita").value("PRIVATA"))
+                .andExpect(jsonPath("$[0].proprietaria").value(true))
+                .andExpect(jsonPath("$[0].numeroItinerari").value(1));
+    }
+
+    @Test
+    void ilDettaglioDellaListaRestituisceGliItinerariSalvati() throws Exception {
+        aggiungi(SUB_UTENTE_A, primo.getId());
+        long listaId = listaPreferitiRepository.findAll().get(0).getId();
+
+        Utente utenteA = utenteRepository.findByKeycloakId(SUB_UTENTE_A).orElseThrow();
+        mockMvc.perform(get("/api/preferiti/" + listaId)
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.proprietarioId").value(utenteA.getId().intValue()))
+                .andExpect(jsonPath("$.itinerari.length()").value(1))
+                .andExpect(jsonPath("$.itinerari[0].id").value(primo.getId().intValue()));
     }
 
     @Test
@@ -110,11 +172,9 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
         aggiungi(SUB_UTENTE_A, primo.getId());
         aggiungi(SUB_UTENTE_A, secondo.getId());
 
-        mockMvc.perform(delete("/api/preferiti")
-                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"itinerarioId\":" + primo.getId() + "}"))
-                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/preferiti/itinerari/" + primo.getId())
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
+                .andExpect(status().isNoContent());
 
         assertThat(itinerariPreferitiA(SUB_UTENTE_A))
                 .as("resta solo l'itinerario non rimosso")
@@ -126,7 +186,7 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
         aggiungi(SUB_UTENTE_A, primo.getId());
         aggiungi(SUB_UTENTE_B, secondo.getId());
 
-        assertThat(preferitoRepository.count()).isEqualTo(2);
+        assertThat(listaPreferitiRepository.count()).isEqualTo(2);
         assertThat(itinerariPreferitiA(SUB_UTENTE_A)).containsExactly(primo.getId());
         assertThat(itinerariPreferitiA(SUB_UTENTE_B))
                 .as("il preferito di A non deve finire nella lista di B")
@@ -139,8 +199,202 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
 
         assertThat(risultato.getResponse().getStatus()).isEqualTo(404);
         NessunLeak.verifica(risultato);
-        assertThat(preferitoRepository.findAll())
+        assertThat(listaPreferitiRepository.findAll())
                 .as("una richiesta fallita non deve lasciare una lista vuota a database")
                 .isEmpty();
+    }
+
+    // --- piu' liste per utente --------------------------------------------------------
+
+    @Test
+    void unViaggiatorePuoAvereListeDiverse() throws Exception {
+        creaLista(SUB_UTENTE_A, "Estate", "PRIVATA");
+        creaLista(SUB_UTENTE_A, "Idee per il weekend", "CONDIVISA");
+
+        mockMvc.perform(get("/api/preferiti")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void dueListeDelloStessoUtenteNonPossonoAvereLoStessoNome() throws Exception {
+        creaLista(SUB_UTENTE_A, "Estate", "PRIVATA");
+
+        MvcResult risultato = mockMvc.perform(post("/api/preferiti")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"estate\"}"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        NessunLeak.verifica(risultato);
+    }
+
+    // --- lista privata ----------------------------------------------------------------
+
+    @Test
+    void unaListaPrivataNonEVisibileAgliAltriUtenti() throws Exception {
+        long listaId = creaLista(SUB_UTENTE_A, "Estate", "PRIVATA");
+
+        MvcResult risultato = mockMvc.perform(get("/api/preferiti/" + listaId)
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        NessunLeak.verifica(risultato);
+    }
+
+    @Test
+    void unaListaPrivataNonCompareFraQuelleCondiviseConMe() throws Exception {
+        creaLista(SUB_UTENTE_A, "Estate", "PRIVATA");
+
+        mockMvc.perform(get("/api/preferiti/condivise-con-me")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    // --- lista condivisa con utenti specifici -----------------------------------------
+
+    @Test
+    void ilDestinatarioLeggeLaListaCondivisaConLui() throws Exception {
+        long listaId = creaLista(SUB_UTENTE_A, "Idee per il weekend", "CONDIVISA");
+        mockMvc.perform(post("/api/preferiti/" + listaId + "/itinerari")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"itinerarioId\":" + primo.getId() + "}"))
+                .andExpect(status().isCreated());
+
+        condividi(SUB_UTENTE_A, listaId, idUtente(SUB_UTENTE_B));
+
+        mockMvc.perform(get("/api/preferiti/" + listaId)
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.proprietaria").value(false))
+                .andExpect(jsonPath("$.itinerari.length()").value(1));
+
+        mockMvc.perform(get("/api/preferiti/condivise-con-me")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value((int) listaId));
+    }
+
+    @Test
+    void unUtenteNonDestinatarioNonVedeLaListaCondivisa() throws Exception {
+        long listaId = creaLista(SUB_UTENTE_A, "Idee per il weekend", "CONDIVISA");
+
+        // condivisa, ma con nessuno: "condivisa" non vuol dire "pubblica"
+        MvcResult risultato = mockMvc.perform(get("/api/preferiti/" + listaId)
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        NessunLeak.verifica(risultato);
+    }
+
+    @Test
+    void ilDestinatarioNonPuoModificareLaListaCheLegge() throws Exception {
+        long listaId = creaLista(SUB_UTENTE_A, "Idee per il weekend", "CONDIVISA");
+        condividi(SUB_UTENTE_A, listaId, idUtente(SUB_UTENTE_B));
+
+        MvcResult aggiunta = mockMvc.perform(post("/api/preferiti/" + listaId + "/itinerari")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"itinerarioId\":" + primo.getId() + "}"))
+                .andExpect(status().isForbidden())
+                .andReturn();
+        NessunLeak.verifica(aggiunta);
+
+        mockMvc.perform(delete("/api/preferiti/" + listaId)
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
+                .andExpect(status().isForbidden());
+
+        assertThat(listaPreferitiRepository.existsById(listaId))
+                .as("la lista di A non deve poter essere cancellata da B")
+                .isTrue();
+    }
+
+    @Test
+    void ilDestinatarioNonVedeConChiAltroLaListaECondivisa() throws Exception {
+        long listaId = creaLista(SUB_UTENTE_A, "Idee per il weekend", "CONDIVISA");
+        condividi(SUB_UTENTE_A, listaId, idUtente(SUB_UTENTE_B));
+        condividi(SUB_UTENTE_A, listaId, idUtente(SUB_ORGANIZZATORE));
+
+        mockMvc.perform(get("/api/preferiti/" + listaId)
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.destinatari.length()").value(0));
+
+        mockMvc.perform(get("/api/preferiti/" + listaId)
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.destinatari.length()").value(2));
+    }
+
+    @Test
+    void revocareLaCondivisioneToglieLAccesso() throws Exception {
+        long listaId = creaLista(SUB_UTENTE_A, "Idee per il weekend", "CONDIVISA");
+        long idB = idUtente(SUB_UTENTE_B);
+        condividi(SUB_UTENTE_A, listaId, idB);
+
+        mockMvc.perform(delete("/api/preferiti/" + listaId + "/condivisioni/" + idB)
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/preferiti/" + listaId)
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void riportareLaListaAPrivataRevocaTutteLeCondivisioni() throws Exception {
+        long listaId = creaLista(SUB_UTENTE_A, "Idee per il weekend", "CONDIVISA");
+        condividi(SUB_UTENTE_A, listaId, idUtente(SUB_UTENTE_B));
+
+        mockMvc.perform(put("/api/preferiti/" + listaId)
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Idee per il weekend\",\"visibilita\":\"PRIVATA\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.visibilita").value("PRIVATA"))
+                .andExpect(jsonPath("$.destinatari.length()").value(0));
+
+        mockMvc.perform(get("/api/preferiti/" + listaId)
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/preferiti/condivise-con-me")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void condividereUnaListaPrivataLaRendeCondivisa() throws Exception {
+        long listaId = creaLista(SUB_UTENTE_A, "Estate", "PRIVATA");
+
+        mockMvc.perform(post("/api/preferiti/" + listaId + "/condivisioni")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + utenteRepository.findByKeycloakId(SUB_UTENTE_B).orElseThrow().getEmail() + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.visibilita").value("CONDIVISA"))
+                .andExpect(jsonPath("$.destinatari.length()").value(1));
+    }
+
+    @Test
+    void nessunoPuoCondividereUnaListaAltrui() throws Exception {
+        long listaId = creaLista(SUB_UTENTE_A, "Estate", "PRIVATA");
+
+        MvcResult risultato = mockMvc.perform(post("/api/preferiti/" + listaId + "/condivisioni")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"utenteId\":" + idUtente(SUB_UTENTE_B) + "}"))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        NessunLeak.verifica(risultato);
     }
 }

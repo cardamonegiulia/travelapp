@@ -105,13 +105,6 @@ fun ProfileScreen(
             onClick = onPaymentsClick
         ),
         ActivityItem(
-            title = "Preferiti",
-            icon = Icons.Default.Favorite,
-            iconTint = IconPink,
-            badgeColor = BadgePink,
-            onClick = onFavoritesClick
-        ),
-        ActivityItem(
             title = "Recensioni scritte",
             icon = ProfileIcons.Review,
             iconTint = IconPurple,
