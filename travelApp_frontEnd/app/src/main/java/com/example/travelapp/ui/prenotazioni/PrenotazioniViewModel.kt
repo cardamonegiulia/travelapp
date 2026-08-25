@@ -17,19 +17,42 @@ class PrenotazioniViewModel(
 
     private val _uiState = MutableStateFlow(BookingUiState())
 
+    private fun ricalcolaTotale() {
+        val stato = _uiState.value
+
+        val prezzoBase =
+            stato.prezzoBaseUnitario * stato.numeroPartecipanti
+
+        val prezzoExtraUnitario =
+            stato.extraSelezionati.values.sum()
+
+        val prezzoExtra =
+            prezzoExtraUnitario * stato.numeroPartecipanti
+
+        val totale =
+            prezzoBase + prezzoExtra
+
+        _uiState.value = stato.copy(
+            prezzoBase = prezzoBase,
+            prezzoExtra = prezzoExtra,
+            prezzoTotaleVisualizzato = totale
+        )
+    }
+
     val uiState: StateFlow<BookingUiState> =
         _uiState.asStateFlow()
 
     fun inizializzaBooking(
         titolo: String,
         luogo: String,
-        prezzoBase: Double
+        prezzoBaseUnitario: Double
     ) {
         _uiState.value = _uiState.value.copy(
             titolo = titolo,
             luogo = luogo,
-            prezzoBase = prezzoBase,
-            prezzoTotaleVisualizzato = prezzoBase
+            prezzoBaseUnitario = prezzoBaseUnitario,
+            prezzoBase = prezzoBaseUnitario,
+            prezzoTotaleVisualizzato = prezzoBaseUnitario
         )
     }
 
@@ -47,28 +70,37 @@ class PrenotazioniViewModel(
         _uiState.value = _uiState.value.copy(
             numeroPartecipanti = _uiState.value.numeroPartecipanti + 1
         )
+        ricalcolaTotale()
     }
-
     fun decrementaPartecipanti() {
         if (_uiState.value.numeroPartecipanti > 1) {
             _uiState.value = _uiState.value.copy(
                 numeroPartecipanti = _uiState.value.numeroPartecipanti - 1
             )
+            ricalcolaTotale()
         }
     }
 
-    fun toggleExtra(attivitaId: Long) {
-        val extraAttuali = _uiState.value.attivitaExtraIds
+    fun toggleExtra(
+        attivitaId: Long,
+        prezzoUnitario: Double
+    ) {
+        val stato = _uiState.value
 
-        val nuoviExtra = if (attivitaId in extraAttuali) {
-            extraAttuali - attivitaId
+        val nuoviExtra =
+            stato.extraSelezionati.toMutableMap()
+
+        if (attivitaId in nuoviExtra) {
+            nuoviExtra.remove(attivitaId)
         } else {
-            extraAttuali + attivitaId
+            nuoviExtra[attivitaId] = prezzoUnitario
         }
 
-        _uiState.value = _uiState.value.copy(
-            attivitaExtraIds = nuoviExtra
+        _uiState.value = stato.copy(
+            extraSelezionati = nuoviExtra
         )
+
+        ricalcolaTotale()
     }
 
     fun creaPrenotazione(

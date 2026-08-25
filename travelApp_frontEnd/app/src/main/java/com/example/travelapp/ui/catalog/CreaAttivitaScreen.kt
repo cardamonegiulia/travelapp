@@ -1,6 +1,7 @@
 package com.example.travelapp.ui.catalog
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -22,10 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.travelapp.data.remote.dto.SingolaAttivitaRequestDto
 import com.example.travelapp.domain.model.SingolaAttivita
@@ -37,9 +40,11 @@ import java.math.BigDecimal
 fun CreaAttivitaScreen(
     attivitaDaModificare: SingolaAttivita? = null,
     onBack: () -> Unit,
-    onSalva: (SingolaAttivitaRequestDto, Uri?) -> Unit
+    viewModel: CreaAttivitaViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val isModifica = attivitaDaModificare != null
+    val uiState by viewModel.uiState.collectAsState()
 
     var titolo by remember { mutableStateOf(attivitaDaModificare?.titolo ?: "") }
     var luogo by remember { mutableStateOf(attivitaDaModificare?.luogo ?: "") }
@@ -68,6 +73,24 @@ fun CreaAttivitaScreen(
     val isDurataValida = durataOre != null && durataOre > 0.0
 
     val isFormValido = titolo.isNotBlank() && luogo.isNotBlank() && isPrezzoValido && isPostiValidi && isDurataValida && giorniSelezionati.isNotEmpty()
+
+    LaunchedEffect(uiState.salvataggioCompletato) {
+        if (uiState.salvataggioCompletato) {
+            Toast.makeText(
+                context,
+                if (isModifica) "Attività aggiornata con successo!" else "Attività creata con successo!",
+                Toast.LENGTH_SHORT
+            ).show()
+            viewModel.resetStato()
+            onBack()
+        }
+    }
+
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -179,30 +202,32 @@ fun CreaAttivitaScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Text("Giorni operativi", fontWeight = FontWeight.Bold, color = TravelTextDark, fontSize = 14.sp)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                giorniSettimana.forEach { (label, value) ->
-                    val selected = giorniSelezionati.contains(value)
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .background(if (selected) TravelBlue else Color.White)
-                            .border(1.dp, if (selected) TravelBlue else TravelBorder, CircleShape)
-                            .clickable {
-                                giorniSelezionati = if (selected) giorniSelezionati - value else giorniSelezionati + value
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = label,
-                            color = if (selected) Color.White else TravelTextDark,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
-                        )
+            if (!isModifica) {
+                Text("Giorni operativi", fontWeight = FontWeight.Bold, color = TravelTextDark, fontSize = 14.sp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    giorniSettimana.forEach { (label, value) ->
+                        val selected = giorniSelezionati.contains(value)
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(if (selected) TravelBlue else Color.White)
+                                .border(1.dp, if (selected) TravelBlue else TravelBorder, CircleShape)
+                                .clickable {
+                                    giorniSelezionati = if (selected) giorniSelezionati - value else giorniSelezionati + value
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                color = if (selected) Color.White else TravelTextDark,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
                     }
                 }
             }
@@ -211,10 +236,12 @@ fun CreaAttivitaScreen(
 
             Button(
                 onClick = {
-                    if (isFormValido) {
+                    if (isFormValido && !uiState.isSalvataggioInCorso) {
                         val minutiTotali = (durataOre!! * 60).toInt()
-                        onSalva(
-                            SingolaAttivitaRequestDto(
+                        viewModel.salvaAttivita(
+                            context = context,
+                            idDaModificare = attivitaDaModificare?.id,
+                            request = SingolaAttivitaRequestDto(
                                 titolo = titolo,
                                 descrizione = descrizione,
                                 luogo = luogo,
@@ -222,23 +249,28 @@ fun CreaAttivitaScreen(
                                 durataMinuti = minutiTotali,
                                 maxPartecipanti = postiNumerici!!
                             ),
-                            immagineUri
+                            giorniSettimana = giorniSelezionati,
+                            immagineUri = immagineUri
                         )
                     }
                 },
-                enabled = isFormValido,
+                enabled = isFormValido && !uiState.isSalvataggioInCorso,
                 colors = ButtonDefaults.buttonColors(containerColor = TravelBlue),
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
             ) {
-                Text(
-                    if (isModifica) "Salva Modifiche" else "Crea Attività",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color.White
-                )
+                if (uiState.isSalvataggioInCorso) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text(
+                        if (isModifica) "Salva Modifiche" else "Crea Attività",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = Color.White
+                    )
+                }
             }
         }
     }

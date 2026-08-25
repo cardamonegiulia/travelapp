@@ -1,6 +1,7 @@
 package com.example.travelapp.ui.catalog
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -22,10 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.travelapp.data.remote.dto.ItinerarioRequestDto
 import com.example.travelapp.domain.model.Itinerario
@@ -37,9 +40,11 @@ import java.math.BigDecimal
 fun CreaItinerarioScreen(
     itinerarioDaModificare: Itinerario? = null,
     onBack: () -> Unit,
-    onSalva: (ItinerarioRequestDto, Uri?) -> Unit
+    viewModel: CreaItinerarioViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val isModifica = itinerarioDaModificare != null
+    val uiState by viewModel.uiState.collectAsState()
 
     var titolo by remember { mutableStateOf(itinerarioDaModificare?.titolo ?: "") }
     var descrizione by remember { mutableStateOf(itinerarioDaModificare?.descrizione ?: "") }
@@ -63,6 +68,24 @@ fun CreaItinerarioScreen(
     val isPartecipantiValidi = partecipantiNumerici != null && partecipantiNumerici > 0
 
     val isFormValido = titolo.isNotBlank() && destinazione.isNotBlank() && isPrezzoValido && isDurataValida && isPartecipantiValidi
+
+    LaunchedEffect(uiState.salvataggioCompletato) {
+        if (uiState.salvataggioCompletato) {
+            Toast.makeText(
+                context,
+                if (isModifica) "Itinerario aggiornato con successo!" else "Itinerario creato con successo!",
+                Toast.LENGTH_SHORT
+            ).show()
+            viewModel.resetStato()
+            onBack()
+        }
+    }
+
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -196,9 +219,11 @@ fun CreaItinerarioScreen(
 
             Button(
                 onClick = {
-                    if (isFormValido) {
-                        onSalva(
-                            ItinerarioRequestDto(
+                    if (isFormValido && !uiState.isSalvataggioInCorso) {
+                        viewModel.salvaItinerario(
+                            context = context,
+                            idDaModificare = itinerarioDaModificare?.id,
+                            request = ItinerarioRequestDto(
                                 titolo = titolo,
                                 descrizione = descrizione,
                                 destinazionePrincipale = destinazione,
@@ -206,26 +231,30 @@ fun CreaItinerarioScreen(
                                 durataGiorni = durataNumerica!!,
                                 maxPartecipanti = partecipantiNumerici!!
                             ),
-                            immagineUri
+                            immagineUri = immagineUri
                         )
                     }
                 },
-                enabled = isFormValido,
+                enabled = isFormValido && !uiState.isSalvataggioInCorso,
                 colors = ButtonDefaults.buttonColors(containerColor = TravelBlue),
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        if (isModifica) "Salva Modifiche" else "Crea Itinerario",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = Color.White
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Color.White)
+                if (uiState.isSalvataggioInCorso) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            if (isModifica) "Salva Modifiche" else "Crea Itinerario",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = Color.White
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Color.White)
+                    }
                 }
             }
         }

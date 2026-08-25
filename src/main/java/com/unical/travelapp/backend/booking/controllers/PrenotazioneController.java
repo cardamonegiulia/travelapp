@@ -21,8 +21,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -127,5 +129,19 @@ public class PrenotazioneController {
         auditLogger.success("PRENOTAZIONE_ANNULLATA", "Prenotazione", String.valueOf(id));
         Pagamento pagamento = pagamentoService.getPagamentoPrenotazione(prenotazione.getId());
         return ResponseEntity.ok(prenotazioneMapper.toResponseDto(prenotazione, pagamento));
+    }
+
+    @GetMapping("/saldo/totale")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Ottiene il saldo globale totale della piattaforma")
+    public ResponseEntity<BigDecimal> getSaldoTotaleGlobale() {
+        return ResponseEntity.ok(prenotazioneService.getSaldoTotaleGlobale());
+    }
+
+    @GetMapping("/saldo/organizzatore")
+    @PreAuthorize("hasRole('ORGANIZZATORE') or hasRole('ADMIN')")
+    @Operation(summary = "Ottiene il saldo incassato dall'organizzatore autenticato")
+    public ResponseEntity<BigDecimal> getSaldoOrganizzatore() {
+        return ResponseEntity.ok(prenotazioneService.getSaldoOrganizzatore());
     }
 }

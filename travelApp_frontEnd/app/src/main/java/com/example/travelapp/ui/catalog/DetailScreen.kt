@@ -1,7 +1,11 @@
 package com.example.travelapp.ui.catalog
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +17,9 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,6 +28,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
@@ -29,10 +37,16 @@ import com.example.travelapp.ui.theme.*
 @Composable
 fun ItinerarioDetailScreen(
     itinerario: Itinerario,
+    viewModel: DetailViewModel = viewModel(),
     onBack: () -> Unit,
-    onPrenota: (Long) -> Unit
+    onPrenota: (disponibilitaId: Long) -> Unit
 ) {
+    val uiState by viewModel.uiState.collectAsState()
     val copertinaUrl = itinerario.immagini.firstOrNull()?.url
+
+    LaunchedEffect(itinerario.id) {
+        viewModel.caricaDisponibilitaItinerario(itinerario.id)
+    }
 
     Scaffold(
         bottomBar = {
@@ -63,7 +77,8 @@ fun ItinerarioDetailScreen(
                     }
 
                     Button(
-                        onClick = { onPrenota(itinerario.id) },
+                        onClick = { uiState.idSelezionato?.let { onPrenota(it) } },
+                        enabled = uiState.idSelezionato != null,
                         colors = ButtonDefaults.buttonColors(containerColor = TravelOrange),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.height(48.dp)
@@ -86,7 +101,7 @@ fun ItinerarioDetailScreen(
                 .background(TravelBg)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header con Immagine Coil (copertina dal backend o background di fallback)
+            // Header con Immagine Coil
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -198,6 +213,43 @@ fun ItinerarioDetailScreen(
 
                 HorizontalDivider(color = TravelBorder)
 
+                // Date e Disponibilità Reali
+                Text(
+                    text = "Date disponibili",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = TravelTextDark
+                )
+
+                if (uiState.isLoading) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = TravelBlue, modifier = Modifier.size(28.dp))
+                    }
+                } else if (uiState.disponibilitaItinerario.isEmpty()) {
+                    Text(
+                        text = "Nessuna data attualmente disponibile per questo itinerario.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TravelTextMuted
+                    )
+                } else {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(vertical = 4.dp)
+                    ) {
+                        items(uiState.disponibilitaItinerario) { disp ->
+                            val isSelected = uiState.idSelezionato == disp.id
+                            SlotDateCard(
+                                title = "${disp.dataInizio} - ${disp.dataFine}",
+                                subtitle = "${disp.postiDisponibili} posti rimasti",
+                                isSelected = isSelected,
+                                onClick = { viewModel.selezionaSlot(disp.id) }
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = TravelBorder)
+
                 Text(
                     text = "Descrizione del viaggio",
                     style = MaterialTheme.typography.titleMedium,
@@ -233,9 +285,16 @@ fun ItinerarioDetailScreen(
 @Composable
 fun AttivitaDetailScreen(
     attivita: SingolaAttivita,
+    viewModel: DetailViewModel = viewModel(),
     onBack: () -> Unit,
-    onPrenota: (Long) -> Unit
+    onPrenota: (sessioneId: Long) -> Unit
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(attivita.id) {
+        viewModel.caricaSessioniAttivita(attivita.id)
+    }
+
     Scaffold(
         bottomBar = {
             Surface(
@@ -265,7 +324,8 @@ fun AttivitaDetailScreen(
                     }
 
                     Button(
-                        onClick = { onPrenota(attivita.id) },
+                        onClick = { uiState.idSelezionato?.let { onPrenota(it) } },
+                        enabled = uiState.idSelezionato != null,
                         colors = ButtonDefaults.buttonColors(containerColor = TravelOrange),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.height(48.dp)
@@ -372,6 +432,43 @@ fun AttivitaDetailScreen(
 
                 HorizontalDivider(color = TravelBorder)
 
+                // Sessioni Reali per Attività
+                Text(
+                    text = "Sessioni disponibili",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = TravelTextDark
+                )
+
+                if (uiState.isLoading) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = TravelBlue, modifier = Modifier.size(28.dp))
+                    }
+                } else if (uiState.sessioniAttivita.isEmpty()) {
+                    Text(
+                        text = "Nessuna sessione programmata per questa attività.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TravelTextMuted
+                    )
+                } else {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(vertical = 4.dp)
+                    ) {
+                        items(uiState.sessioniAttivita) { sess ->
+                            val isSelected = uiState.idSelezionato == sess.id
+                            SlotDateCard(
+                                title = sess.dataInizio.substringBefore("T"),
+                                subtitle = "${sess.postiDisponibili} posti",
+                                isSelected = isSelected,
+                                onClick = { viewModel.selezionaSlot(sess.id) }
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = TravelBorder)
+
                 Text(
                     text = "Descrizione dell'esperienza",
                     style = MaterialTheme.typography.titleMedium,
@@ -385,6 +482,44 @@ fun AttivitaDetailScreen(
                     lineHeight = 22.sp
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun SlotDateCard(
+    title: String,
+    subtitle: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected) TravelBlue else TravelBorder,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected) TravelChipBg else Color.White
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) TravelBlue else TravelTextDark
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                color = TravelTextMuted
+            )
         }
     }
 }

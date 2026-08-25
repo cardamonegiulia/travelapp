@@ -11,27 +11,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.Response
 
-/** Profilo dell'utente corrente e aggiornamento dei suoi dati. */
 class UtenteRepository(
     context: Context,
-    private val api: UtenteApi = ApiClient.getUtenteApi(context)
+    private val api: UtenteApi =  ApiClient.getUtenteApi(context)
 ) {
-
-    // applicationContext: il repository può sopravvivere alla Activity che l'ha creato
     private val context: Context = context.applicationContext
 
-    /** Profilo dell'utente loggato (lo crea in locale se è il primo accesso). */
     suspend fun caricaProfilo(): Result<Utente> = chiamata("Errore nel recupero del profilo") {
         api.sincronizzaProfilo()
     }
 
-    /**
-     * Carica [uri] come foto profilo e restituisce il profilo aggiornato, con l'url da cui
-     * scaricare la nuova immagine.
-     *
-     * [uri] è quello che arriva dal photo picker di sistema: il permesso di leggerlo vale
-     * per la sessione corrente, quindi il file va letto adesso e non conservato per dopo.
-     */
     suspend fun impostaFotoProfilo(uri: Uri): Result<Utente> {
         val parte = try {
             // decodifica, ridimensionamento e ricompressione sono lavoro di CPU su qualche
@@ -42,7 +31,6 @@ class UtenteRepository(
             // un guasto, e non vale la pena disturbare il backend per farselo dire
             return Result.failure(e)
         }
-
         return chiamata("Errore nel caricamento della foto") { api.impostaFotoProfilo(parte) }
     }
 
@@ -51,6 +39,32 @@ class UtenteRepository(
             val risposta = api.rimuoviFotoProfilo()
             if (risposta.isSuccessful) Result.success(Unit)
             else Result.failure(Exception(messaggioErrore("Errore nella rimozione della foto", risposta)))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    suspend fun getTuttiGliUtenti(page: Int = 0, size: Int = 50): Result<List<Utente>> =
+        try {
+            val risposta = api.getTuttiGliUtenti(page, size)
+            val corpo = risposta.body()
+            if (risposta.isSuccessful && corpo != null) {
+                Result.success(corpo.content.map { it.toDomain() })
+            } else {
+                Result.failure(Exception("Errore recupero utenti: HTTP ${risposta.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    suspend fun promuoviAdAdmin(id: Long): Result<Utente> = chiamata("Errore promozione utente") {
+        api.promuoviAdAdmin(id)
+    }
+
+    suspend fun eliminaUtente(id: Long): Result<Unit> =
+        try {
+            val risposta = api.eliminaUtente(id)
+            if (risposta.isSuccessful) Result.success(Unit)
+            else Result.failure(Exception("Errore eliminazione utente: HTTP ${risposta.code()}"))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -71,16 +85,11 @@ class UtenteRepository(
             Result.failure(e)
         }
 
-    /**
-     * Traduce i codici che l'utente può davvero incontrare. Sugli altri resta il codice
-     * HTTP: inventare un messaggio rassicurante per un errore che non si conosce nasconde
-     * il problema invece di risolverlo.
-     */
     private fun messaggioErrore(contesto: String, risposta: Response<*>): String = when (risposta.code()) {
         401 -> "Sessione scaduta: accedi di nuovo"
         403 -> "Non hai i permessi per questa operazione"
         413 -> "L'immagine è troppo grande"
-        400 -> "$contesto: il file non è un'immagine JPEG o PNG valida"
+        400 -> "$contesto: il file non è valido"
         else -> "$contesto: HTTP ${risposta.code()}"
     }
 }

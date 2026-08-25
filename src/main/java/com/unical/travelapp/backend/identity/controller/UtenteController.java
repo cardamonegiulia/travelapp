@@ -116,6 +116,15 @@ public class UtenteController {
         return ResponseEntity.ok(aggiornato);
     }
 
+    @PutMapping("/{id}/ruolo/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Promuove un utente al ruolo di ADMIN (solo per amministratori)")
+    public ResponseEntity<UtenteResponseDto> promuoviAdAdmin(@PathVariable Long id) {
+        UtenteResponseDto aggiornato = utenteService.promuoviAdAdmin(id);
+        auditLogger.success("UTENTE_PROMOSSO_ADMIN", "Utente", String.valueOf(id));
+        return ResponseEntity.ok(aggiornato);
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @utenteSecurity.isSelf(#id, authentication)")
     @Operation(
@@ -172,24 +181,11 @@ public class UtenteController {
     }
 
     // --- Foto profilo ---------------------------------------------------------------------
-    // Le rotte sono su "/me" e non su "/{id}": la foto e' sempre quella di chi possiede il
-    // token, quindi non c'e' un id da passare ne' da autorizzare.
 
     @PutMapping(value = "/me/foto-profilo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
-            summary = "Imposta (o sostituisce) la foto profilo dell'utente autenticato",
-            description = "Accetta un file JPEG o PNG di al massimo 5 MB nel campo multipart "
-                    + "\"file\". Le stesse validazioni dell'upload generico: dimensione, "
-                    + "estensione e tipo reale ricavato dal contenuto. La foto precedente viene "
-                    + "cancellata, riga e file. E' PUT e non POST perche' la foto e' una sola: "
-                    + "ripetere la chiamata porta allo stesso stato finale. Restituisce il "
-                    + "profilo aggiornato, con l'url da cui scaricare la nuova immagine."
+            summary = "Imposta (o sostituisce) la foto profilo dell'utente autenticato"
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Foto impostata; nel corpo il profilo aggiornato"),
-            @ApiResponse(responseCode = "400", description = "File assente, troppo grande o non JPEG/PNG", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Autenticazione assente o non valida", content = @Content)
-    })
     public ResponseEntity<UtenteResponseDto> impostaFotoProfilo(@RequestParam("file") MultipartFile file) {
         UtenteResponseDto aggiornato = fotoProfiloService.imposta(file);
         auditLogger.success("FOTO_PROFILO_IMPOSTATA", "Utente", String.valueOf(aggiornato.getId()));
@@ -197,11 +193,7 @@ public class UtenteController {
     }
 
     @DeleteMapping("/me/foto-profilo")
-    @Operation(
-            summary = "Rimuove la foto profilo dell'utente autenticato",
-            description = "Cancella riga e file. Risponde 204 anche se non c'era alcuna foto: "
-                    + "lo stato finale e' quello richiesto."
-    )
+    @Operation(summary = "Rimuove la foto profilo dell'utente autenticato")
     public ResponseEntity<Void> rimuoviFotoProfilo() {
         fotoProfiloService.rimuovi();
         auditLogger.success("FOTO_PROFILO_RIMOSSA", "Utente", "me");
