@@ -97,10 +97,14 @@ fun AppBottomBar(
  * navigation: un solo livello nel back stack e stato di ogni sezione
  * conservato tra un cambio di scheda e l'altro.
  */
-private fun NavController.navigateToTopLevel(destination: AppDestination) {
-    navigate(destination.route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
-        launchSingleTop = true
-        restoreState = true
+private fun NavController.navigateToTopLevel(
+    destination: AppDestination
+) {
+    val currentRoute = currentDestination?.route
+
+    if (currentRoute != destination.route) {
+        navigate(destination.route) {
+            launchSingleTop = true
+        }
     }
 }
