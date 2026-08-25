@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.travelapp.BuildConfig
 import com.example.travelapp.data.remote.api.ItinerarioApi
 import com.example.travelapp.data.remote.api.PagamentoApi
+import com.example.travelapp.data.remote.api.PreferitiApi
 import com.example.travelapp.data.remote.api.PrenotazioneApi
 import com.example.travelapp.data.remote.api.SingolaAttivitaApi
 import com.example.travelapp.data.remote.api.UtenteApi
@@ -95,6 +96,9 @@ object ApiClient {
 
     fun getPagamentoApi(context: Context): PagamentoApi =
         getClientAutenticato(context).create(PagamentoApi::class.java)
+
+    fun getPreferitiApi(context: Context): PreferitiApi =
+        getClientAutenticato(context).create(PreferitiApi::class.java)
 
     /**
      * Trasforma in URL assoluto i link relativi restituiti

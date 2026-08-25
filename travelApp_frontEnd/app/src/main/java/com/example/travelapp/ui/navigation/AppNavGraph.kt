@@ -10,9 +10,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
@@ -21,12 +18,12 @@ import androidx.navigation.compose.composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.travelapp.ui.components.AppBottomBar
+import com.example.travelapp.ui.preferiti.PreferitiViewModel
 import com.example.travelapp.ui.profilo.ProfiloViewModel
 import com.example.travelapp.ui.screens.BookingsScreen
 import com.example.travelapp.ui.screens.ExploreScreen
 import com.example.travelapp.ui.screens.FavoritesScreen
 import com.example.travelapp.ui.screens.ProfileScreen
-import com.example.travelapp.ui.screens.sampleFavoriteTrips
 import com.example.travelapp.ui.theme.BackgroundLavender
 
 /**
@@ -76,24 +73,33 @@ fun AppNavGraph(
 }
 
 /**
- * Collega [FavoritesScreen] a una sorgente di stato.
+ * Collega [FavoritesScreen] al suo [PreferitiViewModel], che tiene le liste dell'utente,
+ * quelle condivise con lui e la lista aperta al momento.
  *
- * I viaggi sono ancora segnaposto: il punto di innesto naturale e' un
- * `FavoritesViewModel` alimentato da `ItinerarioRepository`.
+ * Lo stato vive nel ViewModel e non in un `remember` locale perche' ogni operazione -
+ * creare una lista, condividerla, revocare un accesso - passa dal backend: con lo stato
+ * nella composizione una rotazione dello schermo lo perderebbe a meta' chiamata.
  */
 @Composable
-private fun FavoritesRoute(onBack: () -> Unit) {
-    var trips by remember { mutableStateOf(sampleFavoriteTrips) }
+private fun FavoritesRoute(
+    onBack: () -> Unit,
+    viewModel: PreferitiViewModel = viewModel()
+) {
+    val state by viewModel.state.collectAsState()
 
     FavoritesScreen(
-        trips = trips,
+        state = state,
         onBack = onBack,
-        onToggleFavorite = { id ->
-            trips = trips.map { trip ->
-                if (trip.id == id) trip.copy(isFavorite = !trip.isFavorite) else trip
-            }
-        },
-        onLoadMore = {},
+        onSectionChange = viewModel::cambiaSezione,
+        onOpenList = viewModel::apriLista,
+        onCloseList = viewModel::chiudiLista,
+        onCreateList = viewModel::creaLista,
+        onChangeVisibility = viewModel::cambiaVisibilita,
+        onDeleteList = viewModel::eliminaLista,
+        onRemoveTrip = viewModel::rimuoviItinerario,
+        onShareWithEmail = viewModel::condividiConEmail,
+        onRevokeShare = viewModel::revocaCondivisione,
+        onMessageShown = viewModel::messaggioMostrato,
         // TODO: navigare al dettaglio del viaggio quando la schermata esistera'.
         onTripClick = {}
     )
