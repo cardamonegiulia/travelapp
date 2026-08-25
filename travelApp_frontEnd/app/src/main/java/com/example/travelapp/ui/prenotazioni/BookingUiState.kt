@@ -8,6 +8,9 @@ data class BookingUiState(
 
     val extraSelezionati: Map<Long, Double> = emptyMap(),
 
+    val disponibilitaItinerarioId: Long? = null,
+    val sessioneSingolaAttivitaId: Long? = null,
+
     val titolo: String = "",
     val luogo: String = "",
     val prezzoBaseUnitario: Double = 0.0,

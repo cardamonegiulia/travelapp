@@ -1,8 +1,8 @@
 package com.unical.travelapp.backend.catalog.controller;
 
+import com.unical.travelapp.backend.catalog.dto.DisponibilitaItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
-import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
 import com.unical.travelapp.backend.catalog.mapper.ItinerarioMapper;
@@ -79,8 +79,26 @@ public class ItinerarioController {
 
     // --- Endpoint per recuperare le disponibilità (richiesto per il booking) ---
     @GetMapping("/{id}/disponibilita")
-    public ResponseEntity<List<DisponibilitaItinerario>> getDisponibilitaByItinerario(@PathVariable Long id) {
-        return ResponseEntity.ok(itinerarioService.getDisponibilitaByItinerarioId(id));
+    public ResponseEntity<List<DisponibilitaItinerarioDTO>> getDisponibilitaByItinerario(
+            @PathVariable Long id
+    ) {
+
+        List<DisponibilitaItinerarioDTO> disponibilita =
+                itinerarioService
+                        .getDisponibilitaByItinerarioId(id)
+                        .stream()
+                        .map(item ->
+                                new DisponibilitaItinerarioDTO(
+                                        item.getId(),
+                                        item.getDataInizio(),
+                                        item.getDataFine(),
+                                        item.getPostiDisponibili(),
+                                        null
+                                )
+                        )
+                        .toList();
+
+        return ResponseEntity.ok(disponibilita);
     }
 
     @PostMapping

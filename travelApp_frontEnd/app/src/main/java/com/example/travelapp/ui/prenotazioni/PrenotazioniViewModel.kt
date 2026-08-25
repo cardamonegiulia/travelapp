@@ -45,14 +45,18 @@ class PrenotazioniViewModel(
     fun inizializzaBooking(
         titolo: String,
         luogo: String,
-        prezzoBaseUnitario: Double
+        prezzoBaseUnitario: Double,
+        disponibilitaItinerarioId: Long? = null,
+        sessioneSingolaAttivitaId: Long? = null
     ) {
-        _uiState.value = _uiState.value.copy(
+        _uiState.value = BookingUiState(
             titolo = titolo,
             luogo = luogo,
             prezzoBaseUnitario = prezzoBaseUnitario,
             prezzoBase = prezzoBaseUnitario,
-            prezzoTotaleVisualizzato = prezzoBaseUnitario
+            prezzoTotaleVisualizzato = prezzoBaseUnitario,
+            disponibilitaItinerarioId = disponibilitaItinerarioId,
+            sessioneSingolaAttivitaId = sessioneSingolaAttivitaId
         )
     }
 
@@ -103,11 +107,20 @@ class PrenotazioniViewModel(
         ricalcolaTotale()
     }
 
-    fun creaPrenotazione(
-        disponibilitaItinerarioId: Long? = null,
-        sessioneSingolaAttivitaId: Long? = null
-    ) {
+    fun creaPrenotazione() {
         if (_uiState.value.isLoading) return
+
+        val stato = _uiState.value
+
+        if (
+            (stato.disponibilitaItinerarioId == null) ==
+            (stato.sessioneSingolaAttivitaId == null)
+        ) {
+            _uiState.value = stato.copy(
+                errore = "Selezione della prenotazione non valida"
+            )
+            return
+        }
 
         viewModelScope.launch {
 
@@ -118,10 +131,17 @@ class PrenotazioniViewModel(
 
             try {
                 val request = CreaPrenotazioneDto(
-                    disponibilitaItinerarioId = disponibilitaItinerarioId,
-                    sessioneSingolaAttivitaId = sessioneSingolaAttivitaId,
-                    numeroPartecipanti = _uiState.value.numeroPartecipanti,
-                    attivitaExtraIds = _uiState.value.attivitaExtraIds
+                    disponibilitaItinerarioId =
+                        stato.disponibilitaItinerarioId,
+
+                    sessioneSingolaAttivitaId =
+                        stato.sessioneSingolaAttivitaId,
+
+                    numeroPartecipanti =
+                        stato.numeroPartecipanti,
+
+                    attivitaExtraIds =
+                        stato.attivitaExtraIds
                 )
 
                 val prenotazione =
@@ -135,7 +155,8 @@ class PrenotazioniViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errore = e.message ?: "Errore durante la prenotazione"
+                    errore = e.message
+                        ?: "Errore durante la prenotazione"
                 )
             }
         }
