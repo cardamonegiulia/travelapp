@@ -1,6 +1,7 @@
 package com.example.travelapp.data.repository
 
 import com.example.travelapp.data.remote.api.SingolaAttivitaApi
+import com.example.travelapp.data.remote.dto.SessioneAttivitaResponseDto
 import com.example.travelapp.data.remote.dto.SingolaAttivitaRequestDto
 import com.example.travelapp.domain.model.SingolaAttivita
 
@@ -28,6 +29,19 @@ class SingolaAttivitaRepository(
                 Result.success(response.body()!!.toDomain())
             } else {
                 Result.failure(Exception("Attività non trovata: HTTP ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getSessioniAttivita(id: Long): Result<List<SessioneAttivitaResponseDto>> {
+        return try {
+            val response = api.getSessioniByAttivita(id)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Errore recupero sessioni: HTTP ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

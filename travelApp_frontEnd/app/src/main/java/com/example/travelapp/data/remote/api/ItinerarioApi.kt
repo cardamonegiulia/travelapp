@@ -1,5 +1,6 @@
 package com.example.travelapp.data.remote.api
 
+import com.example.travelapp.data.remote.dto.DisponibilitaItinerarioResponseDto
 import com.example.travelapp.data.remote.dto.ItinerarioRequestDto
 import com.example.travelapp.data.remote.dto.ItinerarioResponseDto
 import com.example.travelapp.data.remote.dto.PageResponse
@@ -30,6 +31,11 @@ interface ItinerarioApi {
         @Path("id") id: Long
     ): Response<ItinerarioResponseDto>
 
+    @GET("api/itinerari/{id}/disponibilita")
+    suspend fun getDisponibilitaByItinerario(
+        @Path("id") id: Long
+    ): Response<List<DisponibilitaItinerarioResponseDto>>
+
     @POST("api/itinerari")
     suspend fun createItinerario(
         @Body request: ItinerarioRequestDto
@@ -45,7 +51,6 @@ interface ItinerarioApi {
     suspend fun deleteItinerario(
         @Path("id") id: Long
     ): Response<Unit>
-
 
     @GET("api/itinerari/{id}/immagini")
     suspend fun getImmaginiItinerario(

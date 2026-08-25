@@ -12,13 +12,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.travelapp.domain.model.Itinerario
+import com.example.travelapp.domain.model.SingolaAttivita
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
     viewModel: CatalogViewModel = viewModel(),
-    onItinerarioClick: (Long) -> Unit = {},
-    onAttivitaClick: (Long) -> Unit = {}
+    onItinerarioClick: (Itinerario) -> Unit = {},
+    onAttivitaClick: (SingolaAttivita) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -112,8 +114,8 @@ private fun FiltriRow(
 @Composable
 private fun ListaCatalogo(
     state: CatalogUiState,
-    onItinerarioClick: (Long) -> Unit,
-    onAttivitaClick: (Long) -> Unit
+    onItinerarioClick: (Itinerario) -> Unit,
+    onAttivitaClick: (SingolaAttivita) -> Unit
 ) {
     val query = state.queryRicerca.trim().lowercase()
 
@@ -133,7 +135,7 @@ private fun ListaCatalogo(
             items(itinerariFiltrati) { itinerario ->
                 ItinerarioCard(
                     itinerario = itinerario,
-                    onClick = { onItinerarioClick(itinerario.id) }
+                    onClick = { onItinerarioClick(itinerario) }
                 )
             }
         }
@@ -142,7 +144,7 @@ private fun ListaCatalogo(
             items(attivitaFiltrate) { attivita ->
                 SingolaAttivitaCard(
                     attivita = attivita,
-                    onClick = { onAttivitaClick(attivita.id) }
+                    onClick = { onAttivitaClick(attivita) }
                 )
             }
         }

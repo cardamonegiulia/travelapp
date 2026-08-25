@@ -1,6 +1,7 @@
 package com.example.travelapp.data.remote.api
 
 import com.example.travelapp.data.remote.dto.PageResponse
+import com.example.travelapp.data.remote.dto.SessioneAttivitaResponseDto
 import com.example.travelapp.data.remote.dto.SingolaAttivitaRequestDto
 import com.example.travelapp.data.remote.dto.SingolaAttivitaResponseDto
 import retrofit2.Response
@@ -25,6 +26,11 @@ interface SingolaAttivitaApi {
     suspend fun getAttivitaById(
         @Path("id") id: Long
     ): Response<SingolaAttivitaResponseDto>
+
+    @GET("api/attivita/{id}/sessioni")
+    suspend fun getSessioniByAttivita(
+        @Path("id") id: Long
+    ): Response<List<SessioneAttivitaResponseDto>>
 
     @POST("api/attivita/con-sessioni")
     suspend fun createAttivitaConSessioni(

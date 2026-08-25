@@ -17,48 +17,30 @@ import java.util.concurrent.TimeUnit
  * Configurazione centralizzata del client HTTP.
  *
  * Gestisce:
- * - base URL del backend, letto da `local.properties` a build time;
+ * - base URL del backend, letta dalla configurazione locale a build time;
  * - timeout;
- * - le API REST, tutte autenticate: sotto `/api` SecurityConfig protegge ogni rotta,
- *   quindi non esiste piu' una variante "senza token" da cui una chiamata possa passare
- *   per distrazione.
+ * - API REST autenticate tramite JWT.
  */
 object ApiClient {
 
     /**
-     * Indirizzo del backend, iniettato a build time da `local.properties`
-     * (chiave `backend.base.url`, default `http://localhost:8081/`).
+     * Indirizzo del backend iniettato a build time.
      *
-     * Non e' piu' una costante scritta nel sorgente: cambiava a ogni cambio di rete, e la
-     * modifica finiva per essere committata o dimenticata. Come impostarlo, e come far
-     * raggiungere il PC a un telefono fisico, e' spiegato in `local.properties.example`.
+     * In questo modo ogni sviluppatore può usare il proprio indirizzo
+     * senza modificare e committare il sorgente.
      */
     val BASE_URL: String = BuildConfig.BACKEND_BASE_URL
 
-    /*
-     * Client HTTP e Retrofit, in un'unica variante: quella che AGGIUNGE il token.
-     *
-     * Prima ne esistevano due, e le API di catalogo, itinerari e profilo passavano da
-     * quella senza interceptor. Ma SecurityConfig protegge ogni rotta sotto `/api`, non solo
-     * prenotazioni e pagamenti: quelle chiamate partivano senza header Authorization e
-     * tornavano 401 anche a login perfettamente riuscito. Una sola strada, e il caso
-     * "ho dimenticato di autenticare questa" non si ripresenta.
-     *
-     * L'interceptor lascia comunque partire la richiesta quando il token non c'e'
-     * (vedi InterceptorAutenticazione): serve a distinguere "non ho fatto il login" —
-     * 401 dal backend — da "il backend non risponde" — errore di connessione.
-     *
-     * Serve un Context perche' il token sta nel DataStore, che e' per applicazione.
-     * Le istanze sono memoizzate: OkHttp vuole essere condiviso, ha un suo pool di
-     * connessioni e un suo thread pool.
-     */
     @Volatile
     private var httpClientAutenticato: OkHttpClient? = null
 
     @Volatile
     private var retrofitAutenticato: Retrofit? = null
 
-    /** Client OkHttp che allega il bearer token: usarlo per QUALUNQUE richiesta a `/api`. */
+    /**
+     * Client OkHttp condiviso che aggiunge il Bearer token
+     * alle richieste verso il backend.
+     */
     @Synchronized
     fun getHttpClient(context: Context): OkHttpClient =
         httpClientAutenticato ?: OkHttpClient.Builder()
@@ -71,38 +53,71 @@ object ApiClient {
                 )
             )
             .build()
-            .also { httpClientAutenticato = it }
+            .also {
+                httpClientAutenticato = it
+            }
 
+    /**
+     * Istanza Retrofit autenticata condivisa.
+     */
     @Synchronized
     fun getClientAutenticato(context: Context): Retrofit =
         retrofitAutenticato ?: Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(getHttpClient(context))
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(
+                GsonConverterFactory.create()
+            )
             .build()
-            .also { retrofitAutenticato = it }
-
-    fun getItinerarioApi(context: Context): ItinerarioApi =
-        getClientAutenticato(context).create(ItinerarioApi::class.java)
-
-    fun getSingolaAttivitaApi(context: Context): SingolaAttivitaApi =
-        getClientAutenticato(context).create(SingolaAttivitaApi::class.java)
-
-    fun getUtenteApi(context: Context): UtenteApi =
-        getClientAutenticato(context).create(UtenteApi::class.java)
-
-    fun getPrenotazioneApi(context: Context): PrenotazioneApi =
-        getClientAutenticato(context).create(PrenotazioneApi::class.java)
-
-    fun getPagamentoApi(context: Context): PagamentoApi =
-        getClientAutenticato(context).create(PagamentoApi::class.java)
+            .also {
+                retrofitAutenticato = it
+            }
 
     fun getPreferitiApi(context: Context): PreferitiApi =
         getClientAutenticato(context).create(PreferitiApi::class.java)
 
     /**
-     * Trasforma in URL assoluto i link relativi restituiti
-     * dal backend, ad esempio "/api/...".
+     * Compatibilità con le classi che usano ancora ApiClient.getClient(context).
+     */
+    fun getClient(context: Context): Retrofit =
+        getClientAutenticato(context)
+
+    fun getItinerarioApi(
+        context: Context
+    ): ItinerarioApi =
+        getClientAutenticato(context)
+            .create(ItinerarioApi::class.java)
+
+    fun getSingolaAttivitaApi(
+        context: Context
+    ): SingolaAttivitaApi =
+        getClientAutenticato(context)
+            .create(SingolaAttivitaApi::class.java)
+
+    /**
+     * Gli endpoint /api/utenti/me identificano l'utente tramite JWT.
+     */
+    fun getUtenteApi(
+        context: Context
+    ): UtenteApi =
+        getClientAutenticato(context)
+            .create(UtenteApi::class.java)
+
+    fun getPrenotazioneApi(
+        context: Context
+    ): PrenotazioneApi =
+        getClientAutenticato(context)
+            .create(PrenotazioneApi::class.java)
+
+    fun getPagamentoApi(
+        context: Context
+    ): PagamentoApi =
+        getClientAutenticato(context)
+            .create(PagamentoApi::class.java)
+
+    /**
+     * Trasforma in URL assoluto i link relativi
+     * restituiti dal backend.
      */
     fun urlAssoluto(percorso: String): String {
         return if (
