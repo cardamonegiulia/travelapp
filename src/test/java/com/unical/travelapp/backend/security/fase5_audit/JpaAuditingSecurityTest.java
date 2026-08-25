@@ -157,6 +157,6 @@ class JpaAuditingSecurityTest extends SecurityIntegrationTestBase {
                 .isAssignableFrom(com.unical.travelapp.backend.catalog.entity.Itinerario.class)
                 .isAssignableFrom(com.unical.travelapp.backend.catalog.entity.SingolaAttivita.class)
                 .isAssignableFrom(com.unical.travelapp.backend.experience.models.Recensione.class)
-                .isAssignableFrom(com.unical.travelapp.backend.experience.models.Preferito.class);
+                .isAssignableFrom(com.unical.travelapp.backend.experience.models.ListaPreferiti.class);
     }
 }

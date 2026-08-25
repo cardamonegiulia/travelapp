@@ -9,6 +9,7 @@ import com.unical.travelapp.backend.experience.exeption.ArchiviazioneImmagineFal
 import com.unical.travelapp.backend.experience.exeption.ImmagineNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.ImmagineNonValida;
 import com.unical.travelapp.backend.experience.exeption.ItinerarioNonTrovato;
+import com.unical.travelapp.backend.experience.exeption.ListaPreferitiNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
 import com.unical.travelapp.backend.identity.exception.IdentityProviderNonDisponibileException;
@@ -368,6 +369,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RecensioneNonTrovata.class)
     public ResponseEntity<ProblemDetail> handleRecensioneNonTrovata(RecensioneNonTrovata ex, HttpServletRequest request) {
+        return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
+    }
+
+    // 404 - Lista di preferiti inesistente, oppure esistente ma non accessibile a chi la
+    // chiede: i due casi rispondono uguale apposta, vedi ListaPreferitiNonTrovata.
+    @ExceptionHandler(ListaPreferitiNonTrovata.class)
+    public ResponseEntity<ProblemDetail> handleListaPreferitiNonTrovata(ListaPreferitiNonTrovata ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
     }
 
