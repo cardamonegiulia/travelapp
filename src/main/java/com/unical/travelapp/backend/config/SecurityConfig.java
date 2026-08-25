@@ -51,9 +51,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitFilter rateLimitFilter) throws Exception {
         http
-                // API stateless a bearer token (Authorization: Bearer <jwt>), nessun cookie di sessione:
-                // il CSRF classico sfrutta l'invio automatico dei cookie dal browser, qui non si applica.
-                // Se in futuro si introducesse un flusso basato su cookie di sessione, va riabilitato.
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session
@@ -69,28 +66,28 @@ public class SecurityConfig {
                         .referrerPolicy(referrer -> referrer
                                 .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                         )
-                        // 'unsafe-inline' e' necessario solo per gli asset bundled di springdoc/swagger-ui;
-                        // le risposte JSON dell'API non eseguono script quindi la CSP e' qui difesa in profondita'.
-                        // In produzione swagger-ui e' comunque disabilitato (vedi application-prod.properties).
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
                                 "default-src 'self'; frame-ancestors 'none'; object-src 'none'; " +
                                         "style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
                         ))
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // rotte pubbliche
+                        // Rotte di documentazione e diagnostica
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        // actuator (se mai abilitato) riservato agli admin
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
-                        // registrazione self-service: unica rotta pubblica sotto /api, e solo in POST
-                        // (il matcher e' vincolato al metodo apposta: un GET sulla stessa rotta ricade
-                        // sulla regola generale /api/** e resta protetto). Il rate limit anonimo per IP
-                        // di RateLimitFilter si applica anche qui.
+
+                        // Registrazione pubblica
                         .requestMatchers(HttpMethod.POST, "/api/auth/registrazione").permitAll()
-                        // API: autenticazione minima richiesta, i ruoli fini sono su @PreAuthorize
+
+                        // Lettura pubblica del catalogo, immagini, date e sessioni
+                        .requestMatchers(HttpMethod.GET, "/api/itinerari/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/attivita/**").permitAll()
+
+                        // Tutte le altre chiamate API (creazione, modifica, eliminazione) richiedono autenticazione
                         .requestMatchers("/api/**").authenticated()
-                        // deny-by-default: qualunque rotta non mappata sopra viene negata
+
+                        // Negazione predefinita per rotte non mappate
                         .anyRequest().denyAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -99,11 +96,8 @@ public class SecurityConfig {
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter())
                         )
                 )
-                // dopo l'autenticazione: qui il claim "sub" del JWT e' gia' disponibile per la chiave del rate limit
                 .addFilterAfter(rateLimitFilter, BearerTokenAuthenticationFilter.class);
 
-        // HTTPS obbligatorio solo quando esplicitamente richiesto (profilo prod): in sviluppo
-        // locale Keycloak gira su HTTP, forzare HTTPS romperebbe l'ambiente di dev.
         if (requireHttps) {
             http.redirectToHttps(Customizer.withDefaults());
         }
@@ -117,8 +111,6 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(corsAllowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        // Bearer token nell'header Authorization, non cookie: nessuna credenziale cross-origin da consentire.
-        // Mai combinare allowCredentials=true con un allow-list permissiva o con "*".
         configuration.setAllowCredentials(false);
         configuration.setMaxAge(3600L);
 

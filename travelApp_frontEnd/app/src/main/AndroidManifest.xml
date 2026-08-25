@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permesso internet per chiamate al backend e Keycloak -->
+    <!-- Necessario per backend e Keycloak -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -17,29 +15,34 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Travelapp">
 
-        <!-- Schermata principale — punto di ingresso dell'app -->
+        <!-- Punto di ingresso dell'app -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Travelapp.NoActionBar">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
 
-        <!-- Activity che gestisce il redirect di Keycloak dopo il login -->
+        <!-- Gestisce il redirect OAuth2 / Keycloak -->
         <activity
             android:name="net.openid.appauth.RedirectUriReceiverActivity"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Schema del redirect URI configurato su Keycloak -->
-                <data android:scheme="${appAuthRedirectScheme}" />
+
+                <data
+                    android:scheme="${appAuthRedirectScheme}" />
             </intent-filter>
+
         </activity>
 
     </application>

@@ -19,7 +19,7 @@ import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRe
 import com.unical.travelapp.backend.catalog.repository.SingolaAttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.TappaRepository;
 import com.unical.travelapp.backend.experience.models.Recensione;
-import com.unical.travelapp.backend.experience.repository.PreferitoRepository;
+import com.unical.travelapp.backend.experience.repository.ListaPreferitiRepository;
 import com.unical.travelapp.backend.experience.repository.ImmagineRepository;
 import com.unical.travelapp.backend.experience.repository.RecensioneRepository;
 import com.unical.travelapp.backend.identity.entity.Ruolo;
@@ -67,7 +67,7 @@ public abstract class SecurityIntegrationTestBase {
     @Autowired protected PagamentoRepository pagamentoRepository;
     @Autowired protected RecensioneRepository recensioneRepository;
     @Autowired protected ImmagineRepository immagineRepository;
-    @Autowired protected PreferitoRepository preferitoRepository;
+    @Autowired protected ListaPreferitiRepository listaPreferitiRepository;
     @Autowired protected ExtraPrenotazioneRepository extraPrenotazioneRepository;
     @Autowired protected SessioneSingolaAttivitaRepository sessioneRepository;
     @Autowired protected SingolaAttivitaRepository singolaAttivitaRepository;
@@ -81,12 +81,22 @@ public abstract class SecurityIntegrationTestBase {
 
     @BeforeEach
     void ripulisciIlDatabase() {
+        // La foto profilo va sganciata prima di tutto: e' l'unico riferimento che parte da
+        // "utenti" e arriva a "immagini", quindi cancellare le immagini con la colonna
+        // ancora valorizzata violerebbe la chiave esterna.
+        utenteRepository.findAll().stream()
+                .filter(utente -> utente.getFotoProfilo() != null)
+                .forEach(utente -> {
+                    utente.setFotoProfilo(null);
+                    utenteRepository.save(utente);
+                });
+
         // per prime le immagini: sono figlie di recensioni e itinerari
         immagineRepository.deleteAll();
         extraPrenotazioneRepository.deleteAll();
         pagamentoRepository.deleteAll();
         recensioneRepository.deleteAll();
-        preferitoRepository.deleteAll();
+        listaPreferitiRepository.deleteAll();
         prenotazioneRepository.deleteAll();
         sessioneRepository.deleteAll();
         disponibilitaRepository.deleteAll();

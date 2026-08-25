@@ -5,48 +5,67 @@ services:
     container_name: travelapp-backend
     ports:
       - "8081:8081"
+
     environment:
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://travelapp-keycloak:8080/realms/travelapp
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://travelapp-keycloak:8080/realms/travelapp/protocol/openid-connect/certs
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      # L'issuer deve coincidere ESATTAMENTE con il claim "iss" del token.
+      # KEYCLOAK_PUBLIC_URL è l'indirizzo pubblico con cui Android raggiunge Keycloak.
+      OAUTH2_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8090}/realms/travelapp
+
+      # Il backend scarica invece le chiavi usando la rete interna Docker.
+      OAUTH2_JWK_SET_URI: http://travelapp-keycloak:8080/realms/travelapp/protocol/openid-connect/certs
+
+      # Admin REST API di Keycloak: anche questa usa la rete interna Docker.
       KEYCLOAK_BASE_URL: http://travelapp-keycloak:8080
-      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
-      # cartella di destinazione degli upload: volume dedicato, separato dal filesystem
-      # dell'applicazione, cosi' i file sopravvivono al riavvio del container e un upload
-      # che riempie il volume non tocca la directory in cui gira l'applicazione
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-}
+
       APP_STORAGE_IMMAGINI_PATH: /var/travelapp/immagini
+
     volumes:
       - immagini:/var/travelapp/immagini
+
     depends_on:
       - keycloak
+
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.1
     container_name: travelapp-keycloak
+
     ports:
       - "8090:8080"
+
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+
+      # Issuer pubblico fisso.
+      # Con adb reverse può restare localhost.
+      # Senza adb reverse va impostato KEYCLOAK_PUBLIC_URL nel .env
+      # con l'IP LAN del PC.
+      KC_HOSTNAME_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8090}
+      KC_HOSTNAME_ADMIN_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8090}
+
     command: start-dev --import-realm
+
     volumes:
       - ./keycloak-import:/opt/keycloak/data/import
+
     depends_on:
       - mailpit
 
-  # Server SMTP di sviluppo: cattura le mail invece di spedirle e le mostra su
-  # http://localhost:8025. Serve perche' il realm ha "verifyEmail" e "resetPasswordAllowed"
-  # attivi: senza un SMTP raggiungibile Keycloak non riesce a mandare la mail di verifica e
-  # un utente appena registrato non riuscirebbe piu' a completare il login.
-  # NON e' un sostituto di un SMTP vero in produzione: qui le mail non escono dalla macchina.
+
   mailpit:
     image: axllent/mailpit:v1.20
     container_name: travelapp-mailpit
+
     ports:
-      - "8025:8025"   # interfaccia web: qui si leggono le mail di verifica e di reset
-      - "1025:1025"   # SMTP, quello che usa Keycloak (host "travelapp-mailpit")
+      - "8025:8025"
+      - "1025:1025"
+
 
 volumes:
   immagini:

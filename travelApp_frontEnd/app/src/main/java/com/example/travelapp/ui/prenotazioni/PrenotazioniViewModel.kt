@@ -1,0 +1,187 @@
+package com.example.travelapp.ui.prenotazioni
+
+import androidx.lifecycle.ViewModel
+import com.example.travelapp.data.repository.PrenotazioneRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import androidx.lifecycle.viewModelScope
+import com.example.travelapp.data.remote.dto.CreaPrenotazioneDto
+import com.example.travelapp.data.repository.PagamentoRepository
+import kotlinx.coroutines.launch
+
+class PrenotazioniViewModel(
+    private val prenotazioneRepository: PrenotazioneRepository,
+    private val pagamentoRepository: PagamentoRepository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(BookingUiState())
+
+    private fun ricalcolaTotale() {
+        val stato = _uiState.value
+
+        val prezzoBase =
+            stato.prezzoBaseUnitario * stato.numeroPartecipanti
+
+        val prezzoExtraUnitario =
+            stato.extraSelezionati.values.sum()
+
+        val prezzoExtra =
+            prezzoExtraUnitario * stato.numeroPartecipanti
+
+        val totale =
+            prezzoBase + prezzoExtra
+
+        _uiState.value = stato.copy(
+            prezzoBase = prezzoBase,
+            prezzoExtra = prezzoExtra,
+            prezzoTotaleVisualizzato = totale
+        )
+    }
+
+    val uiState: StateFlow<BookingUiState> =
+        _uiState.asStateFlow()
+
+    fun inizializzaBooking(
+        titolo: String,
+        luogo: String,
+        prezzoBaseUnitario: Double
+    ) {
+        _uiState.value = _uiState.value.copy(
+            titolo = titolo,
+            luogo = luogo,
+            prezzoBaseUnitario = prezzoBaseUnitario,
+            prezzoBase = prezzoBaseUnitario,
+            prezzoTotaleVisualizzato = prezzoBaseUnitario
+        )
+    }
+
+    fun resetBooking() {
+        _uiState.value = BookingUiState()
+    }
+
+    fun pulisciErrore() {
+        _uiState.value = _uiState.value.copy(
+            errore = null
+        )
+    }
+
+    fun incrementaPartecipanti() {
+        _uiState.value = _uiState.value.copy(
+            numeroPartecipanti = _uiState.value.numeroPartecipanti + 1
+        )
+        ricalcolaTotale()
+    }
+    fun decrementaPartecipanti() {
+        if (_uiState.value.numeroPartecipanti > 1) {
+            _uiState.value = _uiState.value.copy(
+                numeroPartecipanti = _uiState.value.numeroPartecipanti - 1
+            )
+            ricalcolaTotale()
+        }
+    }
+
+    fun toggleExtra(
+        attivitaId: Long,
+        prezzoUnitario: Double
+    ) {
+        val stato = _uiState.value
+
+        val nuoviExtra =
+            stato.extraSelezionati.toMutableMap()
+
+        if (attivitaId in nuoviExtra) {
+            nuoviExtra.remove(attivitaId)
+        } else {
+            nuoviExtra[attivitaId] = prezzoUnitario
+        }
+
+        _uiState.value = stato.copy(
+            extraSelezionati = nuoviExtra
+        )
+
+        ricalcolaTotale()
+    }
+
+    fun creaPrenotazione(
+        disponibilitaItinerarioId: Long? = null,
+        sessioneSingolaAttivitaId: Long? = null
+    ) {
+        if (_uiState.value.isLoading) return
+
+        viewModelScope.launch {
+
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errore = null
+            )
+
+            try {
+                val request = CreaPrenotazioneDto(
+                    disponibilitaItinerarioId = disponibilitaItinerarioId,
+                    sessioneSingolaAttivitaId = sessioneSingolaAttivitaId,
+                    numeroPartecipanti = _uiState.value.numeroPartecipanti,
+                    attivitaExtraIds = _uiState.value.attivitaExtraIds
+                )
+
+                val prenotazione =
+                    prenotazioneRepository.creaPrenotazione(request)
+
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    prenotazioneCreata = prenotazione
+                )
+
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errore = e.message ?: "Errore durante la prenotazione"
+                )
+            }
+        }
+    }
+
+    fun pagaPrenotazione() {
+        if (_uiState.value.isLoading) return
+
+        val prenotazione = _uiState.value.prenotazioneCreata
+
+        if (prenotazione == null) {
+            _uiState.value = _uiState.value.copy(
+                errore = "Nessuna prenotazione da pagare"
+            )
+            return
+        }
+
+        viewModelScope.launch {
+
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errore = null
+            )
+
+            try {
+                val pagamento =
+                    pagamentoRepository.pagaPrenotazione(prenotazione.id)
+
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    pagamentoCompletato = pagamento
+                )
+
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errore = e.message ?: "Errore durante il pagamento"
+                )
+            }
+        }
+    }
+    fun selezionaMetodoPagamento(
+        metodo: MetodoPagamentoUi
+    ) {
+        _uiState.value = _uiState.value.copy(
+            metodoPagamento = metodo
+        )
+    }
+}

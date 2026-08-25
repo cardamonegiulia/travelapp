@@ -2,8 +2,8 @@ package com.unical.travelapp.backend.catalog.controller;
 
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaDTO;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaRequestDTO;
+import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
 import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
-import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
 import com.unical.travelapp.backend.catalog.mapper.SingolaAttivitaMapper;
 import com.unical.travelapp.backend.catalog.service.SingolaAttivitaService;
 import com.unical.travelapp.backend.common.audit.AuditLogger;
@@ -26,6 +26,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -78,6 +79,25 @@ public class SingolaAttivitaController {
         return ResponseEntity.ok(attivitaMapper.toDTO(attivita));
     }
 
+    // --- Endpoint per recuperare le sessioni (richiesto per il booking) ---
+    @GetMapping("/{id}/sessioni")
+    @Operation(
+            summary = "Restituisce le sessioni di un'attività",
+            description = "Restituisce tutte le sessioni associate all'attività, necessarie anche per selezionare la sessione da prenotare."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Sessioni restituite con successo"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
+            @ApiResponse(responseCode = "404", description = "Attività non trovata")
+    })
+    public ResponseEntity<List<SessioneSingolaAttivita>> getSessioniByAttivita(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                attivitaService.getSessioniByAttivitaId(id)
+        );
+    }
+
     @PostMapping("/con-sessioni")
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(
@@ -101,6 +121,7 @@ public class SingolaAttivitaController {
             @Size(max = 7, message = "I giorni della settimana sono al massimo 7")
             List<@Min(value = 1, message = "Giorno della settimana non valido")
             @Max(value = 7, message = "Giorno della settimana non valido") Integer> giorni) {
+
         SingolaAttivita entity = attivitaMapper.fromRequest(attivitaRequest);
         entity.setOrganizzatore(utenteService.getUtenteSessione());
         SingolaAttivita salvata = attivitaService.saveAttivitaConSessioni(entity, inizio, fine, giorni);

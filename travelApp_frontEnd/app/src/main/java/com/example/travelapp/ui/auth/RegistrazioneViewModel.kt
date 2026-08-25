@@ -22,7 +22,7 @@ class RegistrazioneViewModel(application: Application) : AndroidViewModel(applic
     private val _uiState = MutableStateFlow<RegistrazioneUiState>(RegistrazioneUiState.Idle)
     val uiState: StateFlow<RegistrazioneUiState> = _uiState
 
-    private val authApi = ApiClient.getClient(application)
+    private val authApi = ApiClient.getClientAutenticato(application)
         .create(AuthApi::class.java)
 
     fun registra(

@@ -138,10 +138,19 @@ class MassAssignmentSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void ilCampoSconosciutoVieneRifiutatoAnchePerILPayloadDeiPreferiti() throws Exception {
-        mockMvc.perform(post("/api/preferiti")
+        mockMvc.perform(post("/api/preferiti/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"itinerarioId\":" + itinerarioEsistente.getId() + ",\"utenteId\":99}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void ilProprietarioDiUnaListaDiPreferitiNonSiSceglieDalPayload() throws Exception {
+        mockMvc.perform(post("/api/preferiti")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Lista\",\"utenteId\":99,\"proprietarioId\":99}"))
                 .andExpect(status().isBadRequest());
     }
 
