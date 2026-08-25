@@ -1,6 +1,7 @@
 package com.example.travelapp.ui.catalog
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.repository.ItinerarioRepository
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+
 data class OfferteUiState(
     val isLoading: Boolean = false,
     val itinerari: List<Itinerario> = emptyList(),
@@ -21,76 +23,222 @@ data class OfferteUiState(
     val errorMessage: String? = null
 )
 
+
 class OfferteManagementViewModel(
-    private val itinerarioRepository: ItinerarioRepository = ItinerarioRepository(ApiClient.itinerarioApi),
-    private val attivitaRepository: SingolaAttivitaRepository = SingolaAttivitaRepository(ApiClient.singolaAttivitaApi)
-) : ViewModel() {
+    application: Application
+) : AndroidViewModel(application) {
 
-    private val _uiState = MutableStateFlow(OfferteUiState())
-    val uiState: StateFlow<OfferteUiState> = _uiState.asStateFlow()
+    /*
+     * Tutte le API passano dal client autenticato.
+     * Il Context serve perché il Bearer token è salvato
+     * nel DataStore dell'applicazione.
+     */
+    private val itinerarioRepository =
+        ItinerarioRepository(
+            ApiClient.getItinerarioApi(application)
+        )
 
-    fun caricaOfferte(soloMie: Boolean = false) {
-        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+    private val attivitaRepository =
+        SingolaAttivitaRepository(
+            ApiClient.getSingolaAttivitaApi(application)
+        )
+
+    private val utenteApi =
+        ApiClient.getUtenteApi(application)
+
+
+    private val _uiState =
+        MutableStateFlow(
+            OfferteUiState()
+        )
+
+    val uiState: StateFlow<OfferteUiState> =
+        _uiState.asStateFlow()
+
+
+    fun caricaOfferte(
+        soloMie: Boolean = false
+    ) {
+
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                errorMessage = null
+            )
+        }
+
         viewModelScope.launch {
-            val resItinerari = itinerarioRepository.getAllItinerari()
-            val resAttivita = attivitaRepository.getAllAttivita()
 
-            var listaItinerari = resItinerari.getOrDefault(emptyList())
-            var listaAttivita = resAttivita.getOrDefault(emptyList())
+            val resItinerari =
+                itinerarioRepository
+                    .getAllItinerari()
+
+            val resAttivita =
+                attivitaRepository
+                    .getAllAttivita()
+
+
+            var listaItinerari =
+                resItinerari
+                    .getOrDefault(
+                        emptyList()
+                    )
+
+            var listaAttivita =
+                resAttivita
+                    .getOrDefault(
+                        emptyList()
+                    )
+
 
             if (soloMie) {
-                // Recupera l'id dell'utente corrente dall'API sincronizzaProfilo
-                val profiloRes = runCatching { ApiClient.utenteApi.sincronizzaProfilo() }
-                val mioId = profiloRes.getOrNull()?.body()?.id
+
+                /*
+                 * Recuperiamo l'utente autenticato.
+                 *
+                 * L'organizzatore viene identificato
+                 * dal JWT tramite /api/utenti/me.
+                 */
+                val profiloRes =
+                    runCatching {
+                        utenteApi
+                            .sincronizzaProfilo()
+                    }
+
+                val risposta =
+                    profiloRes.getOrNull()
+
+                val mioId =
+                    if (
+                        risposta?.isSuccessful == true
+                    ) {
+                        risposta
+                            .body()
+                            ?.id
+                    } else {
+                        null
+                    }
+
+
                 if (mioId != null) {
-                    listaItinerari = listaItinerari.filter { it.organizzatoreId == mioId }
-                    listaAttivita = listaAttivita.filter { it.organizzatoreId == mioId }
+
+                    listaItinerari =
+                        listaItinerari.filter {
+                            it.organizzatoreId ==
+                                    mioId
+                        }
+
+                    listaAttivita =
+                        listaAttivita.filter {
+                            it.organizzatoreId ==
+                                    mioId
+                        }
                 }
             }
 
+
             _uiState.update {
+
                 it.copy(
                     isLoading = false,
-                    itinerari = listaItinerari,
-                    attivita = listaAttivita
+                    itinerari =
+                        listaItinerari,
+                    attivita =
+                        listaAttivita
                 )
             }
         }
     }
 
-    fun eliminaItinerario(id: Long) {
+
+    fun eliminaItinerario(
+        id: Long
+    ) {
+
         viewModelScope.launch {
-            val result = itinerarioRepository.deleteItinerario(id)
+
+            val result =
+                itinerarioRepository
+                    .deleteItinerario(id)
+
             if (result.isSuccess) {
+
                 _uiState.update { state ->
+
                     state.copy(
-                        itinerari = state.itinerari.filterNot { it.id == id },
-                        feedbackMessage = "Itinerario eliminato con successo"
+                        itinerari =
+                            state.itinerari
+                                .filterNot {
+                                    it.id == id
+                                },
+
+                        feedbackMessage =
+                            "Itinerario eliminato con successo"
                     )
                 }
+
             } else {
-                _uiState.update { it.copy(errorMessage = "Errore eliminazione itinerario") }
+
+                _uiState.update {
+
+                    it.copy(
+                        errorMessage =
+                            "Errore eliminazione itinerario"
+                    )
+                }
             }
         }
     }
 
-    fun eliminaAttivita(id: Long) {
+
+    fun eliminaAttivita(
+        id: Long
+    ) {
+
         viewModelScope.launch {
-            val result = attivitaRepository.deleteAttivita(id)
+
+            val result =
+                attivitaRepository
+                    .deleteAttivita(id)
+
             if (result.isSuccess) {
+
                 _uiState.update { state ->
+
                     state.copy(
-                        attivita = state.attivita.filterNot { it.id == id },
-                        feedbackMessage = "Attività eliminata con successo"
+                        attivita =
+                            state.attivita
+                                .filterNot {
+                                    it.id == id
+                                },
+
+                        feedbackMessage =
+                            "Attività eliminata con successo"
                     )
                 }
+
             } else {
-                _uiState.update { it.copy(errorMessage = "Errore eliminazione attività") }
+
+                _uiState.update {
+
+                    it.copy(
+                        errorMessage =
+                            "Errore eliminazione attività"
+                    )
+                }
             }
         }
     }
+
 
     fun clearFeedback() {
-        _uiState.update { it.copy(feedbackMessage = null, errorMessage = null) }
+
+        _uiState.update {
+
+            it.copy(
+                feedbackMessage = null,
+                errorMessage = null
+            )
+        }
     }
 }

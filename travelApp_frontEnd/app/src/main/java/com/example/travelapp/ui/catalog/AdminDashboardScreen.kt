@@ -1,5 +1,6 @@
 package com.example.travelapp.ui.catalog
 
+import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,9 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.repository.PrenotazioneRepository
 import com.example.travelapp.ui.theme.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,8 +28,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
-class AdminDashboardViewModel : ViewModel() {
-    private val repo = PrenotazioneRepository()
+class AdminDashboardViewModel(
+    application: Application
+) : AndroidViewModel(application) {
+
+    private val repo = PrenotazioneRepository(
+        ApiClient.getPrenotazioneApi(application)
+    )
     private val _saldo = MutableStateFlow<BigDecimal?>(null)
     val saldo: StateFlow<BigDecimal?> = _saldo.asStateFlow()
 
