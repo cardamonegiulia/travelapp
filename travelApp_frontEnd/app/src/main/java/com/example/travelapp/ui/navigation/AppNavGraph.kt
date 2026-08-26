@@ -589,13 +589,6 @@ fun AppNavGraph(
                         )
                     },
 
-                    onNavigateToRoute = { route ->
-
-                        navController.navigate(
-                            route
-                        )
-                    },
-
                     onLogout = {
                         onExitApp()
                     },
@@ -1192,7 +1185,6 @@ private fun FavoritesRoute(
 private fun ProfileRoute(
     onBack: () -> Unit,
     onNavigateTo: (AppDestination) -> Unit,
-    onNavigateToRoute: (String) -> Unit,
     onLogout: () -> Unit = {},
     viewModel: ProfiloViewModel = viewModel()
 ) {
@@ -1202,54 +1194,40 @@ private fun ProfileRoute(
         .state
         .collectAsState()
 
-
     val photoPicker =
         rememberLauncherForActivityResult(
-
             contract =
                 ActivityResultContracts
                     .PickVisualMedia()
-
         ) { uri ->
 
             if (uri != null) {
-
-                viewModel
-                    .cambiaFotoProfilo(
-                        uri
-                    )
+                viewModel.cambiaFotoProfilo(uri)
             }
         }
 
-
     ProfileScreen(
+        state = state,
 
-        state =
-            state,
-
-        onBack =
-            onBack,
+        onBack = onBack,
 
         onBookingsClick = {
-
             onNavigateTo(
                 AppDestination.Bookings
             )
         },
 
-        onFavoritesClick = {
-
+        onPaymentsClick = {
             onNavigateTo(
-                AppDestination.Favorites
+                AppDestination.Payments
             )
         },
 
+        onReviewsClick = {},
+
         onAddProfilePhoto = {
-
             photoPicker.launch(
-
                 PickVisualMediaRequest(
-
                     ActivityResultContracts
                         .PickVisualMedia
                         .ImageOnly
@@ -1260,70 +1238,17 @@ private fun ProfileRoute(
         onPhotoMessageShown =
             viewModel::messaggioMostrato,
 
-
-        /*
-         * CATALOGO
-         */
-
-        onCreaItinerarioClick = {
-
-            onNavigateToRoute(
-                CatalogRoutes.CREA_ITINERARIO
-            )
-        },
-
-        onCreaAttivitaClick = {
-
-            onNavigateToRoute(
-                CatalogRoutes.CREA_ATTIVITA
-            )
-        },
-
-        onLeMieOfferteClick = {
-
-            onNavigateToRoute(
-                CatalogRoutes.LE_MIE_OFFERTE
-            )
-        },
-
-        onGestioneOfferteAdminClick = {
-
-            onNavigateToRoute(
-                CatalogRoutes.OFFERTE_ADMIN
-            )
-        },
-
-        onGestioneUtentiAdminClick = {
-
-            onNavigateToRoute(
-                CatalogRoutes
-                    .GESTIONE_UTENTI_ADMIN
-            )
-        },
-
-
-        /*
-         * BOOKING / PAGAMENTI
-         */
-
-        onPaymentsClick = {
-
-            onNavigateTo(
-                AppDestination.Payments
-            )
-        },
-
-        onReviewsClick = {},
-
         onToggleDarkMode =
             viewModel::cambiaTemaScuro,
 
         onChangePassword = {},
 
-        onLogout =
-            onLogout
+        onLogout = onLogout
     )
 }
+
+
+
 
 
 /*
