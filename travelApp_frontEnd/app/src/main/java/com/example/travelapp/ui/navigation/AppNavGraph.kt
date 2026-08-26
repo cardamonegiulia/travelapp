@@ -169,6 +169,7 @@ fun AppNavGraph(
                 AdminDashboardScreen(
                     onVaiOfferte = { navController.navigate(CatalogRoutes.OFFERTE_ADMIN) },
                     onVaiUtenti = { navController.navigate(CatalogRoutes.GESTIONE_UTENTI_ADMIN) },
+                    onVaiProfilo = { navController.navigate(AppDestination.Profile.route) },
                     onLogout = { onExitApp() }
                 )
             }
