@@ -93,7 +93,8 @@ object KeycloakManager {
                 .setScopes(
                     "openid",
                     "profile",
-                    "email"
+                    "email",
+                    "roles"
                 )
 
         if (!loginHint.isNullOrBlank()) {

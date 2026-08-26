@@ -3,12 +3,15 @@ package com.unical.travelapp.backend.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -23,7 +26,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -39,7 +43,7 @@ public class SecurityConfig {
     @Value("${app.security.expected-audience}")
     private String expectedAudience;
 
-    @Value("${app.security.resource-client-id}")
+    @Value("${app.security.resource-client-id:travelapp-backend}")
     private String resourceClientId;
 
     @Value("${app.security.require-https:false}")
@@ -84,10 +88,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/itinerari/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/attivita/**").permitAll()
 
-                        // Tutte le altre chiamate API (creazione, modifica, eliminazione) richiedono autenticazione
+                        // Tutte le altre chiamate API richiedono autenticazione
                         .requestMatchers("/api/**").authenticated()
 
-                        // Negazione predefinita per rotte non mappate
                         .anyRequest().denyAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -134,7 +137,37 @@ public class SecurityConfig {
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter(resourceClientId));
+        converter.setJwtGrantedAuthoritiesConverter(new Converter<Jwt, Collection<GrantedAuthority>>() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public Collection<GrantedAuthority> convert(Jwt jwt) {
+                Set<String> ruoli = new HashSet<>();
+
+                // 1. Estrazione Realm Roles
+                Map<String, Object> realmAccess = (Map<String, Object>) jwt.getClaims().get("realm_access");
+                if (realmAccess != null && realmAccess.containsKey("roles")) {
+                    ruoli.addAll((List<String>) realmAccess.get("roles"));
+                }
+
+                // 2. Estrazione Client Roles
+                Map<String, Object> resourceAccess = (Map<String, Object>) jwt.getClaims().get("resource_access");
+                if (resourceAccess != null && resourceAccess.containsKey(resourceClientId)) {
+                    Map<String, Object> clientResource = (Map<String, Object>) resourceAccess.get(resourceClientId);
+                    if (clientResource != null && clientResource.containsKey("roles")) {
+                        ruoli.addAll((List<String>) clientResource.get("roles"));
+                    }
+                }
+
+                // 3. Mapping dei ruoli con prefisso standard ROLE_
+                return ruoli.stream()
+                        .map(r -> {
+                            String roleName = r.toUpperCase();
+                            return roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
+                        })
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toSet());
+            }
+        });
         return converter;
     }
 }

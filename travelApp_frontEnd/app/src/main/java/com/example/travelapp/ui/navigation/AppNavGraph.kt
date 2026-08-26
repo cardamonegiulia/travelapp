@@ -95,18 +95,24 @@ fun AppNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     profiloViewModel: ProfiloViewModel = viewModel(),
+    ruoloIniziale: String? = null,
     onExitApp: () -> Unit = {}
 ) {
 
     val context =
         LocalContext.current
 
+
     /*
-     * Un'unica istanza del ViewModel gestisce l'intero
-     * flusso di prenotazione:
+     * ============================================================
+     * BOOKING VIEWMODEL CONDIVISO
+     * ============================================================
+     *
+     * Una sola istanza gestisce l'intero flusso:
      *
      * dettaglio -> step 1 -> step 2 -> successo.
      */
+
     val bookingViewModel: PrenotazioniViewModel =
         viewModel(
             factory =
@@ -122,14 +128,24 @@ fun AppNavGraph(
 
 
     /*
-     * Utilizziamo la stessa istanza del ProfiloViewModel
-     * sia per il profilo sia per determinare il ruolo
-     * dell'utente e quindi la relativa home.
+     * ============================================================
+     * PROFILO / RUOLO
+     * ============================================================
      */
+
     val profiloState by
     profiloViewModel
         .state
         .collectAsState()
+
+
+    /*
+     * Carichiamo il profilo quando viene creato il NavGraph,
+     * così possiamo determinare il ruolo effettivo dell'utente.
+     */
+    LaunchedEffect(Unit) {
+        profiloViewModel.caricaProfilo()
+    }
 
 
     val onBack: () -> Unit = {
@@ -141,22 +157,48 @@ fun AppNavGraph(
 
 
     /*
-     * ============================================================
-     * RUOLO
-     * ============================================================
+     * Se il profilo contiene già un ruolo diverso dal valore
+     * standard VIAGGIATORE, utilizziamo quello.
+     *
+     * Altrimenti possiamo utilizzare il ruolo ricevuto dal login
+     * tramite ruoloIniziale.
      */
-
-    val ruoloStr =
+    val ruoloProfilo =
         profiloState.ruolo
-            ?.toString()
-            ?.uppercase()
-            ?: ""
+            .toString()
+            .uppercase()
+
+    val ruoloEffettivo =
+        when {
+
+            ruoloProfilo.isNotBlank() &&
+                    ruoloProfilo != "VIAGGIATORE" &&
+                    ruoloProfilo != "NULL" -> {
+
+                ruoloProfilo
+            }
+
+            !ruoloIniziale.isNullOrBlank() -> {
+
+                ruoloIniziale.uppercase()
+            }
+
+            else -> {
+
+                if (ruoloProfilo == "NULL") {
+                    ""
+                } else {
+                    ruoloProfilo
+                }
+            }
+        }
+
 
     val isAdmin =
-        ruoloStr.contains("ADMIN")
+        ruoloEffettivo.contains("ADMIN")
 
     val isOrganizzatore =
-        ruoloStr.contains("ORGANIZZATORE")
+        ruoloEffettivo.contains("ORGANIZZATORE")
 
 
     /*
@@ -183,11 +225,15 @@ fun AppNavGraph(
 
 
     /*
-     * Quando il ruolo viene caricato dal profilo,
-     * Admin e Organizzatore vengono reindirizzati
-     * verso la rispettiva home dedicata.
+     * ============================================================
+     * REDIRECT IN BASE AL RUOLO
+     * ============================================================
      */
-    LaunchedEffect(profiloState.ruolo) {
+
+    LaunchedEffect(
+        isAdmin,
+        isOrganizzatore
+    ) {
 
         when {
 
@@ -241,6 +287,7 @@ fun AppNavGraph(
             ?.destination
             ?.route
 
+
     val isBookingWizard =
         currentRoute in setOf(
             AppDestination.BookingStep1.route,
@@ -248,10 +295,50 @@ fun AppNavGraph(
             AppDestination.BookingSuccess.route
         )
 
+
+    /*
+     * Anche le schermate dedicate ad Admin e Organizzatore
+     * non devono mostrare la bottom bar del viaggiatore.
+     */
+    val isCatalogAdminOrOrg =
+        currentRoute in setOf(
+            CatalogRoutes.ADMIN_HOME,
+            CatalogRoutes.ORGANIZZATORE_HOME,
+            CatalogRoutes.CREA_ITINERARIO,
+            CatalogRoutes.CREA_ATTIVITA,
+            CatalogRoutes.MODIFICA_ITINERARIO,
+            CatalogRoutes.MODIFICA_ATTIVITA,
+            CatalogRoutes.LE_MIE_OFFERTE,
+            CatalogRoutes.OFFERTE_ADMIN,
+            CatalogRoutes.GESTIONE_UTENTI_ADMIN
+        )
+
+
     val mostraBottomBar =
         !isAdmin &&
                 !isOrganizzatore &&
-                !isBookingWizard
+                !isBookingWizard &&
+                !isCatalogAdminOrOrg
+
+
+    /*
+     * Destinazione iniziale coerente con il ruolo già noto.
+     *
+     * Il LaunchedEffect precedente continua comunque a garantire
+     * il redirect quando il ruolo viene caricato successivamente.
+     */
+    val startDestination =
+        when {
+
+            isAdmin ->
+                CatalogRoutes.ADMIN_HOME
+
+            isOrganizzatore ->
+                CatalogRoutes.ORGANIZZATORE_HOME
+
+            else ->
+                AppDestination.Explore.route
+        }
 
 
     Scaffold(
@@ -276,7 +363,7 @@ fun AppNavGraph(
                 navController,
 
             startDestination =
-                AppDestination.Explore.route,
+                startDestination,
 
             modifier =
                 Modifier
@@ -308,6 +395,13 @@ fun AppNavGraph(
 
                         navController.navigate(
                             CatalogRoutes.GESTIONE_UTENTI_ADMIN
+                        )
+                    },
+
+                    onVaiProfilo = {
+
+                        navController.navigate(
+                            AppDestination.Profile.route
                         )
                     },
 
@@ -361,6 +455,13 @@ fun AppNavGraph(
 
                         navController.navigate(
                             CatalogRoutes.MODIFICA_ATTIVITA
+                        )
+                    },
+
+                    onVaiProfilo = {
+
+                        navController.navigate(
+                            AppDestination.Profile.route
                         )
                     },
 
@@ -450,7 +551,8 @@ fun AppNavGraph(
 
                 FavoritesRoute(
 
-                    onBack = onBack,
+                    onBack =
+                        onBack,
 
                     onItinerarioClick = { itinerario ->
 
@@ -477,7 +579,8 @@ fun AppNavGraph(
 
                 ProfileRoute(
 
-                    onBack = onBack,
+                    onBack =
+                        onBack,
 
                     onNavigateTo = { destination ->
 
@@ -491,6 +594,10 @@ fun AppNavGraph(
                         navController.navigate(
                             route
                         )
+                    },
+
+                    onLogout = {
+                        onExitApp()
                     },
 
                     viewModel =
@@ -523,11 +630,12 @@ fun AppNavGraph(
                             onPrenota = { disponibilitaId ->
 
                                 /*
-                                 * Salviamo nel ViewModel del booking:
+                                 * Inizializziamo il booking con:
                                  *
-                                 * - dati visuali;
-                                 * - prezzo;
-                                 * - ID REALE della disponibilità.
+                                 * - titolo;
+                                 * - luogo;
+                                 * - prezzo reale;
+                                 * - ID reale della disponibilità.
                                  */
                                 bookingViewModel
                                     .inizializzaBooking(
@@ -589,8 +697,8 @@ fun AppNavGraph(
                             onPrenota = { sessioneId ->
 
                                 /*
-                                 * Per una singola attività salviamo
-                                 * l'ID REALE della sessione.
+                                 * Per l'attività singola conserviamo
+                                 * l'ID reale della sessione selezionata.
                                  */
                                 bookingViewModel
                                     .inizializzaBooking(
@@ -770,8 +878,8 @@ fun AppNavGraph(
              * BOOKING WIZARD
              * ============================================================
              *
-             * Una sola istanza di PrenotazioniViewModel
-             * viene condivisa tra tutti gli step.
+             * La stessa istanza bookingViewModel viene utilizzata
+             * dall'inizio alla fine del wizard.
              */
 
             navigation(
@@ -799,8 +907,8 @@ fun AppNavGraph(
                 ) {
 
                     /*
-                     * Quando il backend restituisce la prenotazione,
-                     * passiamo automaticamente al pagamento.
+                     * Quando il backend restituisce la prenotazione
+                     * appena creata, passiamo automaticamente allo Step 2.
                      */
                     LaunchedEffect(
                         bookingState
@@ -820,11 +928,9 @@ fun AppNavGraph(
                             ) {
 
                                 /*
-                                 * La prenotazione esiste ormai
-                                 * realmente sul backend.
-                                 *
-                                 * Non ha senso tornare allo Step 1
-                                 * e rischiare di crearne un'altra.
+                                 * La prenotazione ormai esiste sul backend.
+                                 * Rimuoviamo Step 1 per evitare di crearla
+                                 * nuovamente tornando indietro.
                                  */
                                 popUpTo(
                                     AppDestination
@@ -846,8 +952,8 @@ fun AppNavGraph(
                             bookingState,
 
                         /*
-                         * Gli extra reali verranno collegati
-                         * successivamente.
+                         * Gli extra reali saranno collegati
+                         * quando avremo i dati corrispondenti.
                          */
                         extraDisponibili =
                             emptyList(),
@@ -867,8 +973,8 @@ fun AppNavGraph(
                         onContinua = {
 
                             /*
-                             * Usa direttamente gli ID salvati
-                             * nello stato del booking.
+                             * Gli ID della disponibilità/sessione
+                             * sono già presenti nel BookingUiState.
                              */
                             bookingViewModel
                                 .creaPrenotazione()
@@ -890,8 +996,8 @@ fun AppNavGraph(
                 ) {
 
                     /*
-                     * Al completamento del pagamento
-                     * andiamo alla schermata finale.
+                     * Quando il pagamento viene completato,
+                     * passiamo automaticamente alla schermata Successo.
                      */
                     LaunchedEffect(
                         bookingState
@@ -910,10 +1016,8 @@ fun AppNavGraph(
                             ) {
 
                                 /*
-                                 * Dopo che il pagamento è riuscito
-                                 * non dobbiamo poter tornare alla
-                                 * schermata che permette di pagare
-                                 * nuovamente.
+                                 * Evitiamo che l'utente torni indietro
+                                 * e possa tentare di pagare di nuovo.
                                  */
                                 popUpTo(
                                     AppDestination
@@ -967,16 +1071,16 @@ fun AppNavGraph(
                         onFine = {
 
                             /*
-                             * Prima usiamo ancora lo state per
-                             * mostrare il riepilogo.
-                             *
-                             * Solo quando l'utente termina
-                             * azzeriamo il wizard.
+                             * Prima resettiamo lo stato del wizard.
                              */
                             bookingViewModel
                                 .resetBooking()
 
 
+                            /*
+                             * Poi portiamo l'utente nelle sue
+                             * prenotazioni.
+                             */
                             navController.navigate(
                                 AppDestination
                                     .Bookings
@@ -984,7 +1088,7 @@ fun AppNavGraph(
                             ) {
 
                                 /*
-                                 * Eliminiamo tutto il wizard
+                                 * Rimuoviamo tutto il booking wizard
                                  * dal back stack.
                                  */
                                 popUpTo(
@@ -1089,6 +1193,7 @@ private fun ProfileRoute(
     onBack: () -> Unit,
     onNavigateTo: (AppDestination) -> Unit,
     onNavigateToRoute: (String) -> Unit,
+    onLogout: () -> Unit = {},
     viewModel: ProfiloViewModel = viewModel()
 ) {
 
@@ -1215,7 +1320,8 @@ private fun ProfileRoute(
 
         onChangePassword = {},
 
-        onLogout = {}
+        onLogout =
+            onLogout
     )
 }
 
