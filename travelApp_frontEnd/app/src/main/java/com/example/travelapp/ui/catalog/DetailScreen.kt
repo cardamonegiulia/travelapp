@@ -12,14 +12,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.travelapp.domain.model.Itinerario
+import com.example.travelapp.domain.model.ListaPreferiti
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.theme.*
 
@@ -46,6 +55,34 @@ fun ItinerarioDetailScreen(
 
     LaunchedEffect(itinerario.id) {
         viewModel.caricaDisponibilitaItinerario(itinerario.id)
+
+        // Il cuore deve risultare già selezionato
+        // se l'itinerario era stato salvato in precedenza.
+        viewModel.caricaPreferiti(itinerario.id)
+    }
+
+    if (uiState.selettorePreferitiAperto) {
+        DialogoSceltaLista(
+            liste = uiState.listePreferiti,
+            listeConItinerario = uiState.listeConItinerario,
+            inCaricamento = uiState.preferitiInCaricamento,
+            operazioneInCorso = uiState.operazionePreferitiInCorso,
+            messaggio = uiState.messaggioPreferiti,
+            errore = uiState.errorePreferiti,
+            onListaClick = { lista ->
+                viewModel.cambiaAppartenenzaLista(
+                    lista,
+                    itinerario.id
+                )
+            },
+            onCreaLista = { nome ->
+                viewModel.creaListaConItinerario(
+                    nome,
+                    itinerario.id
+                )
+            },
+            onDismiss = viewModel::chiudiSelettorePreferiti
+        )
     }
 
     Scaffold(
@@ -58,16 +95,21 @@ fun ItinerarioDetailScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                        .padding(
+                            horizontal = 20.dp,
+                            vertical = 16.dp
+                        ),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+
                     Column {
                         Text(
                             text = "A partire da",
                             style = MaterialTheme.typography.labelMedium,
                             color = TravelTextMuted
                         )
+
                         Text(
                             text = "€${itinerario.prezzoBase ?: "---"}",
                             style = MaterialTheme.typography.titleLarge,
@@ -77,9 +119,15 @@ fun ItinerarioDetailScreen(
                     }
 
                     Button(
-                        onClick = { uiState.idSelezionato?.let { onPrenota(it) } },
+                        onClick = {
+                            uiState.idSelezionato?.let {
+                                onPrenota(it)
+                            }
+                        },
                         enabled = uiState.idSelezionato != null,
-                        colors = ButtonDefaults.buttonColors(containerColor = TravelOrange),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = TravelOrange
+                        ),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.height(48.dp)
                     ) {
@@ -94,6 +142,7 @@ fun ItinerarioDetailScreen(
             }
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -101,12 +150,14 @@ fun ItinerarioDetailScreen(
                 .background(TravelBg)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header con Immagine Coil
+
+            // Header con immagine
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(260.dp)
             ) {
+
                 AsyncImage(
                     model = copertinaUrl,
                     contentDescription = itinerario.titolo,
@@ -119,14 +170,21 @@ fun ItinerarioDetailScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                        .padding(
+                            horizontal = 16.dp,
+                            vertical = 16.dp
+                        ),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+
                     IconButton(
                         onClick = onBack,
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                            .background(
+                                Color.White.copy(alpha = 0.9f),
+                                CircleShape
+                            )
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -135,16 +193,39 @@ fun ItinerarioDetailScreen(
                         )
                     }
 
+                    // Preferiti
                     IconButton(
-                        onClick = { },
+                        onClick = {
+                            viewModel.apriSelettorePreferiti(
+                                itinerario.id
+                            )
+                        },
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                            .background(
+                                Color.White.copy(alpha = 0.9f),
+                                CircleShape
+                            )
                     ) {
                         Icon(
-                            imageVector = Icons.Default.FavoriteBorder,
-                            contentDescription = "Preferiti",
-                            tint = TravelTextDark
+                            imageVector =
+                                if (uiState.ePreferito) {
+                                    Icons.Default.Favorite
+                                } else {
+                                    Icons.Default.FavoriteBorder
+                                },
+                            contentDescription =
+                                if (uiState.ePreferito) {
+                                    "Gestisci le liste di preferiti"
+                                } else {
+                                    "Aggiungi ai preferiti"
+                                },
+                            tint =
+                                if (uiState.ePreferito) {
+                                    FavoriteRed
+                                } else {
+                                    TravelTextDark
+                                }
                         )
                     }
                 }
@@ -155,11 +236,17 @@ fun ItinerarioDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .offset(y = (-16).dp)
-                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 20.dp,
+                            topEnd = 20.dp
+                        )
+                    )
                     .background(Color.White)
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+
                 Surface(
                     shape = RoundedCornerShape(6.dp),
                     color = TravelChipBg
@@ -169,7 +256,10 @@ fun ItinerarioDetailScreen(
                         color = TravelBlue,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        )
                     )
                 }
 
@@ -184,36 +274,59 @@ fun ItinerarioDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+
                     itinerario.destinazionePrincipale?.let {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Icon(
-                                Icons.Default.LocationOn,
+                                imageVector = Icons.Default.LocationOn,
                                 contentDescription = null,
                                 tint = TravelTextMuted,
                                 modifier = Modifier.size(16.dp)
                             )
-                            Spacer(Modifier.width(4.dp))
-                            Text(text = it, style = MaterialTheme.typography.bodyMedium, color = TravelTextMuted)
+
+                            Spacer(
+                                modifier = Modifier.width(4.dp)
+                            )
+
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TravelTextMuted
+                            )
                         }
                     }
 
                     itinerario.durataGiorni?.let {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Icon(
-                                Icons.Default.DateRange,
+                                imageVector = Icons.Default.DateRange,
                                 contentDescription = null,
                                 tint = TravelTextMuted,
                                 modifier = Modifier.size(16.dp)
                             )
-                            Spacer(Modifier.width(4.dp))
-                            Text(text = "$it giorni", style = MaterialTheme.typography.bodyMedium, color = TravelTextMuted)
+
+                            Spacer(
+                                modifier = Modifier.width(4.dp)
+                            )
+
+                            Text(
+                                text = "$it giorni",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TravelTextMuted
+                            )
                         }
                     }
                 }
 
-                HorizontalDivider(color = TravelBorder)
+                HorizontalDivider(
+                    color = TravelBorder
+                )
 
-                // Date e Disponibilità Reali
+                // Date e disponibilità reali
                 Text(
                     text = "Date disponibili",
                     style = MaterialTheme.typography.titleMedium,
@@ -222,33 +335,65 @@ fun ItinerarioDetailScreen(
                 )
 
                 if (uiState.isLoading) {
-                    Box(modifier = Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = TravelBlue, modifier = Modifier.size(28.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = TravelBlue,
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
-                } else if (uiState.disponibilitaItinerario.isEmpty()) {
+
+                } else if (
+                    uiState.disponibilitaItinerario.isEmpty()
+                ) {
+
                     Text(
                         text = "Nessuna data attualmente disponibile per questo itinerario.",
                         style = MaterialTheme.typography.bodySmall,
                         color = TravelTextMuted
                     )
+
                 } else {
+
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        contentPadding = PaddingValues(vertical = 4.dp)
+                        horizontalArrangement =
+                            Arrangement.spacedBy(10.dp),
+                        contentPadding =
+                            PaddingValues(vertical = 4.dp)
                     ) {
-                        items(uiState.disponibilitaItinerario) { disp ->
-                            val isSelected = uiState.idSelezionato == disp.id
+
+                        items(
+                            uiState.disponibilitaItinerario
+                        ) { disp ->
+
+                            val isSelected =
+                                uiState.idSelezionato == disp.id
+
                             SlotDateCard(
-                                title = "${formattaData(disp.dataInizio)} - ${formattaData(disp.dataFine)}",
-                                subtitle = "${disp.postiDisponibili} posti rimasti",
+                                title =
+                                    "${formattaData(disp.dataInizio)} - " +
+                                            formattaData(disp.dataFine),
+                                subtitle =
+                                    "${disp.postiDisponibili} posti rimasti",
                                 isSelected = isSelected,
-                                onClick = { viewModel.selezionaSlot(disp.id) }
+                                onClick = {
+                                    viewModel.selezionaSlot(
+                                        disp.id
+                                    )
+                                }
                             )
                         }
                     }
                 }
 
-                HorizontalDivider(color = TravelBorder)
+                HorizontalDivider(
+                    color = TravelBorder
+                )
 
                 Text(
                     text = "Descrizione del viaggio",
@@ -256,14 +401,19 @@ fun ItinerarioDetailScreen(
                     fontWeight = FontWeight.Bold,
                     color = TravelTextDark
                 )
+
                 Text(
-                    text = itinerario.descrizione ?: "Nessuna descrizione disponibile per questo itinerario.",
+                    text =
+                        itinerario.descrizione
+                            ?: "Nessuna descrizione disponibile per questo itinerario.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = TravelTextMuted,
                     lineHeight = 22.sp
                 )
 
-                HorizontalDivider(color = TravelBorder)
+                HorizontalDivider(
+                    color = TravelBorder
+                )
 
                 Text(
                     text = "Programma dell'itinerario",
@@ -272,10 +422,28 @@ fun ItinerarioDetailScreen(
                     color = TravelTextDark
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TappaItem(giorno = "Giorno 1", titolo = "Arrivo e check-in", desc = "Accoglienza dei partecipanti e briefing iniziale.")
-                    TappaItem(giorno = "Giorno 2", titolo = "Escursione principale", desc = "Visita guidata ai punti di maggiore interesse.")
-                    TappaItem(giorno = "Giorno 3", titolo = "Rientro e saluti", desc = "Tempo libero per shopping e ripartenza.")
+                Column(
+                    verticalArrangement =
+                        Arrangement.spacedBy(12.dp)
+                ) {
+
+                    TappaItem(
+                        giorno = "Giorno 1",
+                        titolo = "Arrivo e check-in",
+                        desc = "Accoglienza dei partecipanti e briefing iniziale."
+                    )
+
+                    TappaItem(
+                        giorno = "Giorno 2",
+                        titolo = "Escursione principale",
+                        desc = "Visita guidata ai punti di maggiore interesse."
+                    )
+
+                    TappaItem(
+                        giorno = "Giorno 3",
+                        titolo = "Rientro e saluti",
+                        desc = "Tempo libero per shopping e ripartenza."
+                    )
                 }
             }
         }
@@ -292,7 +460,9 @@ fun AttivitaDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(attivita.id) {
-        viewModel.caricaSessioniAttivita(attivita.id)
+        viewModel.caricaSessioniAttivita(
+            attivita.id
+        )
     }
 
     Scaffold(
@@ -302,19 +472,25 @@ fun AttivitaDetailScreen(
                 color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.fillMaxWidth()
             ) {
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                        .padding(
+                            horizontal = 20.dp,
+                            vertical = 16.dp
+                        ),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+
                     Column {
                         Text(
                             text = "Prezzo a persona",
                             style = MaterialTheme.typography.labelMedium,
                             color = TravelTextMuted
                         )
+
                         Text(
                             text = "€${attivita.prezzo ?: "---"}",
                             style = MaterialTheme.typography.titleLarge,
@@ -324,9 +500,15 @@ fun AttivitaDetailScreen(
                     }
 
                     Button(
-                        onClick = { uiState.idSelezionato?.let { onPrenota(it) } },
+                        onClick = {
+                            uiState.idSelezionato?.let {
+                                onPrenota(it)
+                            }
+                        },
                         enabled = uiState.idSelezionato != null,
-                        colors = ButtonDefaults.buttonColors(containerColor = TravelOrange),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = TravelOrange
+                        ),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.height(48.dp)
                     ) {
@@ -341,6 +523,7 @@ fun AttivitaDetailScreen(
             }
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -348,26 +531,37 @@ fun AttivitaDetailScreen(
                 .background(TravelBg)
                 .verticalScroll(rememberScrollState())
         ) {
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(260.dp)
                     .background(Color(0xFFCBD5E1))
             ) {
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .padding(
+                            horizontal = 16.dp,
+                            vertical = 16.dp
+                        ),
+                    horizontalArrangement =
+                        Arrangement.SpaceBetween
                 ) {
+
                     IconButton(
                         onClick = onBack,
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                            .background(
+                                Color.White.copy(alpha = 0.9f),
+                                CircleShape
+                            )
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector =
+                                Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Indietro",
                             tint = TravelTextDark
                         )
@@ -377,10 +571,14 @@ fun AttivitaDetailScreen(
                         onClick = { },
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                            .background(
+                                Color.White.copy(alpha = 0.9f),
+                                CircleShape
+                            )
                     ) {
                         Icon(
-                            imageVector = Icons.Default.FavoriteBorder,
+                            imageVector =
+                                Icons.Default.FavoriteBorder,
                             contentDescription = "Preferiti",
                             tint = TravelTextDark
                         )
@@ -392,11 +590,18 @@ fun AttivitaDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .offset(y = (-16).dp)
-                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 20.dp,
+                            topEnd = 20.dp
+                        )
+                    )
                     .background(Color.White)
                     .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement =
+                    Arrangement.spacedBy(16.dp)
             ) {
+
                 Surface(
                     shape = RoundedCornerShape(6.dp),
                     color = TravelChipBg
@@ -406,7 +611,10 @@ fun AttivitaDetailScreen(
                         color = TravelBlue,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        )
                     )
                 }
 
@@ -418,21 +626,38 @@ fun AttivitaDetailScreen(
                 )
 
                 attivita.luogo?.let {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+
+                    Row(
+                        verticalAlignment =
+                            Alignment.CenterVertically
+                    ) {
+
                         Icon(
-                            Icons.Default.LocationOn,
+                            imageVector =
+                                Icons.Default.LocationOn,
                             contentDescription = null,
                             tint = TravelTextMuted,
                             modifier = Modifier.size(16.dp)
                         )
-                        Spacer(Modifier.width(4.dp))
-                        Text(text = it, style = MaterialTheme.typography.bodyMedium, color = TravelTextMuted)
+
+                        Spacer(
+                            modifier = Modifier.width(4.dp)
+                        )
+
+                        Text(
+                            text = it,
+                            style =
+                                MaterialTheme.typography.bodyMedium,
+                            color = TravelTextMuted
+                        )
                     }
                 }
 
-                HorizontalDivider(color = TravelBorder)
+                HorizontalDivider(
+                    color = TravelBorder
+                )
 
-                // Sessioni Reali per Attività
+                // Sessioni reali
                 Text(
                     text = "Sessioni disponibili",
                     style = MaterialTheme.typography.titleMedium,
@@ -441,33 +666,66 @@ fun AttivitaDetailScreen(
                 )
 
                 if (uiState.isLoading) {
-                    Box(modifier = Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = TravelBlue, modifier = Modifier.size(28.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = TravelBlue,
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
-                } else if (uiState.sessioniAttivita.isEmpty()) {
+
+                } else if (
+                    uiState.sessioniAttivita.isEmpty()
+                ) {
+
                     Text(
                         text = "Nessuna sessione programmata per questa attività.",
                         style = MaterialTheme.typography.bodySmall,
                         color = TravelTextMuted
                     )
+
                 } else {
+
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        contentPadding = PaddingValues(vertical = 4.dp)
+                        horizontalArrangement =
+                            Arrangement.spacedBy(10.dp),
+                        contentPadding =
+                            PaddingValues(vertical = 4.dp)
                     ) {
-                        items(uiState.sessioniAttivita) { sess ->
-                            val isSelected = uiState.idSelezionato == sess.id
+
+                        items(
+                            uiState.sessioniAttivita
+                        ) { sess ->
+
+                            val isSelected =
+                                uiState.idSelezionato == sess.id
+
                             SlotDateCard(
-                                title = formattaData(sess.dataInizio),
-                                subtitle = "${sess.postiDisponibili} posti",
+                                title =
+                                    formattaData(
+                                        sess.dataInizio
+                                    ),
+                                subtitle =
+                                    "${sess.postiDisponibili} posti",
                                 isSelected = isSelected,
-                                onClick = { viewModel.selezionaSlot(sess.id) }
+                                onClick = {
+                                    viewModel.selezionaSlot(
+                                        sess.id
+                                    )
+                                }
                             )
                         }
                     }
                 }
 
-                HorizontalDivider(color = TravelBorder)
+                HorizontalDivider(
+                    color = TravelBorder
+                )
 
                 Text(
                     text = "Descrizione dell'esperienza",
@@ -475,8 +733,11 @@ fun AttivitaDetailScreen(
                     fontWeight = FontWeight.Bold,
                     color = TravelTextDark
                 )
+
                 Text(
-                    text = attivita.descrizione ?: "Nessuna descrizione disponibile.",
+                    text =
+                        attivita.descrizione
+                            ?: "Nessuna descrizione disponibile.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = TravelTextMuted,
                     lineHeight = 22.sp
@@ -495,26 +756,58 @@ private fun SlotDateCard(
 ) {
     Surface(
         modifier = Modifier
-            .clickable(onClick = onClick)
+            .clickable(
+                onClick = onClick
+            )
             .border(
-                width = if (isSelected) 2.dp else 1.dp,
-                color = if (isSelected) TravelBlue else TravelBorder,
+                width =
+                    if (isSelected) {
+                        2.dp
+                    } else {
+                        1.dp
+                    },
+                color =
+                    if (isSelected) {
+                        TravelBlue
+                    } else {
+                        TravelBorder
+                    },
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = if (isSelected) TravelChipBg else Color.White
+        color =
+            if (isSelected) {
+                TravelChipBg
+            } else {
+                Color.White
+            }
     ) {
+
         Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(
+                horizontal = 14.dp,
+                vertical = 10.dp
+            ),
+            horizontalAlignment =
+                Alignment.CenterHorizontally
         ) {
+
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                color = if (isSelected) TravelBlue else TravelTextDark
+                color =
+                    if (isSelected) {
+                        TravelBlue
+                    } else {
+                        TravelTextDark
+                    }
             )
-            Spacer(modifier = Modifier.height(2.dp))
+
+            Spacer(
+                modifier = Modifier.height(2.dp)
+            )
+
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.labelSmall,
@@ -525,24 +818,37 @@ private fun SlotDateCard(
 }
 
 @Composable
-private fun TappaItem(giorno: String, titolo: String, desc: String) {
+private fun TappaItem(
+    giorno: String,
+    titolo: String,
+    desc: String
+) {
+
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement =
+            Arrangement.spacedBy(12.dp)
     ) {
+
         Box(
             modifier = Modifier
                 .size(8.dp)
                 .offset(y = 6.dp)
-                .background(TravelBlue, CircleShape)
+                .background(
+                    TravelBlue,
+                    CircleShape
+                )
         )
+
         Column {
+
             Text(
                 text = "$giorno: $titolo",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = TravelTextDark
             )
+
             Text(
                 text = desc,
                 style = MaterialTheme.typography.bodySmall,
@@ -552,18 +858,450 @@ private fun TappaItem(giorno: String, titolo: String, desc: String) {
     }
 }
 
-private fun formattaData(data: String): String {
-    return try {
-        val parteData = data.substringBefore("T")
+/**
+ * Selettore delle liste di preferiti.
+ *
+ * Un itinerario può essere presente in più liste contemporaneamente.
+ */
+@Composable
+private fun DialogoSceltaLista(
+    liste: List<ListaPreferiti>,
+    listeConItinerario: Set<Long>,
+    inCaricamento: Boolean,
+    operazioneInCorso: Boolean,
+    messaggio: String?,
+    errore: String?,
+    onListaClick: (ListaPreferiti) -> Unit,
+    onCreaLista: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
 
-        val parti = parteData.split("-")
+    var creazioneAperta by remember {
+        mutableStateOf(false)
+    }
+
+    var nuovoNome by remember {
+        mutableStateOf("")
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+
+        title = {
+            Text(
+                text = "Salva nei preferiti",
+                fontWeight = FontWeight.Bold,
+                color = TravelTextDark
+            )
+        },
+
+        text = {
+
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                Text(
+                    text = "In quale lista vuoi metterlo?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TravelTextMuted
+                )
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+
+                when {
+
+                    inCaricamento -> {
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 20.dp),
+                            contentAlignment =
+                                Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = TravelBlue,
+                                modifier =
+                                    Modifier.size(28.dp)
+                            )
+                        }
+                    }
+
+                    liste.isEmpty() -> {
+
+                        Text(
+                            text = "Non hai ancora nessuna lista: creane una qui sotto.",
+                            style =
+                                MaterialTheme.typography.bodySmall,
+                            color = TravelTextMuted
+                        )
+                    }
+
+                    else -> {
+
+                        Column(
+                            modifier = Modifier
+                                .heightIn(max = 260.dp)
+                                .verticalScroll(
+                                    rememberScrollState()
+                                ),
+                            verticalArrangement =
+                                Arrangement.spacedBy(8.dp)
+                        ) {
+
+                            liste.forEach { lista ->
+
+                                RigaLista(
+                                    lista = lista,
+                                    selezionata =
+                                        lista.id in
+                                                listeConItinerario,
+                                    abilitata =
+                                        !operazioneInCorso,
+                                    onClick = {
+                                        onListaClick(lista)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+
+                HorizontalDivider(
+                    color = TravelBorder
+                )
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+
+                if (creazioneAperta) {
+
+                    OutlinedTextField(
+                        value = nuovoNome,
+                        onValueChange = {
+                            nuovoNome = it
+                        },
+                        singleLine = true,
+                        label = {
+                            Text(
+                                text =
+                                    "Nome della nuova lista"
+                            )
+                        },
+                        modifier =
+                            Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(8.dp)
+                    )
+
+                    Row(
+                        horizontalArrangement =
+                            Arrangement.spacedBy(8.dp)
+                    ) {
+
+                        Button(
+                            onClick = {
+                                onCreaLista(nuovoNome)
+                                nuovoNome = ""
+                                creazioneAperta = false
+                            },
+                            enabled =
+                                nuovoNome.isNotBlank() &&
+                                        !operazioneInCorso,
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor =
+                                        TravelBlue
+                                ),
+                            shape =
+                                RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                text = "Crea e salva",
+                                color = Color.White
+                            )
+                        }
+
+                        TextButton(
+                            onClick = {
+                                creazioneAperta = false
+                                nuovoNome = ""
+                            }
+                        ) {
+                            Text(
+                                text = "Annulla",
+                                color = TravelTextMuted
+                            )
+                        }
+                    }
+
+                } else {
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(
+                                RoundedCornerShape(10.dp)
+                            )
+                            .clickable(
+                                enabled =
+                                    !operazioneInCorso
+                            ) {
+                                creazioneAperta = true
+                            }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment =
+                            Alignment.CenterVertically
+                    ) {
+
+                        Icon(
+                            imageVector =
+                                Icons.Default.Add,
+                            contentDescription = null,
+                            tint = TravelBlue,
+                            modifier =
+                                Modifier.size(20.dp)
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.width(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Crea una nuova lista",
+                            style =
+                                MaterialTheme.typography.bodyMedium,
+                            fontWeight =
+                                FontWeight.Medium,
+                            color = TravelBlue
+                        )
+                    }
+                }
+
+                if (operazioneInCorso) {
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(10.dp)
+                    )
+
+                    LinearProgressIndicator(
+                        color = TravelBlue,
+                        modifier =
+                            Modifier.fillMaxWidth()
+                    )
+                }
+
+                val avviso =
+                    errore ?: messaggio
+
+                avviso?.let {
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(10.dp)
+                    )
+
+                    Text(
+                        text = it,
+                        style =
+                            MaterialTheme.typography.bodySmall,
+                        color =
+                            if (errore != null) {
+                                ErrorRed
+                            } else {
+                                TravelBlue
+                            }
+                    )
+                }
+            }
+        },
+
+        confirmButton = {
+
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text(
+                    text = "Fine",
+                    color = TravelBlue,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    )
+}
+
+/**
+ * Riga del selettore preferiti.
+ */
+@Composable
+private fun RigaLista(
+    lista: ListaPreferiti,
+    selezionata: Boolean,
+    abilitata: Boolean,
+    onClick: () -> Unit
+) {
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(
+                RoundedCornerShape(12.dp)
+            )
+            .background(
+                if (selezionata) {
+                    TravelChipBg
+                } else {
+                    Color.Transparent
+                }
+            )
+            .clickable(
+                enabled = abilitata,
+                onClick = onClick
+            )
+            .padding(
+                horizontal = 10.dp,
+                vertical = 10.dp
+            ),
+        verticalAlignment =
+            Alignment.CenterVertically
+    ) {
+
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .clip(
+                    RoundedCornerShape(6.dp)
+                )
+                .background(
+                    if (selezionata) {
+                        TravelBlue
+                    } else {
+                        Color.Transparent
+                    }
+                )
+                .border(
+                    width = 1.5.dp,
+                    color =
+                        if (selezionata) {
+                            TravelBlue
+                        } else {
+                            TravelBorder
+                        },
+                    shape =
+                        RoundedCornerShape(6.dp)
+                ),
+            contentAlignment =
+                Alignment.Center
+        ) {
+
+            if (selezionata) {
+
+                Icon(
+                    imageVector =
+                        Icons.Default.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier =
+                        Modifier.size(16.dp)
+                )
+            }
+        }
+
+        Spacer(
+            modifier = Modifier.width(12.dp)
+        )
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+
+            Text(
+                text = lista.nome,
+                style =
+                    MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = TravelTextDark
+            )
+
+            Text(
+                text =
+                    if (lista.numeroItinerari == 1) {
+                        "1 itinerario"
+                    } else {
+                        "${lista.numeroItinerari} itinerari"
+                    },
+                style =
+                    MaterialTheme.typography.labelSmall,
+                color = TravelTextMuted
+            )
+        }
+
+        Icon(
+            imageVector =
+                if (lista.eCondivisa) {
+                    Icons.Default.Share
+                } else {
+                    Icons.Default.Lock
+                },
+            contentDescription =
+                if (lista.eCondivisa) {
+                    "Lista condivisa"
+                } else {
+                    "Lista privata"
+                },
+            tint = TravelTextMuted,
+            modifier = Modifier.size(16.dp)
+        )
+    }
+}
+
+/**
+ * Converte le date ricevute dal backend:
+ *
+ * 2026-08-26T10:30:00
+ *
+ * in:
+ *
+ * 26/08/2026
+ */
+private fun formattaData(
+    data: String
+): String {
+
+    return try {
+
+        val parteData =
+            data.substringBefore("T")
+
+        val parti =
+            parteData.split("-")
 
         if (parti.size == 3) {
+
             "${parti[2]}/${parti[1]}/${parti[0]}"
+
         } else {
+
             data
         }
+
     } catch (e: Exception) {
+
         data
     }
 }
