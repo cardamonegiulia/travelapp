@@ -239,7 +239,7 @@ fun ItinerarioDetailScreen(
                         items(uiState.disponibilitaItinerario) { disp ->
                             val isSelected = uiState.idSelezionato == disp.id
                             SlotDateCard(
-                                title = "${disp.dataInizio} - ${disp.dataFine}",
+                                title = "${formattaData(disp.dataInizio)} - ${formattaData(disp.dataFine)}",
                                 subtitle = "${disp.postiDisponibili} posti rimasti",
                                 isSelected = isSelected,
                                 onClick = { viewModel.selezionaSlot(disp.id) }
@@ -458,7 +458,7 @@ fun AttivitaDetailScreen(
                         items(uiState.sessioniAttivita) { sess ->
                             val isSelected = uiState.idSelezionato == sess.id
                             SlotDateCard(
-                                title = sess.dataInizio.substringBefore("T"),
+                                title = formattaData(sess.dataInizio),
                                 subtitle = "${sess.postiDisponibili} posti",
                                 isSelected = isSelected,
                                 onClick = { viewModel.selezionaSlot(sess.id) }
@@ -549,5 +549,21 @@ private fun TappaItem(giorno: String, titolo: String, desc: String) {
                 color = TravelTextMuted
             )
         }
+    }
+}
+
+private fun formattaData(data: String): String {
+    return try {
+        val parteData = data.substringBefore("T")
+
+        val parti = parteData.split("-")
+
+        if (parti.size == 3) {
+            "${parti[2]}/${parti[1]}/${parti[0]}"
+        } else {
+            data
+        }
+    } catch (e: Exception) {
+        data
     }
 }

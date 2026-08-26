@@ -443,5 +443,9 @@ private fun campoColori() = OutlinedTextFieldDefaults.colors(
     unfocusedLabelColor = TextSecondary,
     cursorColor = PrimaryBlue,
     focusedTextColor = TextPrimary,
-    unfocusedTextColor = TextPrimary
+    unfocusedTextColor = TextPrimary,
+    errorTextColor = TextPrimary,
+    errorCursorColor = ErrorRed,
+    errorBorderColor = ErrorRed,
+    errorLabelColor = ErrorRed
 )
