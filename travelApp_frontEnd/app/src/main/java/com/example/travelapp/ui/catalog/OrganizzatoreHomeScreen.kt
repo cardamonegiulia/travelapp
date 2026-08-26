@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -66,6 +67,7 @@ fun OrganizzatoreHomeScreen(
     onCreaAttivita: () -> Unit,
     onModificaItinerario: (Itinerario) -> Unit,
     onModificaAttivita: (SingolaAttivita) -> Unit,
+    onVaiProfilo: () -> Unit = {},
     onLogout: () -> Unit,
     homeViewModel: OrganizzatoreHomeViewModel = viewModel(),
     offerteViewModel: OfferteManagementViewModel = viewModel()
@@ -92,8 +94,19 @@ fun OrganizzatoreHomeScreen(
             TopAppBar(
                 title = { Text("Area Organizzatore", fontWeight = FontWeight.Bold, color = TravelTextDark) },
                 actions = {
+                    IconButton(onClick = onVaiProfilo) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profilo",
+                            tint = TravelBlue
+                        )
+                    }
                     IconButton(onClick = onLogout) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout", tint = Color(0xFFDC2626))
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Logout",
+                            tint = Color(0xFFDC2626)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)

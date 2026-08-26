@@ -10,22 +10,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,54 +31,30 @@ import com.example.travelapp.ui.components.ProfileIcons
 import com.example.travelapp.ui.components.ProfileMenuRow
 import com.example.travelapp.ui.components.ProfileSwitchRow
 import com.example.travelapp.ui.components.SectionTitle
+import com.example.travelapp.ui.profilo.ProfiloUiState
 import com.example.travelapp.ui.theme.BackgroundLavender
 import com.example.travelapp.ui.theme.BadgeBlue
 import com.example.travelapp.ui.theme.BadgeGrey
 import com.example.travelapp.ui.theme.BadgeIndigo
-import com.example.travelapp.ui.theme.BadgePink
 import com.example.travelapp.ui.theme.BadgePurple
 import com.example.travelapp.ui.theme.BadgeTeal
 import com.example.travelapp.ui.theme.IconBlue
 import com.example.travelapp.ui.theme.IconGrey
 import com.example.travelapp.ui.theme.IconIndigo
-import com.example.travelapp.ui.theme.IconPink
 import com.example.travelapp.ui.theme.IconPurple
 import com.example.travelapp.ui.theme.IconTeal
 
-/** Stato osservabile della schermata profilo. */
-data class ProfileUiState(
-    val name: String = "",
-    val email: String = "",
-    /** Ruolo utente: "VIAGGIATORE", "ORGANIZZATORE" o "ADMIN" */
-    val ruolo: String = "VIAGGIATORE",
-    val avatarUrl: String? = null,
-    val isDarkModeEnabled: Boolean = false,
-    val isPhotoUploading: Boolean = false,
-    val photoMessage: String? = null
-)
-
-/**
- * Schermata "Profilo": intestazione utente, sezioni dinamiche per ruolo,
- * scorciatoie alle attività, impostazioni e logout.
- */
 @Composable
 fun ProfileScreen(
-    state: ProfileUiState,
+    state: ProfiloUiState,
     onBack: () -> Unit,
     onAddProfilePhoto: () -> Unit,
     onBookingsClick: () -> Unit,
     onPaymentsClick: () -> Unit,
-    onFavoritesClick: () -> Unit,
     onReviewsClick: () -> Unit,
     onToggleDarkMode: (Boolean) -> Unit,
     onChangePassword: () -> Unit,
     onLogout: () -> Unit,
-    // Callback Catalogo e Gestione
-    onCreaItinerarioClick: () -> Unit = {},
-    onCreaAttivitaClick: () -> Unit = {},
-    onLeMieOfferteClick: () -> Unit = {},
-    onGestioneOfferteAdminClick: () -> Unit = {},
-    onGestioneUtentiAdminClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     onPhotoMessageShown: () -> Unit = {}
 ) {
@@ -121,8 +90,8 @@ fun ProfileScreen(
         }
     }
 
-    val isOrganizzatore = state.ruolo.equals("ORGANIZZATORE", ignoreCase = true)
-    val isAdmin = state.ruolo.equals("ADMIN", ignoreCase = true)
+    val isViaggiatore = !state.ruolo.contains("ORGANIZZATORE", ignoreCase = true) &&
+            !state.ruolo.contains("ADMIN", ignoreCase = true)
 
     Scaffold(
         modifier = modifier,
@@ -139,6 +108,7 @@ fun ProfileScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            // Intestazione Utente per tutti i ruoli
             ProfileHeaderCard(
                 name = state.name,
                 email = state.email,
@@ -147,73 +117,24 @@ fun ProfileScreen(
                 onAddProfilePhoto = onAddProfilePhoto
             )
 
-            // Sezione visibile SOLO a ORGANIZZATORE
-            if (isOrganizzatore) {
+            // Sezione Attività: VISIBILE SOLO AI VIAGGIATORI
+            if (isViaggiatore) {
                 SectionTitle(
-                    text = "Area Organizzatore",
+                    text = "Le mie attività",
                     modifier = Modifier.padding(top = 14.dp)
                 )
-                ProfileMenuRow(
-                    icon = Icons.Default.AddCircle,
-                    title = "Crea nuovo itinerario",
-                    iconTint = IconBlue,
-                    badgeColor = BadgeBlue,
-                    onClick = onCreaItinerarioClick
-                )
-                ProfileMenuRow(
-                    icon = Icons.Default.AddCircle,
-                    title = "Crea singola attività",
-                    iconTint = IconTeal,
-                    badgeColor = BadgeTeal,
-                    onClick = onCreaAttivitaClick
-                )
-                ProfileMenuRow(
-                    icon = Icons.AutoMirrored.Filled.List,
-                    title = "Le mie offerte pubblicate",
-                    iconTint = IconPink,
-                    badgeColor = BadgePink,
-                    onClick = onLeMieOfferteClick
-                )
+                activityItems.forEach { item ->
+                    ProfileMenuRow(
+                        icon = item.icon,
+                        title = item.title,
+                        iconTint = item.iconTint,
+                        badgeColor = item.badgeColor,
+                        onClick = item.onClick
+                    )
+                }
             }
 
-            // Sezione visibile SOLO ad ADMIN
-            if (isAdmin) {
-                SectionTitle(
-                    text = "Pannello Amministrazione",
-                    modifier = Modifier.padding(top = 14.dp)
-                )
-                ProfileMenuRow(
-                    icon = Icons.AutoMirrored.Filled.List,
-                    title = "Tutte le offerte della piattaforma",
-                    iconTint = IconPurple,
-                    badgeColor = BadgePurple,
-                    onClick = onGestioneOfferteAdminClick
-                )
-                ProfileMenuRow(
-                    icon = Icons.Default.Person,
-                    title = "Gestione utenti registrati",
-                    iconTint = IconIndigo,
-                    badgeColor = BadgeIndigo,
-                    onClick = onGestioneUtentiAdminClick
-                )
-            }
-
-            // Sezione attività standard (Per tutti gli utenti)
-            SectionTitle(
-                text = "Le mie attività",
-                modifier = Modifier.padding(top = 14.dp)
-            )
-            activityItems.forEach { item ->
-                ProfileMenuRow(
-                    icon = item.icon,
-                    title = item.title,
-                    iconTint = item.iconTint,
-                    badgeColor = item.badgeColor,
-                    onClick = item.onClick
-                )
-            }
-
-            // Impostazioni
+            // Impostazioni per tutti i ruoli
             SectionTitle(
                 text = "Impostazioni",
                 modifier = Modifier.padding(top = 14.dp)
@@ -238,7 +159,7 @@ fun ProfileScreen(
                 onClick = onLogout,
                 modifier = Modifier.padding(top = 20.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -254,17 +175,13 @@ private data class ActivityItem(
 @Preview(showBackground = true, showSystemUi = true, name = "Profilo")
 @Composable
 private fun ProfileScreenPreview() {
-    var state by remember {
-        mutableStateOf(
-            ProfileUiState(
-                name = "Mario Rossi",
-                email = "mario@example.it",
-                ruolo = "VIAGGIATORE",
-                avatarUrl = null,
-                isDarkModeEnabled = false
-            )
-        )
-    }
+    val state = ProfiloUiState(
+        name = "Mario Rossi",
+        email = "mario@example.it",
+        ruolo = "VIAGGIATORE",
+        avatarUrl = null,
+        isDarkModeEnabled = false
+    )
 
     MaterialTheme {
         ProfileScreen(
@@ -273,16 +190,10 @@ private fun ProfileScreenPreview() {
             onAddProfilePhoto = {},
             onBookingsClick = {},
             onPaymentsClick = {},
-            onFavoritesClick = {},
             onReviewsClick = {},
-            onToggleDarkMode = { enabled -> state = state.copy(isDarkModeEnabled = enabled) },
+            onToggleDarkMode = {},
             onChangePassword = {},
-            onLogout = {},
-            onCreaItinerarioClick = {},
-            onCreaAttivitaClick = {},
-            onLeMieOfferteClick = {},
-            onGestioneOfferteAdminClick = {},
-            onGestioneUtentiAdminClick = {}
+            onLogout = {}
         )
     }
 }
