@@ -59,6 +59,9 @@ services:
 
     volumes:
       - ./keycloak-import:/opt/keycloak/data/import
+      # Dati interni di Keycloak (utenti, credenziali, sessioni): senza questo volume
+      # vivono solo nel filesystem del container e spariscono a ogni `docker compose down`.
+      - keycloak_data:/opt/keycloak/data
 
     depends_on:
       - mailpit
@@ -75,3 +78,4 @@ services:
 
 volumes:
   immagini:
+  keycloak_data:
