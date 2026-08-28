@@ -1,8 +1,10 @@
 package com.example.travelapp.ui.catalog
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.remote.dto.SingolaAttivitaRequestDto
@@ -24,8 +26,8 @@ data class CreaAttivitaUiState(
 )
 
 class CreaAttivitaViewModel(
-    application: android.app.Application
-) : androidx.lifecycle.AndroidViewModel(application) {
+    application: Application
+) : AndroidViewModel(application) {
 
     private val repository =
         SingolaAttivitaRepository(
@@ -67,6 +69,15 @@ class CreaAttivitaViewModel(
             }
 
             if (result.isSuccess) {
+                val attivitaSalvata = result.getOrNull()
+
+                if (immagineUri != null && attivitaSalvata != null) {
+                    val uploadResult = repository.caricaImmagine(context, attivitaSalvata.id, immagineUri)
+                    uploadResult.onFailure { errore ->
+                        Log.e("UploadAttivita", "Upload fallito per attivita ${attivitaSalvata.id}: ${errore.message}")
+                    }
+                }
+
                 _uiState.update { it.copy(isSalvataggioInCorso = false, salvataggioCompletato = true) }
             } else {
                 _uiState.update {

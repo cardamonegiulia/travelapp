@@ -3,6 +3,7 @@ package com.example.travelapp.ui.catalog
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -56,9 +57,13 @@ fun CreaAttivitaScreen(
     }
     var immagineUri by remember { mutableStateOf<Uri?>(null) }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? -> immagineUri = uri }
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            immagineUri = uri
+        }
+    }
 
     val giorniSettimana = listOf("Lun" to 1, "Mar" to 2, "Mer" to 3, "Gio" to 4, "Ven" to 5, "Sab" to 6, "Dom" to 7)
     var giorniSelezionati by remember { mutableStateOf(setOf(6, 7)) }
@@ -126,12 +131,17 @@ fun CreaAttivitaScreen(
                     .height(160.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color(0xFFE2E8F0))
-                    .clickable { imagePickerLauncher.launch("image/*") },
+                    .clickable {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
                 contentAlignment = Alignment.Center
             ) {
-                if (immagineUri != null) {
+                val imageUrl = attivitaDaModificare?.immagini?.firstOrNull()?.url
+                if (immagineUri != null || imageUrl != null) {
                     AsyncImage(
-                        model = immagineUri,
+                        model = immagineUri ?: imageUrl,
                         contentDescription = "Copertina attività",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -245,7 +255,7 @@ fun CreaAttivitaScreen(
                                 titolo = titolo,
                                 descrizione = descrizione,
                                 luogo = luogo,
-                                prezzo = BigDecimal(prezzoNumerico!!),
+                                prezzo = BigDecimal.valueOf(prezzoNumerico!!),
                                 durataMinuti = minutiTotali,
                                 maxPartecipanti = postiNumerici!!
                             ),
