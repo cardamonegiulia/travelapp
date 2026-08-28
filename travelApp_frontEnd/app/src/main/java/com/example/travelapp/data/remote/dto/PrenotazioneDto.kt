@@ -18,6 +18,8 @@ data class PrenotazioneDto(
     val statoPrenotazione: StatoPrenotazione,
     val statoPagamento: StatoPagamento?,
     val dataPrenotazione: String,
+    val dataInizio: String?,
+    val dataFine: String?,
     val tipoPrenotazione: TipoPrenotazione,
     val titolo: String,
     val luogo: String
@@ -33,7 +35,9 @@ fun PrenotazioneDto.toDomain(): Prenotazione {
         statoPrenotazione = statoPrenotazione,
         statoPagamento = statoPagamento,
         tipoPrenotazione = tipoPrenotazione,
-        dataPrenotazione = dataPrenotazione
+        dataPrenotazione = dataPrenotazione,
+        dataInizio = dataInizio,
+        dataFine = dataFine
     )
 }
 

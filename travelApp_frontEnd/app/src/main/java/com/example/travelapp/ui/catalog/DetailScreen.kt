@@ -42,6 +42,7 @@ import com.example.travelapp.domain.model.ListaPreferiti
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.components.AuthedAsyncImage
 import com.example.travelapp.ui.theme.*
+import com.example.travelapp.ui.util.formattaData
 
 @Composable
 fun ItinerarioDetailScreen(
@@ -802,12 +803,3 @@ private fun RigaLista(
     }
 }
 
-private fun formattaData(data: String): String {
-    return try {
-        val parteData = data.substringBefore("T")
-        val parti = parteData.split("-")
-        if (parti.size == 3) "${parti[2]}/${parti[1]}/${parti[0]}" else data
-    } catch (e: Exception) {
-        data
-    }
-}

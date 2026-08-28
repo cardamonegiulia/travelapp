@@ -31,6 +31,7 @@ import com.example.travelapp.ui.theme.ErrorRed
 import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
+import com.example.travelapp.ui.util.formattaData
 
 @Composable
 fun PrenotazioneDettaglioScreen(
@@ -111,8 +112,13 @@ fun PrenotazioneDettaglioScreen(
                     )
 
                     DettaglioRiga(
-                        etichetta = "Data prenotazione",
-                        valore = prenotazione.dataPrenotazione
+                        etichetta = "Data inizio",
+                        valore = formattaData(prenotazione.dataInizio)
+                    )
+
+                    DettaglioRiga(
+                        etichetta = "Data fine",
+                        valore = formattaData(prenotazione.dataFine)
                     )
 
                     DettaglioRiga(

@@ -31,6 +31,7 @@ import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 import com.example.travelapp.ui.theme.WarningBackground
 import com.example.travelapp.ui.theme.WarningYellow
+import com.example.travelapp.ui.util.formattaData
 
 @Composable
 fun PrenotazioneCard(
@@ -112,7 +113,7 @@ fun PrenotazioneCard(
                 )
 
                 Text(
-                    text = prenotazione.dataPrenotazione,
+                    text = formattaData(prenotazione.dataPrenotazione),
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary
                 )
@@ -280,50 +281,4 @@ private fun StatoPagamentoBadge(
             )
         )
     }
-}
-
-
-@Preview(
-    showBackground = true,
-    showSystemUi = false,
-    name = "Prenotazione Card"
-)
-@Composable
-private fun PrenotazioneCardPreview() {
-    PrenotazioneCard(
-        prenotazione = Prenotazione(
-            id = 1L,
-            titolo = "Tour delle Cantine del Chianti",
-            luogo = "Toscana",
-            numeroPartecipanti = 2,
-            prezzoTotale = 240.0,
-            statoPrenotazione = StatoPrenotazione.CONFERMATA,
-            statoPagamento = StatoPagamento.COMPLETATO,
-            tipoPrenotazione = TipoPrenotazione.ITINERARIO,
-            dataPrenotazione = "23/08/2026"
-        ),
-        onClick = {}
-    )
-}
-
-@Preview(
-    showBackground = true,
-    name = "Prenotazione cancellata"
-)
-@Composable
-private fun PrenotazioneCancellataPreview() {
-    PrenotazioneCard(
-        prenotazione = Prenotazione(
-            id = 2L,
-            titolo = "Escursione Etna",
-            luogo = "Catania",
-            numeroPartecipanti = 1,
-            prezzoTotale = 85.0,
-            statoPrenotazione = StatoPrenotazione.CANCELLATA,
-            statoPagamento = StatoPagamento.RIMBORSATO,
-            tipoPrenotazione = TipoPrenotazione.SESSIONE_SINGOLA,
-            dataPrenotazione = "20/08/2026"
-        ),
-        onClick = {}
-    )
 }

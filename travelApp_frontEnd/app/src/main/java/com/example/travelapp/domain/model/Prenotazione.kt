@@ -11,7 +11,9 @@ data class Prenotazione(
     val statoPrenotazione: StatoPrenotazione,
     val statoPagamento: StatoPagamento?,
     val tipoPrenotazione: TipoPrenotazione,
-    val dataPrenotazione: String
+    val dataPrenotazione: String,
+    val dataInizio: String?,
+    val dataFine: String?
 )
 
 
