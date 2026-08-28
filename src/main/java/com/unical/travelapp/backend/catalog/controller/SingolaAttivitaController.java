@@ -105,12 +105,10 @@ public class SingolaAttivitaController {
 
     /**
      * Restituisce le sessioni tramite DTO.
-     *
      * È importante non restituire direttamente
      * SessioneSingolaAttivita perché l'entity contiene il
      * riferimento a SingolaAttivita, che a sua volta contiene
      * la lista delle sessioni.
-     *
      * Restituendo direttamente le entity si genera quindi una
      * ricorsione durante la serializzazione JSON.
      */
