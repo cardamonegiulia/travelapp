@@ -1,12 +1,15 @@
 package com.unical.travelapp.backend.catalog.entity;
 
 import com.unical.travelapp.backend.common.audit.Auditable;
+import com.unical.travelapp.backend.experience.models.Immagine;
+import com.unical.travelapp.backend.identity.entity.Utente;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
-import com.unical.travelapp.backend.identity.entity.Utente;
 
 @Entity
 @Table(name = "singole_attivita")
@@ -39,4 +42,8 @@ public class SingolaAttivita extends Auditable {
 
     @OneToMany(mappedBy = "singolaAttivita", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SessioneSingolaAttivita> sessioni;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "singola_attivita_id")
+    private List<Immagine> immagini = new ArrayList<>();
 }

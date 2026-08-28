@@ -1,5 +1,7 @@
 package com.example.travelapp.data.remote.dto
 
+import com.example.travelapp.data.remote.ApiClient
+import com.example.travelapp.domain.model.ImmagineResponse
 import com.example.travelapp.domain.model.Itinerario
 import java.math.BigDecimal
 
@@ -12,7 +14,8 @@ data class ItinerarioResponseDto(
     val prezzoBase: BigDecimal?,
     val durataGiorni: Int?,
     val maxPartecipanti: Int?,
-    val stato: String?
+    val stato: String?,
+    val immagini: List<ImmagineDto>? = null
 ) {
     fun toDomain(): Itinerario = Itinerario(
         id = id,
@@ -23,7 +26,14 @@ data class ItinerarioResponseDto(
         prezzoBase = prezzoBase,
         durataGiorni = durataGiorni,
         maxPartecipanti = maxPartecipanti,
-        stato = stato
+        stato = stato,
+        immagini = immagini?.map { img ->
+            ImmagineResponse(
+                id = img.id,
+                url = ApiClient.urlAssoluto(img.url),
+                tipo = img.contentType
+            )
+        } ?: emptyList()
     )
 }
 

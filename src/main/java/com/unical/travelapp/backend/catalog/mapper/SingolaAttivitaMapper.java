@@ -3,12 +3,18 @@ package com.unical.travelapp.backend.catalog.mapper;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaDTO;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaRequestDTO;
 import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
+import com.unical.travelapp.backend.experience.mapper.ImmagineMapper;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SingolaAttivitaMapper {
 
-    // id/organizzatore non sono nel DTO di request: li imposta il chiamante (controller)
+    private final ImmagineMapper immagineMapper;
+
+    public SingolaAttivitaMapper(ImmagineMapper immagineMapper) {
+        this.immagineMapper = immagineMapper;
+    }
+
     public SingolaAttivita fromRequest(SingolaAttivitaRequestDTO dto) {
         if (dto == null) return null;
 
@@ -33,6 +39,7 @@ public class SingolaAttivitaMapper {
         dto.setPrezzo(attivita.getPrezzo());
         dto.setDurataMinuti(attivita.getDurataMinuti());
         dto.setMaxPartecipanti(attivita.getMaxPartecipanti());
+        dto.setImmagini(immagineMapper.toResponse(attivita.getImmagini()));
 
         if (attivita.getOrganizzatore() != null) {
             dto.setOrganizzatoreId(attivita.getOrganizzatore().getId());

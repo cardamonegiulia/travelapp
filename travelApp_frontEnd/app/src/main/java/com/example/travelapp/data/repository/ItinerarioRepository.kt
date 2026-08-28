@@ -1,9 +1,16 @@
 package com.example.travelapp.data.repository
 
+import android.content.Context
+import android.net.Uri
+import com.example.travelapp.data.remote.CorpoImmagine
+import com.example.travelapp.data.remote.ImmagineNonCaricabile
 import com.example.travelapp.data.remote.api.ItinerarioApi
 import com.example.travelapp.data.remote.dto.DisponibilitaItinerarioResponseDto
 import com.example.travelapp.data.remote.dto.ItinerarioRequestDto
+import com.example.travelapp.domain.model.ImmagineResponse
 import com.example.travelapp.domain.model.Itinerario
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class ItinerarioRepository(
     private val api: ItinerarioApi
@@ -81,6 +88,28 @@ class ItinerarioRepository(
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Errore eliminazione itinerario: HTTP ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun caricaImmagine(context: Context, id: Long, uri: Uri): Result<ImmagineResponse> {
+        val parte = try {
+            withContext(Dispatchers.IO) { CorpoImmagine.da(context, uri) }
+        } catch (e: ImmagineNonCaricabile) {
+            return Result.failure(e)
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
+
+        return try {
+            val response = api.caricaImmagine(id, parte)
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
+                Result.success(body)
+            } else {
+                Result.failure(Exception("Errore upload immagine itinerario: HTTP ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
