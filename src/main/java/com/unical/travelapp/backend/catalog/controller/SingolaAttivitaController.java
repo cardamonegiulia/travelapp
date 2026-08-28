@@ -1,8 +1,8 @@
 package com.unical.travelapp.backend.catalog.controller;
 
+import com.unical.travelapp.backend.catalog.dto.SessioneSingolaAttivitaDTO;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaDTO;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaRequestDTO;
-import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
 import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
 import com.unical.travelapp.backend.catalog.mapper.SingolaAttivitaMapper;
 import com.unical.travelapp.backend.catalog.service.SingolaAttivitaService;
@@ -90,12 +90,18 @@ public class SingolaAttivitaController {
             @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
             @ApiResponse(responseCode = "404", description = "Attività non trovata")
     })
-    public ResponseEntity<List<SessioneSingolaAttivita>> getSessioniByAttivita(
+
+    public ResponseEntity<List<SessioneSingolaAttivitaDTO>> getSessioniByAttivita(
             @PathVariable Long id
     ) {
-        return ResponseEntity.ok(
-                attivitaService.getSessioniByAttivitaId(id)
-        );
+        List<SessioneSingolaAttivitaDTO> sessioni =
+                attivitaService
+                        .getSessioniByAttivitaId(id)
+                        .stream()
+                        .map(attivitaMapper::sessioneToDTO)
+                        .toList();
+
+        return ResponseEntity.ok(sessioni);
     }
 
     @PostMapping("/con-sessioni")

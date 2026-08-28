@@ -1,7 +1,9 @@
 package com.unical.travelapp.backend.catalog.mapper;
 
+import com.unical.travelapp.backend.catalog.dto.SessioneSingolaAttivitaDTO;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaDTO;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaRequestDTO;
+import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
 import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
 import org.springframework.stereotype.Component;
 
@@ -38,5 +40,21 @@ public class SingolaAttivitaMapper {
             dto.setOrganizzatoreId(attivita.getOrganizzatore().getId());
         }
         return dto;
+    }
+
+    public SessioneSingolaAttivitaDTO sessioneToDTO(
+            SessioneSingolaAttivita sessione
+    ) {
+        if (sessione == null) {
+            return null;
+        }
+
+        return new SessioneSingolaAttivitaDTO(
+                sessione.getId(),
+                sessione.getDataInizio(),
+                sessione.getDataFine(),
+                sessione.getPostiDisponibili(),
+                sessione.getStato()
+        );
     }
 }
