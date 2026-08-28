@@ -1,7 +1,9 @@
 package com.unical.travelapp.backend.catalog.mapper;
 
+import com.unical.travelapp.backend.catalog.dto.DisponibilitaItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
+import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.experience.mapper.ImmagineMapper;
 import org.springframework.stereotype.Component;
@@ -48,4 +50,21 @@ public class ItinerarioMapper {
         }
         return dto;
     }
+
+    public DisponibilitaItinerarioDTO disponibilitaToDTO(
+            DisponibilitaItinerario disponibilita
+    ) {
+        if (disponibilita == null) {
+            return null;
+        }
+
+        return new DisponibilitaItinerarioDTO(
+                disponibilita.getId(),
+                disponibilita.getDataInizio(),
+                disponibilita.getDataFine(),
+                disponibilita.getPostiDisponibili(),
+                null
+        );
+    }
+
 }

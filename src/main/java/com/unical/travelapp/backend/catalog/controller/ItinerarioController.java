@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.catalog.controller;
 
+import com.unical.travelapp.backend.catalog.dto.DisponibilitaItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
@@ -79,10 +80,17 @@ public class ItinerarioController {
     // --- Endpoint per recuperare le disponibilità (richiesto per il booking) ---
     @GetMapping("/{id}/disponibilita")
     @Operation(summary = "Restituisce le disponibilità di un itinerario")
-    public ResponseEntity<List<com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario>> getDisponibilitaByItinerario(
+    public ResponseEntity<List<DisponibilitaItinerarioDTO>> getDisponibilitaByItinerario(
             @PathVariable Long id
     ) {
-        return ResponseEntity.ok(itinerarioService.getDisponibilitaByItinerarioId(id));
+        List<DisponibilitaItinerarioDTO> disponibilita =
+                itinerarioService
+                        .getDisponibilitaByItinerarioId(id)
+                        .stream()
+                        .map(itinerarioMapper::disponibilitaToDTO)
+                        .toList();
+
+        return ResponseEntity.ok(disponibilita);
     }
 
     @PostMapping
