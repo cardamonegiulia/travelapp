@@ -3,6 +3,7 @@ package com.example.travelapp.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,9 +21,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            TravelAppTheme {
+
+            val temaSistema = isSystemInDarkTheme()
+
+            var temaScuro by remember {
+                mutableStateOf(temaSistema)
+            }
+
+            TravelAppTheme(
+                darkTheme = temaScuro
+            ) {
                 AppNavigation(
-                    onExit = { finish() }
+                    onExit = { finish() },
+                    onDarkModeChanged = {
+                        temaScuro = it
+                    }
                 )
             }
         }
@@ -31,7 +44,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigation(
-    onExit: () -> Unit
+    onExit: () -> Unit,
+    onDarkModeChanged: (Boolean) -> Unit
 ) {
 
     var schermataCorrente by remember {
@@ -39,28 +53,28 @@ fun AppNavigation(
     }
 
     /*
-     * Ruolo ottenuto al login.
-     * Viene passato ad AppNavGraph come fallback
-     * mentre ProfiloViewModel recupera il profilo reale.
+     * Ruolo ottenuto durante il login.
+     * AppNavGraph lo utilizza come fallback mentre
+     * viene caricato il profilo reale dal backend.
      */
     var ruoloUtente by remember {
         mutableStateOf<String?>(null)
     }
 
     /*
-     * Dopo una registrazione riuscita conserviamo l'email
-     * per riproporla nella schermata di login.
+     * Dopo una registrazione riuscita conserviamo
+     * l'email per precompilarla nel login.
      */
     var emailAppenaRegistrata by remember {
         mutableStateOf<String?>(null)
     }
 
     /*
-     * Cambia a ogni login riuscito.
+     * Cambia dopo ogni login riuscito.
      *
-     * Serve per creare un nuovo ProfiloViewModel per ogni
-     * sessione ed evitare di riutilizzare dati/ruolo
-     * dell'utente precedente dopo logout e nuovo login.
+     * In questo modo viene creato un nuovo
+     * ProfiloViewModel per ogni sessione e non
+     * rimangono dati dell'utente precedente.
      */
     var sessioneId by remember {
         mutableStateOf(0)
@@ -71,66 +85,111 @@ fun AppNavigation(
         "login" -> {
 
             LoginScreen(
+
                 onLoginSuccessViaggiatore = {
-                    ruoloUtente = "VIAGGIATORE"
+
+                    ruoloUtente =
+                        "VIAGGIATORE"
+
                     sessioneId++
-                    schermataCorrente = "app"
+
+                    schermataCorrente =
+                        "app"
                 },
 
                 onLoginSuccessOrganizzatore = {
-                    ruoloUtente = "ORGANIZZATORE"
+
+                    ruoloUtente =
+                        "ORGANIZZATORE"
+
                     sessioneId++
-                    schermataCorrente = "app"
+
+                    schermataCorrente =
+                        "app"
                 },
 
                 onVaiRegistrazione = {
-                    emailAppenaRegistrata = null
-                    schermataCorrente = "registrazione"
+
+                    emailAppenaRegistrata =
+                        null
+
+                    schermataCorrente =
+                        "registrazione"
                 },
 
-                emailPreCompilata = emailAppenaRegistrata
+                emailPreCompilata =
+                    emailAppenaRegistrata
             )
         }
+
 
         "registrazione" -> {
 
             RegistrazioneScreen(
+
                 onRegistrazioneSuccess = { email ->
-                    emailAppenaRegistrata = email
-                    schermataCorrente = "login"
+
+                    emailAppenaRegistrata =
+                        email
+
+                    schermataCorrente =
+                        "login"
                 },
 
                 onVaiLogin = {
-                    schermataCorrente = "login"
+
+                    schermataCorrente =
+                        "login"
                 }
             )
         }
 
+
         "app" -> {
 
             AppNavGraph(
-                profiloViewModel = viewModel(
-                    key = "profilo-$sessioneId"
-                ),
 
-                ruoloIniziale = ruoloUtente,
+                profiloViewModel =
+                    viewModel(
+                        key =
+                            "profilo-$sessioneId"
+                    ),
+
+                ruoloIniziale =
+                    ruoloUtente,
 
                 /*
-                 * Se si esce normalmente dalla navigazione
-                 * principale, chiudiamo l'Activity.
+                 * Fine della navigazione:
+                 * chiude l'Activity.
                  */
-                onExitApp = onExit,
+                onExitApp =
+                    onExit,
 
                 /*
-                 * Il logout vero viene gestito dentro AppNavGraph:
-                 * lì viene cancellato il token tramite TokenManager.
-                 * Qui riportiamo semplicemente l'utente al login.
+                 * Il token viene cancellato da
+                 * AppNavGraph tramite TokenManager.
+                 * Qui riportiamo semplicemente
+                 * l'app alla schermata di login.
                  */
                 onLogout = {
-                    ruoloUtente = null
-                    emailAppenaRegistrata = null
-                    schermataCorrente = "login"
-                }
+
+                    ruoloUtente =
+                        null
+
+                    emailAppenaRegistrata =
+                        null
+
+                    schermataCorrente =
+                        "login"
+                },
+
+                /*
+                 * Riceve dal profilo la preferenza
+                 * Light/Dark e la propaga al tema
+                 * principale dell'app.
+                 */
+                onDarkModeChanged =
+                    onDarkModeChanged
             )
         }
     }

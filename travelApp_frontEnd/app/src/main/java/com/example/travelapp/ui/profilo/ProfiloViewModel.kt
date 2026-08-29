@@ -15,12 +15,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Gestisce lo stato e la logica della schermata Profilo.
- *
- * Usa AndroidViewModel perché il caricamento della foto profilo
- * richiede un Context per accedere al ContentResolver.
- */
 class ProfiloViewModel(
     application: Application
 ) : AndroidViewModel(application) {
@@ -34,16 +28,19 @@ class ProfiloViewModel(
     val state: StateFlow<ProfiloUiState> =
         _state.asStateFlow()
 
+
     init {
         inizializzaDaCache()
         caricaProfilo()
     }
 
-    /**
-     * Mostra subito nome, email e ruolo eventualmente già salvati
-     * nel DataStore mentre viene caricato il profilo reale dal backend.
+
+    /*
+     * Mostra subito eventuali dati già salvati localmente
+     * mentre viene recuperato il profilo reale dal backend.
      */
     private fun inizializzaDaCache() {
+
         viewModelScope.launch {
 
             val nome =
@@ -64,10 +61,12 @@ class ProfiloViewModel(
                     .firstOrNull()
                     ?: "VIAGGIATORE"
 
+
             if (
                 nome.isNotBlank() ||
                 email.isNotBlank()
             ) {
+
                 _state.update {
                     it.copy(
                         name = nome,
@@ -79,11 +78,13 @@ class ProfiloViewModel(
         }
     }
 
-    /**
+
+    /*
      * Recupera il profilo aggiornato dal backend.
      *
-     * Se la chiamata fallisce ma esiste ancora un JWT,
-     * utilizziamo i dati contenuti nel token come fallback.
+     * Se il backend non risponde ma esiste ancora
+     * un JWT valido, utilizziamo i dati del token
+     * come fallback.
      */
     fun caricaProfilo() {
 
@@ -94,6 +95,7 @@ class ProfiloViewModel(
             )
         }
 
+
         viewModelScope.launch {
 
             repository
@@ -102,7 +104,10 @@ class ProfiloViewModel(
                 .onSuccess { utente ->
 
                     _state.update {
-                        it.conProfilo(utente).copy(
+
+                        it.conProfilo(
+                            utente
+                        ).copy(
                             isLoading = false,
                             errorMessage = null
                         )
@@ -113,8 +118,11 @@ class ProfiloViewModel(
 
                     val token =
                         TokenManager
-                            .getToken(getApplication())
+                            .getToken(
+                                getApplication()
+                            )
                             .firstOrNull()
+
 
                     if (!token.isNullOrBlank()) {
 
@@ -130,26 +138,35 @@ class ProfiloViewModel(
                             KeycloakManager
                                 .estraiRuolo(token)
 
+
                         _state.update {
+
                             it.copy(
+
                                 isLoading = false,
 
                                 name =
-                                    if (nomeJwt.isNotBlank()) {
+                                    if (
+                                        nomeJwt.isNotBlank()
+                                    ) {
                                         nomeJwt
                                     } else {
                                         it.name
                                     },
 
                                 email =
-                                    if (emailJwt.isNotBlank()) {
+                                    if (
+                                        emailJwt.isNotBlank()
+                                    ) {
                                         emailJwt
                                     } else {
                                         it.email
                                     },
 
                                 ruolo =
-                                    if (ruoloJwt.isNotBlank()) {
+                                    if (
+                                        ruoloJwt.isNotBlank()
+                                    ) {
                                         ruoloJwt
                                     } else {
                                         it.ruolo
@@ -162,6 +179,7 @@ class ProfiloViewModel(
                     } else {
 
                         _state.update {
+
                             it.copy(
                                 isLoading = false,
                                 errorMessage =
@@ -173,22 +191,35 @@ class ProfiloViewModel(
         }
     }
 
-    /**
-     * Aggiorna immediatamente l'avatar con l'immagine locale.
-     * Se l'upload fallisce viene ripristinata quella precedente.
+
+    /*
+     * Aggiornamento foto profilo.
+     *
+     * Mostriamo subito l'immagine locale.
+     * Se l'upload fallisce ripristiniamo quella precedente.
      */
-    fun cambiaFotoProfilo(uri: Uri) {
+    fun cambiaFotoProfilo(
+        uri: Uri
+    ) {
 
         val precedente =
             _state.value.avatarUrl
 
+
         _state.update {
+
             it.copy(
-                avatarUrl = uri.toString(),
-                isPhotoUploading = true,
-                photoMessage = null
+                avatarUrl =
+                    uri.toString(),
+
+                isPhotoUploading =
+                    true,
+
+                photoMessage =
+                    null
             )
         }
+
 
         viewModelScope.launch {
 
@@ -198,8 +229,13 @@ class ProfiloViewModel(
                 .onSuccess { utente ->
 
                     _state.update {
-                        it.conProfilo(utente).copy(
-                            isPhotoUploading = false,
+
+                        it.conProfilo(
+                            utente
+                        ).copy(
+                            isPhotoUploading =
+                                false,
+
                             photoMessage =
                                 "Foto profilo aggiornata"
                         )
@@ -209,9 +245,14 @@ class ProfiloViewModel(
                 .onFailure { errore ->
 
                     _state.update {
+
                         it.copy(
-                            avatarUrl = precedente,
-                            isPhotoUploading = false,
+                            avatarUrl =
+                                precedente,
+
+                            isPhotoUploading =
+                                false,
+
                             photoMessage =
                                 errore.message
                                     ?: "Caricamento non riuscito"
@@ -221,18 +262,22 @@ class ProfiloViewModel(
         }
     }
 
+
     fun rimuoviFotoProfilo() {
 
         val precedente =
             _state.value.avatarUrl
 
+
         _state.update {
+
             it.copy(
                 avatarUrl = null,
                 isPhotoUploading = true,
                 photoMessage = null
             )
         }
+
 
         viewModelScope.launch {
 
@@ -242,8 +287,11 @@ class ProfiloViewModel(
                 .onSuccess {
 
                     _state.update {
+
                         it.copy(
-                            isPhotoUploading = false,
+                            isPhotoUploading =
+                                false,
+
                             photoMessage =
                                 "Foto profilo rimossa"
                         )
@@ -253,9 +301,14 @@ class ProfiloViewModel(
                 .onFailure { errore ->
 
                     _state.update {
+
                         it.copy(
-                            avatarUrl = precedente,
-                            isPhotoUploading = false,
+                            avatarUrl =
+                                precedente,
+
+                            isPhotoUploading =
+                                false,
+
                             photoMessage =
                                 errore.message
                                     ?: "Rimozione non riuscita"
@@ -265,44 +318,119 @@ class ProfiloViewModel(
         }
     }
 
+
+    /*
+     * TEMA LIGHT / DARK
+     *
+     * Cambia immediatamente il tema nella UI.
+     *
+     * Se abbiamo già l'id dell'utente,
+     * salviamo anche la preferenza nel backend.
+     *
+     * In caso di errore ripristiniamo il valore precedente.
+     */
     fun cambiaTemaScuro(
         attivo: Boolean
     ) {
-        // TODO:
-        // rendere persistente e propagare realmente
-        // la preferenza a TravelAppTheme.
+
+        val precedente =
+            _state.value.isDarkModeEnabled
+
+        val id =
+            _state.value.id
+
+
         _state.update {
+
             it.copy(
-                isDarkModeEnabled = attivo
+                isDarkModeEnabled =
+                    attivo
             )
+        }
+
+
+        /*
+         * Se il profilo non è ancora stato caricato
+         * non possiamo aggiornare l'utente sul backend.
+         */
+        if (id == null) {
+            return
+        }
+
+
+        viewModelScope.launch {
+
+            repository
+                .aggiornaTema(
+                    id,
+                    attivo
+                )
+
+                .onFailure {
+
+                    /*
+                     * Rollback grafico in caso
+                     * di errore backend.
+                     */
+                    _state.update {
+
+                        it.copy(
+                            isDarkModeEnabled =
+                                precedente
+                        )
+                    }
+                }
         }
     }
 
+
+    /*
+     * Dopo aver mostrato Snackbar / messaggio
+     * lo eliminiamo dallo stato.
+     */
     fun messaggioMostrato() {
+
         _state.update {
+
             it.copy(
                 photoMessage = null
             )
         }
     }
 
-    /**
-     * Converte i dati del dominio nello stato UI
-     * preservando gli altri campi dello stato corrente.
+
+    /*
+     * Aggiorna lo stato UI con il profilo reale ricevuto
+     * dal backend.
+     *
+     * Qui uniamo le informazioni che servivano
+     * sia al tuo branch sia a quello di Giulia.
      */
     private fun ProfiloUiState.conProfilo(
         utente: Utente
     ): ProfiloUiState {
 
         val nomeValido =
-            if (utente.nomeCompleto.isNotBlank()) {
+
+            if (
+                utente.nomeCompleto.isNotBlank()
+            ) {
+
                 utente.nomeCompleto
+
             } else {
+
                 utente.nome
             }
 
+
         return copy(
-            utente = utente,
+
+            id =
+                utente.id,
+
+            utente =
+                utente,
 
             name =
                 nomeValido.ifBlank {
@@ -319,7 +447,18 @@ class ProfiloViewModel(
                     ?: ruolo,
 
             avatarUrl =
-                utente.fotoProfiloUrl
+                utente.fotoProfiloUrl,
+
+            /*
+             * Il backend salva il tema come stringa.
+             */
+            isDarkModeEnabled =
+                utente.tema
+                    ?.equals(
+                        "SCURO",
+                        ignoreCase = true
+                    )
+                    ?: isDarkModeEnabled
         )
     }
 }

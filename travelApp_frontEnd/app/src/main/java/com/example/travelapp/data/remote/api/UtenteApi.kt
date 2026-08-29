@@ -1,5 +1,6 @@
 package com.example.travelapp.data.remote.api
 
+import com.example.travelapp.data.remote.dto.AggiornaTemaDto
 import com.example.travelapp.data.remote.dto.CambioPasswordDto
 import com.example.travelapp.data.remote.dto.PageResponse
 import com.example.travelapp.data.remote.dto.UtenteResponseDto
@@ -22,6 +23,9 @@ interface UtenteApi {
 
     @POST("api/utenti/me/password")
     suspend fun cambiaPassword(@Body richiesta: CambioPasswordDto): Response<Unit>
+
+    @PUT("api/utenti/{id}")
+    suspend fun aggiornaTema(@Path("id") id: Long, @Body richiesta: AggiornaTemaDto): Response<UtenteResponseDto>
 
     @Multipart
     @PUT("api/utenti/me/foto-profilo")

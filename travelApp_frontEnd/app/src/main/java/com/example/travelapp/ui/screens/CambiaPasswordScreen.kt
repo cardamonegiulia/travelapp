@@ -67,13 +67,8 @@ import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 
-/**
- * Cambio password dell'utente autenticato.
- *
- * Se il salvataggio va a buon fine il backend chiude tutte le sessioni (vedi
- * `UtenteController.cambiaPassword`): [onPasswordCambiata] deve riportare l'utente al login,
- * non solo tornare indietro, altrimenti resterebbe su una schermata con un token già invalido.
- */
+// [onPasswordCambiata] deve riportare al login, non solo tornare indietro: a salvataggio
+// riuscito il backend chiude tutte le sessioni.
 @Composable
 fun CambiaPasswordScreen(
     onBack: () -> Unit,
