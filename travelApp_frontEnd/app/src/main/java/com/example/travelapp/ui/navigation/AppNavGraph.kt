@@ -14,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import com.example.travelapp.data.remote.TokenManager
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.catalog.AdminDashboardScreen
@@ -52,6 +54,7 @@ import com.example.travelapp.ui.screens.ExploreScreen
 import com.example.travelapp.ui.screens.FavoritesScreen
 import com.example.travelapp.ui.screens.ProfileScreen
 import com.example.travelapp.ui.theme.BackgroundLavender
+import kotlinx.coroutines.launch
 
 
 object CatalogRoutes {
@@ -96,11 +99,27 @@ fun AppNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     profiloViewModel: ProfiloViewModel = viewModel(),
-    onExitApp: () -> Unit = {}
+    onExitApp: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
 
     val context =
         LocalContext.current
+
+    val coroutineScope =
+        rememberCoroutineScope()
+
+    /*
+     * Cancella il token salvato e notifica il chiamante (che riporta
+     * l'app alla schermata di login): condivisa da tutte le schermate
+     * che espongono un pulsante di logout.
+     */
+    val eseguiLogout: () -> Unit = {
+        coroutineScope.launch {
+            TokenManager.cancellaToken(context)
+            onLogout()
+        }
+    }
 
     /*
      * Utilizziamo la stessa istanza del ProfiloViewModel
@@ -277,9 +296,7 @@ fun AppNavGraph(
                         )
                     },
 
-                    onLogout = {
-                        onExitApp()
-                    }
+                    onLogout = eseguiLogout
                 )
             }
 
@@ -328,9 +345,7 @@ fun AppNavGraph(
                         )
                     },
 
-                    onLogout = {
-                        onExitApp()
-                    }
+                    onLogout = eseguiLogout
                 )
             }
 
@@ -446,6 +461,8 @@ fun AppNavGraph(
                             route
                         )
                     },
+
+                    onLogout = eseguiLogout,
 
                     viewModel =
                     profiloViewModel
@@ -971,6 +988,7 @@ private fun ProfileRoute(
     onBack: () -> Unit,
     onNavigateTo: (AppDestination) -> Unit,
     onNavigateToRoute: (String) -> Unit,
+    onLogout: () -> Unit,
     viewModel: ProfiloViewModel = viewModel()
 ) {
 
@@ -1089,7 +1107,7 @@ private fun ProfileRoute(
 
         onChangePassword = {},
 
-        onLogout = {}
+        onLogout = onLogout
     )
 }
 

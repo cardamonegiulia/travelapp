@@ -116,6 +116,7 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
     private fun ProfileUiState.conProfilo(utente: Utente) = copy(
         name = utente.nomeCompleto,
         email = utente.email,
+        ruolo = utente.ruolo ?: ruolo,
         avatarUrl = utente.fotoProfiloUrl
     )
 
