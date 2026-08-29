@@ -35,19 +35,21 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @Composable
 fun AppNavigation(
     onExit: () -> Unit,
     onDarkModeChanged: (Boolean) -> Unit
 ) {
+
     var schermataCorrente by remember {
         mutableStateOf("login")
     }
 
-    var ruoloUtente by remember {
-        mutableStateOf<String?>(null)
-    }
-
+    /*
+     * Dopo una registrazione riuscita conserviamo l'email
+     * per riproporla nella schermata di login.
+     */
     var emailAppenaRegistrata by remember {
         mutableStateOf<String?>(null)
     }
@@ -59,30 +61,39 @@ fun AppNavigation(
     }
 
     when (schermataCorrente) {
+
         "login" -> {
+
             LoginScreen(
                 onLoginSuccessViaggiatore = {
                     sessioneId++
                     schermataCorrente = "home"
                 },
+
                 onLoginSuccessOrganizzatore = {
                     sessioneId++
                     schermataCorrente = "home"
                 },
+
                 onVaiRegistrazione = {
                     emailAppenaRegistrata = null
                     schermataCorrente = "registrazione"
                 },
+
                 emailPreCompilata = emailAppenaRegistrata
             )
         }
 
+
         "registrazione" -> {
+
             RegistrazioneScreen(
                 onRegistrazioneSuccess = { email ->
+
                     emailAppenaRegistrata = email
                     schermataCorrente = "login"
                 },
+
                 onVaiLogin = {
                     schermataCorrente = "login"
                 }

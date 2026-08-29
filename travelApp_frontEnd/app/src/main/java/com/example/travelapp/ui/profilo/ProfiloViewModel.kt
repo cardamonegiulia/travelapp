@@ -4,90 +4,53 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.travelapp.data.remote.KeycloakManager
-import com.example.travelapp.data.remote.TokenManager
 import com.example.travelapp.data.repository.UtenteRepository
 import com.example.travelapp.domain.model.Utente
+import com.example.travelapp.ui.screens.ProfileUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * Logica di presentazione del profilo: pubblica [ProfileUiState].
+ *
+ * È un `AndroidViewModel` perché la foto arriva come `content://` e per leggerla serve il
+ * `ContentResolver`, cioè un `Context`. Quello dell'applicazione, non quello della
+ * Activity: il caricamento deve poter finire anche se lo schermo ruota.
+ */
 class ProfiloViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = UtenteRepository(application)
 
-    private val _state = MutableStateFlow(ProfiloUiState())
-    val state: StateFlow<ProfiloUiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(statoIniziale())
+    val state: StateFlow<ProfileUiState> = _state.asStateFlow()
 
     init {
-        inizializzaDaCache()
         caricaProfilo()
     }
 
-    private fun inizializzaDaCache() {
-        viewModelScope.launch {
-            val nome = TokenManager.getNome(getApplication()).firstOrNull().orEmpty()
-            val email = TokenManager.getEmail(getApplication()).firstOrNull().orEmpty()
-            val ruolo = TokenManager.getRuolo(getApplication()).firstOrNull() ?: "VIAGGIATORE"
-
-            if (nome.isNotBlank() || email.isNotBlank()) {
-                _state.update {
-                    it.copy(
-                        name = nome,
-                        email = email,
-                        ruolo = ruolo
-                    )
-                }
-            }
-        }
-    }
-
+    /**
+     * Rilegge il profilo dal backend, foto compresa.
+     *
+     * Se la chiamata fallisce lo stato resta com'è: senza login (nessun token in `TokenManager`) la
+     * risposta è 401, e svuotare la schermata per questo non aiuterebbe nessuno.
+     */
     fun caricaProfilo() {
-        _state.update { it.copy(isLoading = true, errorMessage = null) }
         viewModelScope.launch {
-            repository.caricaProfilo()
-                .onSuccess { utente ->
-                    val nomeValido = if (utente.nomeCompleto.isNotBlank()) utente.nomeCompleto else utente.nome
-                    val emailValida = utente.email
-
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            utente = utente,
-                            name = nomeValido.ifBlank { it.name },
-                            email = emailValida.ifBlank { it.email },
-                            ruolo = utente.ruolo ?: it.ruolo,
-                            avatarUrl = utente.fotoProfiloUrl,
-                            errorMessage = null
-                        )
-                    }
-                }
-                .onFailure { errore ->
-                    val token = TokenManager.getToken(getApplication()).firstOrNull()
-                    if (!token.isNullOrBlank()) {
-                        val nomeJwt = KeycloakManager.estraiNome(token)
-                        val emailJwt = KeycloakManager.estraiEmail(token)
-                        val ruoloJwt = KeycloakManager.estraiRuolo(token)
-
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                name = if (nomeJwt.isNotBlank()) nomeJwt else it.name,
-                                email = if (emailJwt.isNotBlank()) emailJwt else it.email,
-                                ruolo = ruoloJwt,
-                                errorMessage = null
-                            )
-                        }
-                    } else {
-                        _state.update { it.copy(isLoading = false, errorMessage = errore.message) }
-                    }
-                }
+            repository.caricaProfilo().onSuccess { utente -> _state.update { it.conProfilo(utente) } }
         }
     }
 
+    /**
+     * Carica sul backend la foto scelta dal photo picker.
+     *
+     * L'avatar passa subito alla foto locale, prima che l'upload finisca: l'utente ha già
+     * espresso la scelta e non ha senso mostrargli il segnaposto mentre aspetta. Se il
+     * caricamento fallisce si torna alla foto precedente, così quello che si vede
+     * corrisponde sempre a quello che il server ha davvero.
+     */
     fun cambiaFotoProfilo(uri: Uri) {
         val precedente = _state.value.avatarUrl
 
@@ -99,10 +62,8 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
             repository.impostaFotoProfilo(uri)
                 .onSuccess { utente ->
                     _state.update {
-                        it.copy(
+                        it.conProfilo(utente).copy(
                             isPhotoUploading = false,
-                            utente = utente,
-                            avatarUrl = utente.fotoProfiloUrl,
                             photoMessage = "Foto profilo aggiornata"
                         )
                     }
@@ -157,6 +118,7 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    /** Da chiamare dopo aver mostrato [ProfileUiState.photoMessage], perché non riappaia. */
     fun messaggioMostrato() {
         _state.update { it.copy(photoMessage = null) }
     }

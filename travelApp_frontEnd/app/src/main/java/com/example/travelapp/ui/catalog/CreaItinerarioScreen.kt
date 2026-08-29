@@ -3,7 +3,6 @@ package com.example.travelapp.ui.catalog
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,13 +54,9 @@ fun CreaItinerarioScreen(
     var maxPartecipantiInput by remember { mutableStateOf(itinerarioDaModificare?.maxPartecipanti?.toString() ?: "20") }
     var immagineUri by remember { mutableStateOf<Uri?>(null) }
 
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            immagineUri = uri
-        }
-    }
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? -> immagineUri = uri }
 
     val prezzoNumerico = prezzoInput.replace(",", ".").toDoubleOrNull()
     val isPrezzoValido = prezzoNumerico != null && prezzoNumerico > 0.0
@@ -120,17 +115,14 @@ fun CreaItinerarioScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Selettore Foto
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(160.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color(0xFFE2E8F0))
-                    .clickable {
-                        photoPickerLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
+                    .clickable { imagePickerLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
                 val imageUrl = itinerarioDaModificare?.immagini?.firstOrNull()?.url
@@ -235,7 +227,7 @@ fun CreaItinerarioScreen(
                                 titolo = titolo,
                                 descrizione = descrizione,
                                 destinazionePrincipale = destinazione,
-                                prezzoBase = BigDecimal.valueOf(prezzoNumerico!!),
+                                prezzoBase = BigDecimal(prezzoNumerico!!),
                                 durataGiorni = durataNumerica!!,
                                 maxPartecipanti = partecipantiNumerici!!
                             ),

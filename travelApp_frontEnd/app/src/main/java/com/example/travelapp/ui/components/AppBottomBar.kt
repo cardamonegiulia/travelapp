@@ -46,30 +46,17 @@ fun AppBottomBar(
         modifier = modifier
     ) {
         AppDestination.bottomBarItems.forEach { destination ->
-
-            val selected =
-                currentDestination?.hierarchy?.any {
-                    it.route == destination.route
-                } == true
-
+            val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
             NavigationBarItem(
                 selected = selected,
-
-                onClick = {
-                    navController.navigateToTopLevel(destination)
-                },
-
+                onClick = { navController.navigateToTopLevel(destination) },
                 icon = {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .size(36.dp)
                             .background(
-                                color = if (selected) {
-                                    NavSelectedBlue
-                                } else {
-                                    Color.Transparent
-                                },
+                                color = if (selected) NavSelectedBlue else Color.Transparent,
                                 shape = CircleShape
                             )
                     ) {
@@ -84,20 +71,16 @@ fun AppBottomBar(
                         )
                     }
                 },
-
                 label = {
                     Text(
                         text = destination.label,
                         fontSize = 11.sp,
-                        fontWeight = if (selected) {
-                            FontWeight.Bold
-                        } else {
-                            FontWeight.Normal
-                        }
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
                     )
                 },
-
                 colors = NavigationBarItemDefaults.colors(
+                    // Il badge circolare è già disegnato dall'icona: l'indicatore
+                    // a pillola di Material3 va reso invisibile.
                     indicatorColor = Color.Transparent,
                     selectedIconColor = Color.White,
                     selectedTextColor = NavSelectedBlue,
@@ -110,28 +93,14 @@ fun AppBottomBar(
 }
 
 /**
- * Navigazione verso una destinazione principale della bottom bar.
- *
- * Se la destinazione esiste gia' nel back stack, torna a quella schermata.
- * Altrimenti la apre evitando copie multiple della stessa destinazione.
+ * Passa a una sezione principale con il comportamento standard della bottom
+ * navigation: un solo livello nel back stack e stato di ogni sezione
+ * conservato tra un cambio di scheda e l'altro.
  */
-private fun NavController.navigateToTopLevel(
-    destination: AppDestination
-) {
-    if (
-        popBackStack(
-            destination.route,
-            inclusive = false
-        )
-    ) {
-        return
-    }
-
+private fun NavController.navigateToTopLevel(destination: AppDestination) {
     navigate(destination.route) {
-        popUpTo(
-            graph.findStartDestination().id
-        )
-
+        popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
+        restoreState = true
     }
 }

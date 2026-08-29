@@ -12,7 +12,6 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,11 +25,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.repository.PrenotazioneRepository
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
-import com.example.travelapp.ui.components.AuthedAsyncImage
 import com.example.travelapp.ui.theme.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -67,7 +66,6 @@ fun OrganizzatoreHomeScreen(
     onCreaAttivita: () -> Unit,
     onModificaItinerario: (Itinerario) -> Unit,
     onModificaAttivita: (SingolaAttivita) -> Unit,
-    onVaiProfilo: () -> Unit = {},
     onLogout: () -> Unit,
     homeViewModel: OrganizzatoreHomeViewModel = viewModel(),
     offerteViewModel: OfferteManagementViewModel = viewModel()
@@ -94,19 +92,8 @@ fun OrganizzatoreHomeScreen(
             TopAppBar(
                 title = { Text("Area Organizzatore", fontWeight = FontWeight.Bold, color = TravelTextDark) },
                 actions = {
-                    IconButton(onClick = onVaiProfilo) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profilo",
-                            tint = TravelBlue
-                        )
-                    }
                     IconButton(onClick = onLogout) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "Logout",
-                            tint = Color(0xFFDC2626)
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout", tint = Color(0xFFDC2626))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -213,10 +200,10 @@ fun OrganizzatoreHomeScreen(
                             ) {
                                 Column {
                                     Box(modifier = Modifier.fillMaxWidth().height(130.dp)) {
-                                        AuthedAsyncImage(
-                                            url = item.immagini.firstOrNull()?.url,
+                                        AsyncImage(
+                                            model = item.immagini.firstOrNull()?.url,
                                             contentDescription = item.titolo,
-                                            modifier = Modifier.fillMaxSize(),
+                                            modifier = Modifier.fillMaxSize().background(Color(0xFFCBD5E1)),
                                             contentScale = ContentScale.Crop
                                         )
                                         Row(
@@ -271,13 +258,7 @@ fun OrganizzatoreHomeScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column {
-                                    Box(modifier = Modifier.fillMaxWidth().height(130.dp)) {
-                                        AuthedAsyncImage(
-                                            url = item.immagini.firstOrNull()?.url,
-                                            contentDescription = item.titolo,
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
-                                        )
+                                    Box(modifier = Modifier.fillMaxWidth().height(130.dp).background(Color(0xFFE2E8F0))) {
                                         Row(
                                             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)

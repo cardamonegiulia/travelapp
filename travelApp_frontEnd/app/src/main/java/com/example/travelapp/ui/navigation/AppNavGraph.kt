@@ -1,5 +1,6 @@
 package com.example.travelapp.ui.navigation
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,7 +40,6 @@ import com.example.travelapp.ui.catalog.OrganizzatoreHomeScreen
 import com.example.travelapp.ui.components.AppBottomBar
 import com.example.travelapp.ui.pagamenti.PaymentsScreen
 import com.example.travelapp.ui.pagamenti.PaymentsViewModel
-import com.example.travelapp.ui.preferiti.PreferitiViewModel
 import com.example.travelapp.ui.prenotazioni.BookingsViewModel
 import com.example.travelapp.ui.prenotazioni.PrenotazioneDettaglioScreen
 import com.example.travelapp.ui.prenotazioni.PrenotazionePasso1Screen
@@ -47,6 +47,7 @@ import com.example.travelapp.ui.prenotazioni.PrenotazionePasso2Screen
 import com.example.travelapp.ui.prenotazioni.PrenotazioneSuccessoScreen
 import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModel
 import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModelFactory
+import com.example.travelapp.ui.preferiti.PreferitiViewModel
 import com.example.travelapp.ui.profilo.ProfiloViewModel
 import com.example.travelapp.ui.screens.BookingsScreen
 import com.example.travelapp.ui.screens.CambiaPasswordScreen
@@ -56,18 +57,41 @@ import com.example.travelapp.ui.screens.ProfileScreen
 import com.example.travelapp.ui.theme.BackgroundLavender
 import kotlinx.coroutines.launch
 
+
 object CatalogRoutes {
-    const val ADMIN_HOME = "catalog/admin_home"
-    const val ORGANIZZATORE_HOME = "catalog/organizzatore_home"
-    const val CREA_ITINERARIO = "catalog/crea_itinerario"
-    const val CREA_ATTIVITA = "catalog/crea_attivita"
-    const val MODIFICA_ITINERARIO = "catalog/modifica_itinerario"
-    const val MODIFICA_ATTIVITA = "catalog/modifica_attivita"
-    const val LE_MIE_OFFERTE = "catalog/le_mie_offerte"
-    const val OFFERTE_ADMIN = "catalog/offerte_admin"
-    const val GESTIONE_UTENTI_ADMIN = "catalog/gestione_utenti_admin"
-    const val DETTAGLIO_ITINERARIO = "catalog/dettaglio_itinerario"
-    const val DETTAGLIO_ATTIVITA = "catalog/dettaglio_attivita"
+
+    const val ADMIN_HOME =
+        "catalog/admin_home"
+
+    const val ORGANIZZATORE_HOME =
+        "catalog/organizzatore_home"
+
+    const val CREA_ITINERARIO =
+        "catalog/crea_itinerario"
+
+    const val CREA_ATTIVITA =
+        "catalog/crea_attivita"
+
+    const val MODIFICA_ITINERARIO =
+        "catalog/modifica_itinerario"
+
+    const val MODIFICA_ATTIVITA =
+        "catalog/modifica_attivita"
+
+    const val LE_MIE_OFFERTE =
+        "catalog/le_mie_offerte"
+
+    const val OFFERTE_ADMIN =
+        "catalog/offerte_admin"
+
+    const val GESTIONE_UTENTI_ADMIN =
+        "catalog/gestione_utenti_admin"
+
+    const val DETTAGLIO_ITINERARIO =
+        "catalog/dettaglio_itinerario"
+
+    const val DETTAGLIO_ATTIVITA =
+        "catalog/dettaglio_attivita"
 }
 
 
@@ -87,12 +111,9 @@ fun AppNavGraph(
     onLogout: () -> Unit = {},
     onDarkModeChanged: (Boolean) -> Unit = {}
 ) {
-    val context = LocalContext.current
 
-    val bookingViewModel: PrenotazioniViewModel =
-        viewModel(
-            factory = PrenotazioniViewModelFactory(context)
-        )
+    val context =
+        LocalContext.current
 
     val coroutineScope =
         rememberCoroutineScope()
@@ -136,91 +157,142 @@ fun AppNavGraph(
             ?.uppercase()
             ?: ""
 
-    val ruoloEffettivo = when {
-        ruoloProfilo.isNotBlank() &&
-                ruoloProfilo != "VIAGGIATORE" &&
-                ruoloProfilo != "NULL" -> {
-            ruoloProfilo
-        }
-        !ruoloIniziale.isNullOrBlank() -> {
-            ruoloIniziale.uppercase()
-        }
-        else -> {
-            if (ruoloProfilo == "NULL") "" else ruoloProfilo
-        }
+    val isAdmin =
+        ruoloStr.contains("ADMIN")
+
+    val isOrganizzatore =
+        ruoloStr.contains("ORGANIZZATORE")
+
+
+    /*
+     * Elementi selezionati nel Catalog.
+     */
+    var itinerarioSelezionato by remember {
+        mutableStateOf<Itinerario?>(null)
     }
 
-    val isAdmin = ruoloEffettivo.contains("ADMIN")
-    val isOrganizzatore = ruoloEffettivo.contains("ORGANIZZATORE")
+    var attivitaSelezionata by remember {
+        mutableStateOf<SingolaAttivita?>(null)
+    }
 
-    var itinerarioSelezionato by remember { mutableStateOf<Itinerario?>(null) }
-    var attivitaSelezionata by remember { mutableStateOf<SingolaAttivita?>(null) }
-    var itinerarioInModifica by remember { mutableStateOf<Itinerario?>(null) }
-    var attivitaInModifica by remember { mutableStateOf<SingolaAttivita?>(null) }
+    var itinerarioInModifica by remember {
+        mutableStateOf<Itinerario?>(null)
+    }
 
-    LaunchedEffect(isAdmin, isOrganizzatore) {
+    var attivitaInModifica by remember {
+        mutableStateOf<SingolaAttivita?>(null)
+    }
+
+
+    /*
+     * Quando il ruolo viene caricato dal profilo,
+     * Admin e Organizzatore vengono reindirizzati
+     * verso la rispettiva home dedicata.
+     */
+    LaunchedEffect(profiloState.ruolo) {
+
         when {
+
             isAdmin -> {
-                navController.navigate(CatalogRoutes.ADMIN_HOME) {
-                    popUpTo(AppDestination.Explore.route) { inclusive = true }
+
+                navController.navigate(
+                    CatalogRoutes.ADMIN_HOME
+                ) {
+
+                    popUpTo(
+                        AppDestination.Explore.route
+                    ) {
+                        inclusive = true
+                    }
+
                     launchSingleTop = true
                 }
             }
+
             isOrganizzatore -> {
-                navController.navigate(CatalogRoutes.ORGANIZZATORE_HOME) {
-                    popUpTo(AppDestination.Explore.route) { inclusive = true }
+
+                navController.navigate(
+                    CatalogRoutes.ORGANIZZATORE_HOME
+                ) {
+
+                    popUpTo(
+                        AppDestination.Explore.route
+                    ) {
+                        inclusive = true
+                    }
+
                     launchSingleTop = true
                 }
             }
         }
     }
 
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
 
-    val isBookingWizard = currentRoute in setOf(
-        AppDestination.BookingStep1.route,
-        AppDestination.BookingStep2.route,
-        AppDestination.BookingSuccess.route
-    )
+    /*
+     * La bottom bar:
+     *
+     * - non viene mostrata ad ADMIN;
+     * - non viene mostrata a ORGANIZZATORE;
+     * - viene nascosta durante il wizard Booking.
+     */
+    val navBackStackEntry by
+    navController.currentBackStackEntryAsState()
 
-    val isCatalogAdminOrOrg = currentRoute in setOf(
-        CatalogRoutes.ADMIN_HOME,
-        CatalogRoutes.ORGANIZZATORE_HOME,
-        CatalogRoutes.CREA_ITINERARIO,
-        CatalogRoutes.CREA_ATTIVITA,
-        CatalogRoutes.MODIFICA_ITINERARIO,
-        CatalogRoutes.MODIFICA_ATTIVITA,
-        CatalogRoutes.LE_MIE_OFFERTE,
-        CatalogRoutes.OFFERTE_ADMIN,
-        CatalogRoutes.GESTIONE_UTENTI_ADMIN
-    )
+    val currentRoute =
+        navBackStackEntry
+            ?.destination
+            ?.route
 
-    val mostraBottomBar = !isAdmin && !isOrganizzatore && !isBookingWizard && !isCatalogAdminOrOrg
+    val isBookingWizard =
+        currentRoute in setOf(
+            AppDestination.BookingStep1.route,
+            AppDestination.BookingStep2.route,
+            AppDestination.BookingSuccess.route
+        )
 
-    val startDestination = when {
-        isAdmin -> CatalogRoutes.ADMIN_HOME
-        isOrganizzatore -> CatalogRoutes.ORGANIZZATORE_HOME
-        else -> AppDestination.Explore.route
-    }
+    val mostraBottomBar =
+        !isAdmin &&
+                !isOrganizzatore &&
+                !isBookingWizard
+
 
     Scaffold(
         modifier = modifier,
         containerColor = BackgroundLavender,
+
         bottomBar = {
+
             if (mostraBottomBar) {
-                AppBottomBar(navController = navController)
+
+                AppBottomBar(
+                    navController = navController
+                )
             }
         }
     ) { innerPadding ->
+
+
         NavHost(
             navController = navController,
-            startDestination = startDestination,
+            startDestination =
+            AppDestination.Explore.route,
+
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            composable(CatalogRoutes.ADMIN_HOME) {
+
+
+            /*
+             * ============================================================
+             * ADMIN
+             * ============================================================
+             */
+
+            composable(
+                CatalogRoutes.ADMIN_HOME
+            ) {
+
                 AdminDashboardScreen(
 
                     onVaiOfferte = {
@@ -241,62 +313,159 @@ fun AppNavGraph(
                 )
             }
 
-            composable(CatalogRoutes.ORGANIZZATORE_HOME) {
+
+            /*
+             * ============================================================
+             * ORGANIZZATORE
+             * ============================================================
+             */
+
+            composable(
+                CatalogRoutes.ORGANIZZATORE_HOME
+            ) {
+
                 OrganizzatoreHomeScreen(
-                    onCreaItinerario = { navController.navigate(CatalogRoutes.CREA_ITINERARIO) },
-                    onCreaAttivita = { navController.navigate(CatalogRoutes.CREA_ATTIVITA) },
-                    onModificaItinerario = { item ->
-                        itinerarioInModifica = item
-                        navController.navigate(CatalogRoutes.MODIFICA_ITINERARIO)
+
+                    onCreaItinerario = {
+
+                        navController.navigate(
+                            CatalogRoutes.CREA_ITINERARIO
+                        )
                     },
+
+                    onCreaAttivita = {
+
+                        navController.navigate(
+                            CatalogRoutes.CREA_ATTIVITA
+                        )
+                    },
+
+                    onModificaItinerario = { item ->
+
+                        itinerarioInModifica = item
+
+                        navController.navigate(
+                            CatalogRoutes.MODIFICA_ITINERARIO
+                        )
+                    },
+
                     onModificaAttivita = { item ->
+
                         attivitaInModifica = item
-                        navController.navigate(CatalogRoutes.MODIFICA_ATTIVITA)
+
+                        navController.navigate(
+                            CatalogRoutes.MODIFICA_ATTIVITA
+                        )
                     },
 
                     onLogout = eseguiLogout
                 )
             }
 
-            composable(AppDestination.Explore.route) {
+
+            /*
+             * ============================================================
+             * VIAGGIATORE / NAVIGAZIONE PRINCIPALE
+             * ============================================================
+             */
+
+            composable(
+                AppDestination.Explore.route
+            ) {
+
                 ExploreScreen(
+
                     onItinerarioClick = { itinerario ->
-                        itinerarioSelezionato = itinerario
-                        navController.navigate(CatalogRoutes.DETTAGLIO_ITINERARIO)
+
+                        itinerarioSelezionato =
+                            itinerario
+
+                        navController.navigate(
+                            CatalogRoutes.DETTAGLIO_ITINERARIO
+                        )
                     },
+
                     onAttivitaClick = { attivita ->
-                        attivitaSelezionata = attivita
-                        navController.navigate(CatalogRoutes.DETTAGLIO_ATTIVITA)
+
+                        attivitaSelezionata =
+                            attivita
+
+                        navController.navigate(
+                            CatalogRoutes.DETTAGLIO_ATTIVITA
+                        )
                     }
                 )
             }
 
-            composable(AppDestination.Bookings.route) {
+
+            /*
+             * BOOKING LIST
+             */
+
+            composable(
+                AppDestination.Bookings.route
+            ) {
+
                 BookingsRoute()
             }
 
-            composable(AppDestination.Payments.route) {
-                PaymentsRoute(
-                    onBack = { navController.popBackStack() }
-                )
-            }
 
-            composable(AppDestination.Favorites.route) {
-                FavoritesRoute(
-                    onBack = onBack,
-                    onItinerarioClick = { itinerario ->
-                        itinerarioSelezionato = itinerario
-                        navController.navigate(CatalogRoutes.DETTAGLIO_ITINERARIO)
+            /*
+             * PAGAMENTI
+             */
+
+            composable(
+                AppDestination.Payments.route
+            ) {
+
+                PaymentsRoute(
+                    onBack = {
+                        navController.popBackStack()
                     }
                 )
             }
 
-            composable(AppDestination.Profile.route) {
-                ProfileRoute(
-                    viewModel = profiloViewModel,
+
+            /*
+             * PREFERITI
+             */
+
+            composable(
+                AppDestination.Favorites.route
+            ) {
+
+                FavoritesRoute(
                     onBack = onBack,
+
+                    onItinerarioClick = { itinerario ->
+
+                        itinerarioSelezionato =
+                            itinerario
+
+                        navController.navigate(
+                            CatalogRoutes.DETTAGLIO_ITINERARIO
+                        )
+                    }
+                )
+            }
+
+
+            /*
+             * PROFILO
+             */
+
+            composable(
+                AppDestination.Profile.route
+            ) {
+
+                ProfileRoute(
+                    onBack = onBack,
+
                     onNavigateTo = { destination ->
-                        navController.navigate(destination.route)
+
+                        navController.navigate(
+                            destination.route
+                        )
                     },
 
                     onNavigateToRoute = { route ->
@@ -337,149 +506,420 @@ fun AppNavGraph(
             ) {
 
                 itinerarioSelezionato?.let { item ->
+
                     ItinerarioDetailScreen(
                         itinerario = item,
                         onBack = onBack,
+
                         onPrenota = { disponibilitaId ->
-                            bookingViewModel.inizializzaBooking(
-                                titolo = item.titolo,
-                                luogo = item.destinazionePrincipale ?: "",
-                                prezzoBaseUnitario = item.prezzoBase?.toDouble() ?: 0.0,
-                                disponibilitaItinerarioId = disponibilitaId,
-                                sessioneSingolaAttivitaId = null
+
+                            Toast.makeText(
+                                context,
+                                "Slot disponibilità #$disponibilitaId selezionato",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            /*
+                             * TODO Booking:
+                             * collegare disponibilitaId
+                             * al booking_graph.
+                             */
+                            navController.navigate(
+                                AppDestination.Bookings.route
                             )
-                            navController.navigate(AppDestination.BookingStep1.route) {
-                                launchSingleTop = true
-                            }
                         }
                     )
                 }
             }
 
-            composable(CatalogRoutes.DETTAGLIO_ATTIVITA) {
+
+            composable(
+                CatalogRoutes.DETTAGLIO_ATTIVITA
+            ) {
+
                 attivitaSelezionata?.let { item ->
+
                     AttivitaDetailScreen(
                         attivita = item,
                         onBack = onBack,
+
                         onPrenota = { sessioneId ->
-                            bookingViewModel.inizializzaBooking(
-                                titolo = item.titolo,
-                                luogo = item.luogo ?: "",
-                                prezzoBaseUnitario = item.prezzo?.toDouble() ?: 0.0,
-                                disponibilitaItinerarioId = null,
-                                sessioneSingolaAttivitaId = sessioneId
+
+                            Toast.makeText(
+                                context,
+                                "Slot sessione #$sessioneId selezionato",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            /*
+                             * TODO Booking:
+                             * collegare sessioneId
+                             * al booking_graph.
+                             */
+                            navController.navigate(
+                                AppDestination.Bookings.route
                             )
-                            navController.navigate(AppDestination.BookingStep1.route) {
-                                launchSingleTop = true
-                            }
                         }
                     )
                 }
             }
 
-            composable(CatalogRoutes.CREA_ITINERARIO) {
-                CreaItinerarioScreen(onBack = onBack)
-            }
 
-            composable(CatalogRoutes.MODIFICA_ITINERARIO) {
+            /*
+             * ============================================================
+             * CREAZIONE / MODIFICA CATALOGO
+             * ============================================================
+             */
+
+            composable(
+                CatalogRoutes.CREA_ITINERARIO
+            ) {
+
                 CreaItinerarioScreen(
-                    itinerarioDaModificare = itinerarioInModifica,
                     onBack = onBack
                 )
             }
 
-            composable(CatalogRoutes.CREA_ATTIVITA) {
-                CreaAttivitaScreen(onBack = onBack)
+
+            composable(
+                CatalogRoutes.MODIFICA_ITINERARIO
+            ) {
+
+                CreaItinerarioScreen(
+                    itinerarioDaModificare =
+                    itinerarioInModifica,
+
+                    onBack = onBack
+                )
             }
 
-            composable(CatalogRoutes.MODIFICA_ATTIVITA) {
+
+            composable(
+                CatalogRoutes.CREA_ATTIVITA
+            ) {
+
                 CreaAttivitaScreen(
-                    attivitaDaModificare = attivitaInModifica,
                     onBack = onBack
                 )
             }
 
-            composable(CatalogRoutes.LE_MIE_OFFERTE) {
+
+            composable(
+                CatalogRoutes.MODIFICA_ATTIVITA
+            ) {
+
+                CreaAttivitaScreen(
+                    attivitaDaModificare =
+                    attivitaInModifica,
+
+                    onBack = onBack
+                )
+            }
+
+
+            /*
+             * ============================================================
+             * OFFERTE ORGANIZZATORE
+             * ============================================================
+             */
+
+            composable(
+                CatalogRoutes.LE_MIE_OFFERTE
+            ) {
+
                 OfferteManagementScreen(
                     isAdmin = false,
                     onBack = onBack,
+
                     onModificaItinerario = { item ->
-                        itinerarioInModifica = item
-                        navController.navigate(CatalogRoutes.MODIFICA_ITINERARIO)
+
+                        itinerarioInModifica =
+                            item
+
+                        navController.navigate(
+                            CatalogRoutes.MODIFICA_ITINERARIO
+                        )
                     },
+
                     onModificaAttivita = { item ->
-                        attivitaInModifica = item
-                        navController.navigate(CatalogRoutes.MODIFICA_ATTIVITA)
+
+                        attivitaInModifica =
+                            item
+
+                        navController.navigate(
+                            CatalogRoutes.MODIFICA_ATTIVITA
+                        )
                     }
                 )
             }
 
-            composable(CatalogRoutes.OFFERTE_ADMIN) {
+
+            /*
+             * ============================================================
+             * OFFERTE ADMIN
+             * ============================================================
+             */
+
+            composable(
+                CatalogRoutes.OFFERTE_ADMIN
+            ) {
+
                 OfferteManagementScreen(
                     isAdmin = true,
                     onBack = onBack
                 )
             }
 
-            composable(CatalogRoutes.GESTIONE_UTENTI_ADMIN) {
-                GestioneUtentiAdminScreen(onBack = onBack)
+
+            /*
+             * ============================================================
+             * GESTIONE UTENTI ADMIN
+             * ============================================================
+             */
+
+            composable(
+                CatalogRoutes.GESTIONE_UTENTI_ADMIN
+            ) {
+
+                GestioneUtentiAdminScreen(
+                    onBack = onBack
+                )
             }
 
+
+            /*
+             * ============================================================
+             * BOOKING WIZARD
+             * ============================================================
+             *
+             * I tre step condividono la stessa istanza
+             * di PrenotazioniViewModel tramite booking_graph.
+             */
+
             navigation(
-                startDestination = AppDestination.BookingStep1.route,
+                startDestination =
+                AppDestination.BookingStep1.route,
+
                 route = "booking_graph"
             ) {
-                composable(AppDestination.BookingStep1.route) {
-                    LaunchedEffect(bookingState.prenotazioneCreata?.id) {
-                        if (bookingState.prenotazioneCreata != null) {
-                            navController.navigate(AppDestination.BookingStep2.route) {
-                                popUpTo(AppDestination.BookingStep1.route) {
-                                    inclusive = true
-                                }
-                                launchSingleTop = true
-                            }
+
+
+                /*
+                 * STEP 1
+                 */
+
+                composable(
+                    AppDestination.BookingStep1.route
+                ) { backStackEntry ->
+
+                    val parentEntry =
+                        remember(backStackEntry) {
+
+                            navController
+                                .getBackStackEntry(
+                                    "booking_graph"
+                                )
+                        }
+
+                    val bookingContext =
+                        LocalContext.current
+
+                    val bookingViewModel:
+                            PrenotazioniViewModel =
+                        viewModel(
+                            viewModelStoreOwner =
+                            parentEntry,
+
+                            factory =
+                            PrenotazioniViewModelFactory(
+                                bookingContext
+                            )
+                        )
+
+                    val state by
+                    bookingViewModel
+                        .uiState
+                        .collectAsState()
+
+
+                    LaunchedEffect(
+                        state.prenotazioneCreata
+                    ) {
+
+                        if (
+                            state.prenotazioneCreata != null
+                        ) {
+
+                            navController.navigate(
+                                AppDestination
+                                    .BookingStep2
+                                    .route
+                            )
                         }
                     }
+
 
                     PrenotazionePasso1Screen(
-                        uiState = bookingState,
-                        extraDisponibili = emptyList(),
-                        onIncrementa = bookingViewModel::incrementaPartecipanti,
-                        onDecrementa = bookingViewModel::decrementaPartecipanti,
-                        onToggleExtra = bookingViewModel::toggleExtra,
-                        onContinua = { bookingViewModel.creaPrenotazione() }
+                        uiState = state,
+
+                        extraDisponibili =
+                        emptyList(),
+
+                        onIncrementa =
+                        bookingViewModel::
+                        incrementaPartecipanti,
+
+                        onDecrementa =
+                        bookingViewModel::
+                        decrementaPartecipanti,
+
+                        onToggleExtra =
+                        bookingViewModel::
+                        toggleExtra,
+
+                        onContinua = {
+
+                            /*
+                             * TODO:
+                             * collegare l'ID reale di:
+                             *
+                             * disponibilitaItinerarioId
+                             * oppure
+                             * sessioneSingolaAttivitaId
+                             */
+                        }
                     )
                 }
 
-                composable(AppDestination.BookingStep2.route) {
-                    LaunchedEffect(bookingState.pagamentoCompletato) {
-                        if (bookingState.pagamentoCompletato != null) {
-                            navController.navigate(AppDestination.BookingSuccess.route) {
-                                popUpTo(AppDestination.BookingStep2.route) {
-                                    inclusive = true
-                                }
-                                launchSingleTop = true
-                            }
+
+                /*
+                 * STEP 2
+                 */
+
+                composable(
+                    AppDestination.BookingStep2.route
+                ) { backStackEntry ->
+
+                    val parentEntry =
+                        remember(backStackEntry) {
+
+                            navController
+                                .getBackStackEntry(
+                                    "booking_graph"
+                                )
+                        }
+
+                    val bookingContext =
+                        LocalContext.current
+
+                    val bookingViewModel:
+                            PrenotazioniViewModel =
+                        viewModel(
+                            viewModelStoreOwner =
+                            parentEntry,
+
+                            factory =
+                            PrenotazioniViewModelFactory(
+                                bookingContext
+                            )
+                        )
+
+                    val state by
+                    bookingViewModel
+                        .uiState
+                        .collectAsState()
+
+
+                    LaunchedEffect(
+                        state.pagamentoCompletato
+                    ) {
+
+                        if (
+                            state.pagamentoCompletato != null
+                        ) {
+
+                            navController.navigate(
+                                AppDestination
+                                    .BookingSuccess
+                                    .route
+                            )
                         }
                     }
 
+
                     PrenotazionePasso2Screen(
-                        uiState = bookingState,
-                        onMetodoPagamentoSelezionato = bookingViewModel::selezionaMetodoPagamento,
-                        onConfermaEPaga = { bookingViewModel.pagaPrenotazione() }
+                        uiState = state,
+
+                        onMetodoPagamentoSelezionato =
+                        bookingViewModel::
+                        selezionaMetodoPagamento,
+
+                        onConfermaEPaga = {
+
+                            bookingViewModel
+                                .pagaPrenotazione()
+                        }
                     )
                 }
 
-                composable(AppDestination.BookingSuccess.route) {
+
+                /*
+                 * SUCCESSO
+                 */
+
+                composable(
+                    AppDestination.BookingSuccess.route
+                ) { backStackEntry ->
+
+                    val parentEntry =
+                        remember(backStackEntry) {
+
+                            navController
+                                .getBackStackEntry(
+                                    "booking_graph"
+                                )
+                        }
+
+                    val bookingContext =
+                        LocalContext.current
+
+                    val bookingViewModel:
+                            PrenotazioniViewModel =
+                        viewModel(
+                            viewModelStoreOwner =
+                            parentEntry,
+
+                            factory =
+                            PrenotazioniViewModelFactory(
+                                bookingContext
+                            )
+                        )
+
+                    val state by
+                    bookingViewModel
+                        .uiState
+                        .collectAsState()
+
+
                     PrenotazioneSuccessoScreen(
-                        uiState = bookingState,
+                        uiState = state,
+
                         onFine = {
-                            bookingViewModel.resetBooking()
-                            navController.navigate(AppDestination.Bookings.route) {
-                                popUpTo("booking_graph") {
+
+                            bookingViewModel
+                                .resetBooking()
+
+                            navController.navigate(
+                                AppDestination
+                                    .Bookings
+                                    .route
+                            ) {
+
+                                popUpTo(
+                                    "booking_graph"
+                                ) {
                                     inclusive = true
                                 }
-                                launchSingleTop = true
                             }
                         }
                     )
@@ -489,35 +929,84 @@ fun AppNavGraph(
     }
 }
 
+
+/*
+ * ================================================================
+ * FAVORITES
+ * ================================================================
+ */
+
 @Composable
 private fun FavoritesRoute(
     onBack: () -> Unit,
     onItinerarioClick: (Itinerario) -> Unit,
     viewModel: PreferitiViewModel = viewModel()
 ) {
-    val state by viewModel.state.collectAsState()
+
+    val state by
+    viewModel
+        .state
+        .collectAsState()
+
 
     FavoritesScreen(
         state = state,
         onBack = onBack,
-        onSectionChange = viewModel::cambiaSezione,
-        onOpenList = viewModel::apriLista,
-        onCloseList = viewModel::chiudiLista,
-        onCreateList = viewModel::creaLista,
-        onChangeVisibility = viewModel::cambiaVisibilita,
-        onDeleteList = viewModel::eliminaLista,
-        onRemoveTrip = viewModel::rimuoviItinerario,
-        onShareWithEmail = viewModel::condividiConEmail,
-        onRevokeShare = viewModel::revocaCondivisione,
+
+        onSectionChange =
+        viewModel::cambiaSezione,
+
+        onOpenList =
+        viewModel::apriLista,
+
+        onCloseList =
+        viewModel::chiudiLista,
+
+        onCreateList =
+        viewModel::creaLista,
+
+        onChangeVisibility =
+        viewModel::cambiaVisibilita,
+
+        onDeleteList =
+        viewModel::eliminaLista,
+
+        onRemoveTrip =
+        viewModel::rimuoviItinerario,
+
+        onShareWithEmail =
+        viewModel::condividiConEmail,
+
+        onRevokeShare =
+        viewModel::revocaCondivisione,
+
+        /*
+         * Il dettaglio della lista conosce solo l'id:
+         * l'Itinerario completo, che serve alla schermata
+         * di dettaglio, e' quello gia' caricato nella
+         * lista aperta.
+         */
         onTripClick = { itinerarioId ->
+
             state.listaAperta
                 ?.itinerari
-                ?.firstOrNull { it.id == itinerarioId }
+                ?.firstOrNull { itinerario ->
+                    itinerario.id == itinerarioId
+                }
                 ?.let(onItinerarioClick)
         },
-        onMessageShown = viewModel::messaggioMostrato
+
+        onMessageShown =
+        viewModel::messaggioMostrato
     )
 }
+
+
+/*
+ * ================================================================
+ * PROFILE
+ * ================================================================
+ */
 
 @Composable
 private fun ProfileRoute(
@@ -527,26 +1016,115 @@ private fun ProfileRoute(
     onLogout: () -> Unit,
     viewModel: ProfiloViewModel = viewModel()
 ) {
-    LaunchedEffect(Unit) {
-        viewModel.caricaProfilo()
-    }
 
-    val state by viewModel.state.collectAsState()
+    val state by
+    viewModel
+        .state
+        .collectAsState()
+
 
     val photoPicker =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.PickVisualMedia()
+            contract =
+            ActivityResultContracts
+                .PickVisualMedia()
         ) { uri ->
+
             if (uri != null) {
-                viewModel.cambiaFotoProfilo(uri)
+
+                viewModel
+                    .cambiaFotoProfilo(
+                        uri
+                    )
             }
         }
+
 
     ProfileScreen(
         state = state,
         onBack = onBack,
-        onBookingsClick = { onNavigateTo(AppDestination.Bookings) },
-        onPaymentsClick = { onNavigateTo(AppDestination.Payments) },
+
+        onBookingsClick = {
+
+            onNavigateTo(
+                AppDestination.Bookings
+            )
+        },
+
+        onFavoritesClick = {
+
+            onNavigateTo(
+                AppDestination.Favorites
+            )
+        },
+
+        onAddProfilePhoto = {
+
+            photoPicker.launch(
+                PickVisualMediaRequest(
+                    ActivityResultContracts
+                        .PickVisualMedia
+                        .ImageOnly
+                )
+            )
+        },
+
+        onPhotoMessageShown =
+        viewModel::messaggioMostrato,
+
+
+        /*
+         * CATALOGO
+         */
+
+        onCreaItinerarioClick = {
+
+            onNavigateToRoute(
+                CatalogRoutes.CREA_ITINERARIO
+            )
+        },
+
+        onCreaAttivitaClick = {
+
+            onNavigateToRoute(
+                CatalogRoutes.CREA_ATTIVITA
+            )
+        },
+
+        onLeMieOfferteClick = {
+
+            onNavigateToRoute(
+                CatalogRoutes.LE_MIE_OFFERTE
+            )
+        },
+
+        onGestioneOfferteAdminClick = {
+
+            onNavigateToRoute(
+                CatalogRoutes.OFFERTE_ADMIN
+            )
+        },
+
+        onGestioneUtentiAdminClick = {
+
+            onNavigateToRoute(
+                CatalogRoutes
+                    .GESTIONE_UTENTI_ADMIN
+            )
+        },
+
+
+        /*
+         * BOOKING / PAGAMENTI
+         */
+
+        onPaymentsClick = {
+
+            onNavigateTo(
+                AppDestination.Payments
+            )
+        },
+
         onReviewsClick = {},
 
         onToggleDarkMode =
@@ -560,46 +1138,121 @@ private fun ProfileRoute(
     )
 }
 
+
+/*
+ * ================================================================
+ * BOOKINGS
+ * ================================================================
+ */
+
 @Composable
 private fun BookingsRoute(
-    viewModel: BookingsViewModel = viewModel()
+    viewModel: BookingsViewModel =
+        viewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
-    val prenotazioneSelezionata = state.prenotazioneSelezionata
 
-    if (prenotazioneSelezionata != null) {
+    val state by
+    viewModel
+        .uiState
+        .collectAsState()
+
+    val prenotazioneSelezionata =
+        state.prenotazioneSelezionata
+
+
+    if (
+        prenotazioneSelezionata != null
+    ) {
+
         PrenotazioneDettaglioScreen(
-            prenotazione = prenotazioneSelezionata,
-            onBack = { viewModel.chiudiDettaglio() },
-            onAnnulla = { viewModel.annullaPrenotazione() },
-            isLoading = state.isLoading
+            prenotazione =
+            prenotazioneSelezionata,
+
+            onBack = {
+
+                viewModel
+                    .chiudiDettaglio()
+            },
+
+            onAnnulla = {
+
+                viewModel
+                    .annullaPrenotazione()
+            },
+
+            isLoading =
+            state.isLoading
         )
+
     } else {
+
         BookingsScreen(
-            prenotazioni = state.prenotazioni,
-            isLoading = state.isLoading,
-            errore = state.errore,
-            onRiprova = { viewModel.caricaPrenotazioni() },
-            onPrenotazioneClick = { viewModel.selezionaPrenotazione(it) }
+            prenotazioni =
+            state.prenotazioni,
+
+            isLoading =
+            state.isLoading,
+
+            errore =
+            state.errore,
+
+            onRiprova = {
+
+                viewModel
+                    .caricaPrenotazioni()
+            },
+
+            onPrenotazioneClick = {
+
+                viewModel
+                    .selezionaPrenotazione(
+                        it
+                    )
+            }
         )
     }
 }
 
+
+/*
+ * ================================================================
+ * PAYMENTS
+ * ================================================================
+ */
+
 @Composable
 private fun PaymentsRoute(
     onBack: () -> Unit,
-    viewModel: PaymentsViewModel = viewModel()
+    viewModel: PaymentsViewModel =
+        viewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+
+    val state by
+    viewModel
+        .uiState
+        .collectAsState()
+
 
     PaymentsScreen(
-        pagamenti = state.pagamenti,
-        isLoading = state.isLoading,
-        errore = state.errore,
-        onRiprova = { viewModel.caricaPagamenti() },
+        pagamenti =
+        state.pagamenti,
+
+        isLoading =
+        state.isLoading,
+
+        errore =
+        state.errore,
+
+        onRiprova = {
+
+            viewModel
+                .caricaPagamenti()
+        },
+
         onBack = onBack
     )
 }
+
 
 @Preview(
     showBackground = true,
@@ -608,7 +1261,9 @@ private fun PaymentsRoute(
 )
 @Composable
 private fun AppNavGraphPreview() {
+
     MaterialTheme {
+
         AppNavGraph()
     }
 }
