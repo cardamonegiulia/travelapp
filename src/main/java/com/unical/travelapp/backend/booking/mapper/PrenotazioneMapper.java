@@ -7,6 +7,7 @@ import com.unical.travelapp.backend.booking.entity.TipoPrenotazione;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Component
@@ -15,6 +16,8 @@ public class PrenotazioneMapper {
         TipoPrenotazione tipoPrenotazione;
         String titolo;
         String luogo;
+        LocalDateTime dataInizio;
+        LocalDateTime dataFine;
 
         if (prenotazione.getDisponibilitaItinerario() != null) {
             tipoPrenotazione = TipoPrenotazione.ITINERARIO;
@@ -24,6 +27,10 @@ public class PrenotazioneMapper {
             luogo = prenotazione.getDisponibilitaItinerario()
                     .getItinerario()
                     .getDestinazionePrincipale();
+            dataInizio = prenotazione.getDisponibilitaItinerario()
+                    .getDataInizio();
+            dataFine = prenotazione.getDisponibilitaItinerario()
+                    .getDataFine();
 
         } else if (prenotazione.getSessioneSingolaAttivita() != null) {
             tipoPrenotazione = TipoPrenotazione.SESSIONE_SINGOLA;
@@ -33,6 +40,10 @@ public class PrenotazioneMapper {
             luogo = prenotazione.getSessioneSingolaAttivita()
                     .getSingolaAttivita()
                     .getLuogo();
+            dataInizio = prenotazione.getSessioneSingolaAttivita()
+                    .getDataInizio();
+            dataFine = prenotazione.getSessioneSingolaAttivita()
+                    .getDataFine();
 
         } else {
             throw new IllegalStateException(
@@ -51,6 +62,8 @@ public class PrenotazioneMapper {
                 .numeroPartecipanti(prenotazione.getNumeroPartecipanti()).prezzoTotale(prenotazione.getPrezzoTotale()).statoPrenotazione(prenotazione.getStato())
                 .statoPagamento(pagamento != null ? pagamento.getStato() : null)
                 .dataPrenotazione(prenotazione.getDataPrenotazione())
+                .dataInizio(dataInizio)
+                .dataFine(dataFine)
                 .tipoPrenotazione(tipoPrenotazione)
                 .titolo(titolo)
                 .luogo(luogo)
