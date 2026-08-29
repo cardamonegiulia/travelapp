@@ -6,6 +6,8 @@ import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.remote.CorpoImmagine
 import com.example.travelapp.data.remote.ImmagineNonCaricabile
 import com.example.travelapp.data.remote.api.UtenteApi
+import com.example.travelapp.data.remote.dto.AggiornaTemaDto
+import com.example.travelapp.data.remote.dto.CambioPasswordDto
 import com.example.travelapp.domain.model.Utente
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -29,6 +31,28 @@ class UtenteRepository(
         }
         return chiamata("Errore nel caricamento della foto") { api.impostaFotoProfilo(parte) }
     }
+
+    // Richiede un login recente (401 altrimenti); se va a buon fine chiude tutte le sessioni.
+    suspend fun cambiaPassword(nuovaPassword: String): Result<Unit> =
+        try {
+            val risposta = api.cambiaPassword(CambioPasswordDto(nuovaPassword))
+            if (risposta.isSuccessful) Result.success(Unit)
+            else Result.failure(Exception(messaggioErroreCambioPassword(risposta)))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    private fun messaggioErroreCambioPassword(risposta: Response<*>): String = when (risposta.code()) {
+        400 -> "La password non rispetta i requisiti richiesti"
+        401 -> "Per cambiare la password devi aver effettuato l'accesso di recente: rifai il login"
+        503 -> "Servizio di autenticazione non disponibile, riprova più tardi"
+        else -> "Cambio password non riuscito: HTTP ${risposta.code()}"
+    }
+
+    suspend fun aggiornaTema(id: Long, temaScuro: Boolean): Result<Utente> =
+        chiamata("Errore nel salvataggio del tema") {
+            api.aggiornaTema(id, AggiornaTemaDto(if (temaScuro) "SCURO" else "CHIARO"))
+        }
 
     suspend fun rimuoviFotoProfilo(): Result<Unit> =
         try {

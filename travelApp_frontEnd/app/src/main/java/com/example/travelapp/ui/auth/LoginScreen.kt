@@ -160,7 +160,8 @@ fun LoginScreen(
                     // Pulsante login con animazione
                     Button(
                         onClick = {
-                            val intent = viewModel.creaIntentLogin(emailPreCompilata)
+                            // forza le credenziali anche se la sessione Keycloak è ancora viva
+                            val intent = viewModel.creaIntentLogin(emailPreCompilata, forzaLogin = true)
                             launcher.launch(intent)
                         },
                         modifier = Modifier

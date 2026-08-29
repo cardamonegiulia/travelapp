@@ -258,8 +258,9 @@ dependencies {
 
 /*
  * Quando installDebug o assembleDebug vengono eseguiti con un dispositivo
- * fisico collegato via USB, espone automaticamente backend (8081)
- * e Keycloak (8090) tramite localhost sul dispositivo.
+ * fisico collegato via USB, espone automaticamente backend (8081),
+ * Keycloak (8090) e la UI di Mailpit (8025, email di verifica/reset)
+ * tramite localhost sul dispositivo.
  *
  * Se non c'è un dispositivo collegato, il task non blocca la build.
  */
@@ -292,7 +293,7 @@ tasks.register("adbReversePortauto") {
             return@doLast
         }
 
-        for (port in listOf(8081, 8090)) {
+        for (port in listOf(8081, 8090, 8025)) {
 
             val risultato =
                 project.exec {

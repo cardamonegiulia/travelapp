@@ -44,6 +44,23 @@ import com.example.travelapp.ui.theme.IconIndigo
 import com.example.travelapp.ui.theme.IconPurple
 import com.example.travelapp.ui.theme.IconTeal
 
+/** Stato osservabile della schermata profilo. */
+data class ProfileUiState(
+    val id: Long? = null,
+    val name: String = "",
+    val email: String = "",
+    /** Ruolo utente: "VIAGGIATORE", "ORGANIZZATORE" o "ADMIN" */
+    val ruolo: String = "VIAGGIATORE",
+    val avatarUrl: String? = null,
+    val isDarkModeEnabled: Boolean = false,
+    val isPhotoUploading: Boolean = false,
+    val photoMessage: String? = null
+)
+
+/**
+ * Schermata "Profilo": intestazione utente, sezioni dinamiche per ruolo,
+ * scorciatoie alle attività, impostazioni e logout.
+ */
 @Composable
 fun ProfileScreen(
     state: ProfiloUiState,

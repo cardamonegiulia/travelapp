@@ -1,14 +1,20 @@
 package com.example.travelapp.ui
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.*
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.travelapp.ui.auth.LoginScreen
 import com.example.travelapp.ui.auth.RegistrazioneScreen
 import com.example.travelapp.ui.navigation.AppNavGraph
 import com.example.travelapp.ui.theme.TravelAppTheme
+
 
 class MainActivity : ComponentActivity() {
 
@@ -16,16 +22,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            TravelAppTheme {
+            val temaSistema = isSystemInDarkTheme()
+            var temaScuro by remember { mutableStateOf(temaSistema) }
+
+            TravelAppTheme(darkTheme = temaScuro) {
                 AppNavigation(
                     onExit = { finish() },
-                    showToast = { message ->
-                        Toast.makeText(
-                            this,
-                            message,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                    onDarkModeChanged = { temaScuro = it }
                 )
             }
         }
@@ -35,7 +38,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation(
     onExit: () -> Unit,
-    showToast: (String) -> Unit
+    onDarkModeChanged: (Boolean) -> Unit
 ) {
     var schermataCorrente by remember {
         mutableStateOf("login")
@@ -49,16 +52,22 @@ fun AppNavigation(
         mutableStateOf<String?>(null)
     }
 
+    // Key del ProfiloViewModel: cambia a ogni login, così non resta quello (con
+    // ruolo e dati) dell'utente precedente dopo un logout.
+    var sessioneId by remember {
+        mutableStateOf(0)
+    }
+
     when (schermataCorrente) {
         "login" -> {
             LoginScreen(
                 onLoginSuccessViaggiatore = {
-                    ruoloUtente = "VIAGGIATORE"
-                    schermataCorrente = "app"
+                    sessioneId++
+                    schermataCorrente = "home"
                 },
                 onLoginSuccessOrganizzatore = {
-                    ruoloUtente = "ORGANIZZATORE"
-                    schermataCorrente = "app"
+                    sessioneId++
+                    schermataCorrente = "home"
                 },
                 onVaiRegistrazione = {
                     emailAppenaRegistrata = null
@@ -80,12 +89,17 @@ fun AppNavigation(
             )
         }
 
-        "app" -> {
+
+        "home" -> {
+
             AppNavGraph(
-                ruoloIniziale = ruoloUtente,
-                onExitApp = {
+                profiloViewModel = viewModel(key = "profilo-$sessioneId"),
+                onExitApp = onExit,
+                onLogout = {
+                    emailAppenaRegistrata = null
                     schermataCorrente = "login"
-                }
+                },
+                onDarkModeChanged = onDarkModeChanged
             )
         }
     }

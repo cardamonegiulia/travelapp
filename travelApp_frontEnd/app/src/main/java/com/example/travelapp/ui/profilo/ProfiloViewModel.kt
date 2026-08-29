@@ -142,11 +142,43 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    // Cambia subito a schermo; se il salvataggio fallisce torna al valore precedente.
     fun cambiaTemaScuro(attivo: Boolean) {
+        val precedente = _state.value.isDarkModeEnabled
+        val id = _state.value.id
+
         _state.update { it.copy(isDarkModeEnabled = attivo) }
+
+        if (id == null) return
+
+        viewModelScope.launch {
+            repository.aggiornaTema(id, attivo)
+                .onFailure { _state.update { it.copy(isDarkModeEnabled = precedente) } }
+        }
     }
 
     fun messaggioMostrato() {
         _state.update { it.copy(photoMessage = null) }
     }
+
+    private fun ProfileUiState.conProfilo(utente: Utente) = copy(
+        id = utente.id,
+        name = utente.nomeCompleto,
+        email = utente.email,
+        ruolo = utente.ruolo ?: ruolo,
+        avatarUrl = utente.fotoProfiloUrl,
+        isDarkModeEnabled = utente.tema?.equals("SCURO", ignoreCase = true) ?: isDarkModeEnabled
+    )
+
+    /**
+     * Dati di esempio finché il login non esiste: senza token il backend risponde 401 e la
+     * schermata resterebbe vuota. Vengono sostituiti dal profilo vero al primo
+     * [caricaProfilo] andato a buon fine.
+     */
+    private fun statoIniziale() = ProfileUiState(
+        name = "Mario Rossi",
+        email = "mario@example.it",
+        avatarUrl = null,
+        isDarkModeEnabled = false
+    )
 }

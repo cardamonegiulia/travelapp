@@ -13,6 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -24,6 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import com.example.travelapp.data.remote.TokenManager
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.catalog.AdminDashboardScreen
@@ -47,10 +49,12 @@ import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModel
 import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModelFactory
 import com.example.travelapp.ui.profilo.ProfiloViewModel
 import com.example.travelapp.ui.screens.BookingsScreen
+import com.example.travelapp.ui.screens.CambiaPasswordScreen
 import com.example.travelapp.ui.screens.ExploreScreen
 import com.example.travelapp.ui.screens.FavoritesScreen
 import com.example.travelapp.ui.screens.ProfileScreen
 import com.example.travelapp.ui.theme.BackgroundLavender
+import kotlinx.coroutines.launch
 
 object CatalogRoutes {
     const val ADMIN_HOME = "catalog/admin_home"
@@ -66,13 +70,22 @@ object CatalogRoutes {
     const val DETTAGLIO_ATTIVITA = "catalog/dettaglio_attivita"
 }
 
+
+object ProfiloRoutes {
+
+    const val CAMBIA_PASSWORD =
+        "profilo/cambia_password"
+}
+
+
 @Composable
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     profiloViewModel: ProfiloViewModel = viewModel(),
-    ruoloIniziale: String? = null,
-    onExitApp: () -> Unit = {}
+    onExitApp: () -> Unit = {},
+    onLogout: () -> Unit = {},
+    onDarkModeChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -81,12 +94,24 @@ fun AppNavGraph(
             factory = PrenotazioniViewModelFactory(context)
         )
 
-    val bookingState by bookingViewModel.uiState.collectAsState()
-    val profiloState by profiloViewModel.state.collectAsState()
+    val coroutineScope =
+        rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        profiloViewModel.caricaProfilo()
+    // Logout condiviso da Admin, Organizzatore e Profilo.
+    val eseguiLogout: () -> Unit = {
+        coroutineScope.launch {
+            TokenManager.cancellaToken(context)
+            onLogout()
+        }
     }
+
+    /*
+     * Utilizziamo la stessa istanza del ProfiloViewModel
+     * sia per il profilo sia per determinare il ruolo
+     * dell'utente e quindi la relativa home.
+     */
+    val profiloState by
+    profiloViewModel.state.collectAsState()
 
     val onBack: () -> Unit = {
         if (!navController.popBackStack()) {
@@ -94,7 +119,22 @@ fun AppNavGraph(
         }
     }
 
-    val ruoloProfilo = profiloState.ruolo.toString().uppercase()
+    // Inoltra il tema a MainActivity. Aspetta il profilo vero (id != null) per non
+    // sovrascrivere per un istante il tema di sistema col placeholder iniziale.
+    LaunchedEffect(profiloState.isDarkModeEnabled, profiloState.id) {
+        if (profiloState.id != null) {
+            onDarkModeChanged(profiloState.isDarkModeEnabled)
+        }
+    }
+
+    /*
+     * Determinazione del ruolo.
+     */
+    val ruoloStr =
+        profiloState.ruolo
+            ?.toString()
+            ?.uppercase()
+            ?: ""
 
     val ruoloEffettivo = when {
         ruoloProfilo.isNotBlank() &&
@@ -182,10 +222,22 @@ fun AppNavGraph(
         ) {
             composable(CatalogRoutes.ADMIN_HOME) {
                 AdminDashboardScreen(
-                    onVaiOfferte = { navController.navigate(CatalogRoutes.OFFERTE_ADMIN) },
-                    onVaiUtenti = { navController.navigate(CatalogRoutes.GESTIONE_UTENTI_ADMIN) },
-                    onVaiProfilo = { navController.navigate(AppDestination.Profile.route) },
-                    onLogout = { onExitApp() }
+
+                    onVaiOfferte = {
+
+                        navController.navigate(
+                            CatalogRoutes.OFFERTE_ADMIN
+                        )
+                    },
+
+                    onVaiUtenti = {
+
+                        navController.navigate(
+                            CatalogRoutes.GESTIONE_UTENTI_ADMIN
+                        )
+                    },
+
+                    onLogout = eseguiLogout
                 )
             }
 
@@ -201,8 +253,8 @@ fun AppNavGraph(
                         attivitaInModifica = item
                         navController.navigate(CatalogRoutes.MODIFICA_ATTIVITA)
                     },
-                    onVaiProfilo = { navController.navigate(AppDestination.Profile.route) },
-                    onLogout = { onExitApp() }
+
+                    onLogout = eseguiLogout
                 )
             }
 
@@ -246,11 +298,44 @@ fun AppNavGraph(
                     onNavigateTo = { destination ->
                         navController.navigate(destination.route)
                     },
-                    onLogout = { onExitApp() }
+
+                    onNavigateToRoute = { route ->
+
+                        navController.navigate(
+                            route
+                        )
+                    },
+
+                    onLogout = eseguiLogout,
+
+                    viewModel =
+                    profiloViewModel
                 )
             }
 
-            composable(CatalogRoutes.DETTAGLIO_ITINERARIO) {
+
+            composable(
+                ProfiloRoutes.CAMBIA_PASSWORD
+            ) {
+
+                CambiaPasswordScreen(
+                    onBack = onBack,
+                    // il backend chiude tutte le sessioni: da qui si esce col logout, non onBack
+                    onPasswordCambiata = eseguiLogout
+                )
+            }
+
+
+            /*
+             * ============================================================
+             * DETTAGLI CATALOGO
+             * ============================================================
+             */
+
+            composable(
+                CatalogRoutes.DETTAGLIO_ITINERARIO
+            ) {
+
                 itinerarioSelezionato?.let { item ->
                     ItinerarioDetailScreen(
                         itinerario = item,
@@ -438,7 +523,8 @@ private fun FavoritesRoute(
 private fun ProfileRoute(
     onBack: () -> Unit,
     onNavigateTo: (AppDestination) -> Unit,
-    onLogout: () -> Unit = {},
+    onNavigateToRoute: (String) -> Unit,
+    onLogout: () -> Unit,
     viewModel: ProfiloViewModel = viewModel()
 ) {
     LaunchedEffect(Unit) {
@@ -462,14 +548,14 @@ private fun ProfileRoute(
         onBookingsClick = { onNavigateTo(AppDestination.Bookings) },
         onPaymentsClick = { onNavigateTo(AppDestination.Payments) },
         onReviewsClick = {},
-        onAddProfilePhoto = {
-            photoPicker.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-            )
+
+        onToggleDarkMode =
+        viewModel::cambiaTemaScuro,
+
+        onChangePassword = {
+            onNavigateToRoute(ProfiloRoutes.CAMBIA_PASSWORD)
         },
-        onPhotoMessageShown = viewModel::messaggioMostrato,
-        onToggleDarkMode = viewModel::cambiaTemaScuro,
-        onChangePassword = {},
+
         onLogout = onLogout
     )
 }
