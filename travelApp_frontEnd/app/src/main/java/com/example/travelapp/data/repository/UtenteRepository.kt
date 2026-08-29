@@ -6,6 +6,7 @@ import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.remote.CorpoImmagine
 import com.example.travelapp.data.remote.ImmagineNonCaricabile
 import com.example.travelapp.data.remote.api.UtenteApi
+import com.example.travelapp.data.remote.dto.CambioPasswordDto
 import com.example.travelapp.domain.model.Utente
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -28,6 +29,29 @@ class UtenteRepository(
             return Result.failure(e)
         }
         return chiamata("Errore nel caricamento della foto") { api.impostaFotoProfilo(parte) }
+    }
+
+    /**
+     * Cambia la password dell'utente autenticato.
+     *
+     * L'endpoint richiede un'autenticazione recente (claim `auth_time`): se il login è troppo
+     * vecchio risponde 401 e serve rifare il login, non basta un refresh del token. Se va a buon
+     * fine, il backend chiude tutte le sessioni esistenti.
+     */
+    suspend fun cambiaPassword(nuovaPassword: String): Result<Unit> =
+        try {
+            val risposta = api.cambiaPassword(CambioPasswordDto(nuovaPassword))
+            if (risposta.isSuccessful) Result.success(Unit)
+            else Result.failure(Exception(messaggioErroreCambioPassword(risposta)))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    private fun messaggioErroreCambioPassword(risposta: Response<*>): String = when (risposta.code()) {
+        400 -> "La password non rispetta i requisiti richiesti"
+        401 -> "Per cambiare la password devi aver effettuato l'accesso di recente: rifai il login"
+        503 -> "Servizio di autenticazione non disponibile, riprova più tardi"
+        else -> "Cambio password non riuscito: HTTP ${risposta.code()}"
     }
 
     suspend fun rimuoviFotoProfilo(): Result<Unit> =
