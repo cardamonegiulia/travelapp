@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.travelapp.data.remote.KeycloakManager
 import com.example.travelapp.data.remote.TokenManager
 import com.example.travelapp.data.repository.UtenteRepository
-import com.example.travelapp.domain.model.Utente
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -103,6 +102,10 @@ class ProfiloViewModel(
 
                 .onSuccess { utente ->
 
+                    println("DEBUG PROFILO SUCCESS")
+                    println("DEBUG UTENTE ID = ${utente.id}")
+                    println("DEBUG UTENTE TEMA = ${utente.tema}")
+
                     _state.update {
 
                         it.conProfilo(
@@ -115,6 +118,8 @@ class ProfiloViewModel(
                 }
 
                 .onFailure { errore ->
+
+                    println("DEBUG PROFILO FAILURE = ${errore.message}")
 
                     val token =
                         TokenManager
@@ -399,66 +404,4 @@ class ProfiloViewModel(
     }
 
 
-    /*
-     * Aggiorna lo stato UI con il profilo reale ricevuto
-     * dal backend.
-     *
-     * Qui uniamo le informazioni che servivano
-     * sia al tuo branch sia a quello di Giulia.
-     */
-    private fun ProfiloUiState.conProfilo(
-        utente: Utente
-    ): ProfiloUiState {
-
-        val nomeValido =
-
-            if (
-                utente.nomeCompleto.isNotBlank()
-            ) {
-
-                utente.nomeCompleto
-
-            } else {
-
-                utente.nome
-            }
-
-
-        return copy(
-
-            id =
-                utente.id,
-
-            utente =
-                utente,
-
-            name =
-                nomeValido.ifBlank {
-                    name
-                },
-
-            email =
-                utente.email.ifBlank {
-                    email
-                },
-
-            ruolo =
-                utente.ruolo
-                    ?: ruolo,
-
-            avatarUrl =
-                utente.fotoProfiloUrl,
-
-            /*
-             * Il backend salva il tema come stringa.
-             */
-            isDarkModeEnabled =
-                utente.tema
-                    ?.equals(
-                        "SCURO",
-                        ignoreCase = true
-                    )
-                    ?: isDarkModeEnabled
-        )
-    }
 }

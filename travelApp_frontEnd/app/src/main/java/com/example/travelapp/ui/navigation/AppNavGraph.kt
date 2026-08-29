@@ -145,10 +145,13 @@ fun AppNavGraph(
         profiloState.isDarkModeEnabled,
         profiloState.id
     ) {
+        println("DEBUG STATE id=${profiloState.id}")
+        println("DEBUG STATE dark=${profiloState.isDarkModeEnabled}")
         if (profiloState.id != null) {
             onDarkModeChanged(
                 profiloState.isDarkModeEnabled
             )
+
         }
     }
 
