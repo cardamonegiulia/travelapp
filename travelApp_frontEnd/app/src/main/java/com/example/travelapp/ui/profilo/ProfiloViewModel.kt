@@ -4,11 +4,14 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.travelapp.data.remote.KeycloakManager
+import com.example.travelapp.data.remote.TokenManager
 import com.example.travelapp.data.repository.UtenteRepository
 import com.example.travelapp.domain.model.Utente
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -20,7 +23,26 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
     val state: StateFlow<ProfiloUiState> = _state.asStateFlow()
 
     init {
+        inizializzaDaCache()
         caricaProfilo()
+    }
+
+    private fun inizializzaDaCache() {
+        viewModelScope.launch {
+            val nome = TokenManager.getNome(getApplication()).firstOrNull().orEmpty()
+            val email = TokenManager.getEmail(getApplication()).firstOrNull().orEmpty()
+            val ruolo = TokenManager.getRuolo(getApplication()).firstOrNull() ?: "VIAGGIATORE"
+
+            if (nome.isNotBlank() || email.isNotBlank()) {
+                _state.update {
+                    it.copy(
+                        name = nome,
+                        email = email,
+                        ruolo = ruolo
+                    )
+                }
+            }
+        }
     }
 
     fun caricaProfilo() {
@@ -28,10 +50,40 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.caricaProfilo()
                 .onSuccess { utente ->
-                    _state.update { it.conProfilo(utente) }
+                    val nomeValido = if (utente.nomeCompleto.isNotBlank()) utente.nomeCompleto else utente.nome
+                    val emailValida = utente.email
+
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            utente = utente,
+                            name = nomeValido.ifBlank { it.name },
+                            email = emailValida.ifBlank { it.email },
+                            ruolo = utente.ruolo ?: it.ruolo,
+                            avatarUrl = utente.fotoProfiloUrl,
+                            errorMessage = null
+                        )
+                    }
                 }
                 .onFailure { errore ->
-                    _state.update { it.copy(isLoading = false, errorMessage = errore.message) }
+                    val token = TokenManager.getToken(getApplication()).firstOrNull()
+                    if (!token.isNullOrBlank()) {
+                        val nomeJwt = KeycloakManager.estraiNome(token)
+                        val emailJwt = KeycloakManager.estraiEmail(token)
+                        val ruoloJwt = KeycloakManager.estraiRuolo(token)
+
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                name = if (nomeJwt.isNotBlank()) nomeJwt else it.name,
+                                email = if (emailJwt.isNotBlank()) emailJwt else it.email,
+                                ruolo = ruoloJwt,
+                                errorMessage = null
+                            )
+                        }
+                    } else {
+                        _state.update { it.copy(isLoading = false, errorMessage = errore.message) }
+                    }
                 }
         }
     }
@@ -47,8 +99,10 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
             repository.impostaFotoProfilo(uri)
                 .onSuccess { utente ->
                     _state.update {
-                        it.conProfilo(utente).copy(
+                        it.copy(
                             isPhotoUploading = false,
+                            utente = utente,
+                            avatarUrl = utente.fotoProfiloUrl,
                             photoMessage = "Foto profilo aggiornata"
                         )
                     }
@@ -95,13 +149,4 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
     fun messaggioMostrato() {
         _state.update { it.copy(photoMessage = null) }
     }
-
-    private fun ProfiloUiState.conProfilo(utente: Utente) = copy(
-        isLoading = false,
-        utente = utente,
-        name = utente.nomeCompleto,
-        email = utente.email,
-        avatarUrl = utente.fotoProfiloUrl,
-        ruolo = utente.ruolo?.toString() ?: "VIAGGIATORE"
-    )
 }
