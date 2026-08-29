@@ -1,9 +1,11 @@
 package com.example.travelapp.data.remote.api
 
+import com.example.travelapp.data.remote.dto.CambioPasswordDto
 import com.example.travelapp.data.remote.dto.PageResponse
 import com.example.travelapp.data.remote.dto.UtenteResponseDto
 import okhttp3.MultipartBody
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
@@ -17,6 +19,9 @@ interface UtenteApi {
 
     @POST("api/utenti/me")
     suspend fun sincronizzaProfilo(): Response<UtenteResponseDto>
+
+    @POST("api/utenti/me/password")
+    suspend fun cambiaPassword(@Body richiesta: CambioPasswordDto): Response<Unit>
 
     @Multipart
     @PUT("api/utenti/me/foto-profilo")

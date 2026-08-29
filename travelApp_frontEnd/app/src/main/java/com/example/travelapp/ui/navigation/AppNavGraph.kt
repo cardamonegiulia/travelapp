@@ -50,6 +50,7 @@ import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModelFactory
 import com.example.travelapp.ui.preferiti.PreferitiViewModel
 import com.example.travelapp.ui.profilo.ProfiloViewModel
 import com.example.travelapp.ui.screens.BookingsScreen
+import com.example.travelapp.ui.screens.CambiaPasswordScreen
 import com.example.travelapp.ui.screens.ExploreScreen
 import com.example.travelapp.ui.screens.FavoritesScreen
 import com.example.travelapp.ui.screens.ProfileScreen
@@ -91,6 +92,13 @@ object CatalogRoutes {
 
     const val DETTAGLIO_ATTIVITA =
         "catalog/dettaglio_attivita"
+}
+
+
+object ProfiloRoutes {
+
+    const val CAMBIA_PASSWORD =
+        "profilo/cambia_password"
 }
 
 
@@ -466,6 +474,20 @@ fun AppNavGraph(
 
                     viewModel =
                     profiloViewModel
+                )
+            }
+
+
+            composable(
+                ProfiloRoutes.CAMBIA_PASSWORD
+            ) {
+
+                CambiaPasswordScreen(
+                    onBack = onBack,
+                    // Il backend chiude tutte le sessioni al cambio riuscito:
+                    // il token attuale non è più valido, quindi da qui si esce
+                    // con lo stesso logout usato altrove, non con un semplice onBack.
+                    onPasswordCambiata = eseguiLogout
                 )
             }
 
@@ -1105,7 +1127,9 @@ private fun ProfileRoute(
         onToggleDarkMode =
         viewModel::cambiaTemaScuro,
 
-        onChangePassword = {},
+        onChangePassword = {
+            onNavigateToRoute(ProfiloRoutes.CAMBIA_PASSWORD)
+        },
 
         onLogout = onLogout
     )
