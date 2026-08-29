@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
+import com.example.travelapp.ui.theme.BackgroundLavender
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,11 +26,12 @@ fun CatalogScreen(
     val state by viewModel.uiState.collectAsState()
 
     Scaffold(
+        containerColor = BackgroundLavender,
         topBar = {
             TopAppBar(
                 title = { Text("Catalogo Viaggi") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = BackgroundLavender
                 )
             )
         }
