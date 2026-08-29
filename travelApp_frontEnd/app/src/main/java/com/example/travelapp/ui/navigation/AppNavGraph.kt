@@ -108,7 +108,8 @@ fun AppNavGraph(
     navController: NavHostController = rememberNavController(),
     profiloViewModel: ProfiloViewModel = viewModel(),
     onExitApp: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onDarkModeChanged: (Boolean) -> Unit = {}
 ) {
 
     val context =
@@ -117,11 +118,7 @@ fun AppNavGraph(
     val coroutineScope =
         rememberCoroutineScope()
 
-    /*
-     * Cancella il token salvato e notifica il chiamante (che riporta
-     * l'app alla schermata di login): condivisa da tutte le schermate
-     * che espongono un pulsante di logout.
-     */
+    // Logout condiviso da Admin, Organizzatore e Profilo.
     val eseguiLogout: () -> Unit = {
         coroutineScope.launch {
             TokenManager.cancellaToken(context)
@@ -140,6 +137,14 @@ fun AppNavGraph(
     val onBack: () -> Unit = {
         if (!navController.popBackStack()) {
             onExitApp()
+        }
+    }
+
+    // Inoltra il tema a MainActivity. Aspetta il profilo vero (id != null) per non
+    // sovrascrivere per un istante il tema di sistema col placeholder iniziale.
+    LaunchedEffect(profiloState.isDarkModeEnabled, profiloState.id) {
+        if (profiloState.id != null) {
+            onDarkModeChanged(profiloState.isDarkModeEnabled)
         }
     }
 
@@ -484,9 +489,7 @@ fun AppNavGraph(
 
                 CambiaPasswordScreen(
                     onBack = onBack,
-                    // Il backend chiude tutte le sessioni al cambio riuscito:
-                    // il token attuale non è più valido, quindi da qui si esce
-                    // con lo stesso logout usato altrove, non con un semplice onBack.
+                    // il backend chiude tutte le sessioni: da qui si esce col logout, non onBack
                     onPasswordCambiata = eseguiLogout
                 )
             }

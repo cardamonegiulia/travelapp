@@ -3,6 +3,7 @@ package com.example.travelapp.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,7 +13,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.travelapp.ui.auth.LoginScreen
 import com.example.travelapp.ui.auth.RegistrazioneScreen
 import com.example.travelapp.ui.navigation.AppNavGraph
-import com.example.travelapp.ui.profilo.ProfiloViewModel
 import com.example.travelapp.ui.theme.TravelAppTheme
 
 
@@ -22,9 +22,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            TravelAppTheme {
+            val temaSistema = isSystemInDarkTheme()
+            var temaScuro by remember { mutableStateOf(temaSistema) }
+
+            TravelAppTheme(darkTheme = temaScuro) {
                 AppNavigation(
-                    onExit = { finish() }
+                    onExit = { finish() },
+                    onDarkModeChanged = { temaScuro = it }
                 )
             }
         }
@@ -34,7 +38,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigation(
-    onExit: () -> Unit
+    onExit: () -> Unit,
+    onDarkModeChanged: (Boolean) -> Unit
 ) {
 
     var schermataCorrente by remember {
@@ -49,12 +54,8 @@ fun AppNavigation(
         mutableStateOf<String?>(null)
     }
 
-    /*
-     * Cambia a ogni login riuscito: usata come key del ProfiloViewModel così
-     * Compose ne crea uno nuovo invece di riusare quello (con dentro ancora
-     * ruolo e dati) dell'utente precedente — lo ViewModelStore è dell'Activity
-     * e sopravvive normalmente a un logout/login.
-     */
+    // Key del ProfiloViewModel: cambia a ogni login, così non resta quello (con
+    // ruolo e dati) dell'utente precedente dopo un logout.
     var sessioneId by remember {
         mutableStateOf(0)
     }
@@ -108,7 +109,8 @@ fun AppNavigation(
                 onLogout = {
                     emailAppenaRegistrata = null
                     schermataCorrente = "login"
-                }
+                },
+                onDarkModeChanged = onDarkModeChanged
             )
         }
     }

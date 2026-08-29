@@ -103,9 +103,19 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    // Cambia subito a schermo; se il salvataggio fallisce torna al valore precedente.
     fun cambiaTemaScuro(attivo: Boolean) {
-        // TODO: propagare il tema al backend (PUT /api/utenti/{id}, campo "tema").
+        val precedente = _state.value.isDarkModeEnabled
+        val id = _state.value.id
+
         _state.update { it.copy(isDarkModeEnabled = attivo) }
+
+        if (id == null) return
+
+        viewModelScope.launch {
+            repository.aggiornaTema(id, attivo)
+                .onFailure { _state.update { it.copy(isDarkModeEnabled = precedente) } }
+        }
     }
 
     /** Da chiamare dopo aver mostrato [ProfileUiState.photoMessage], perché non riappaia. */
@@ -114,10 +124,12 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun ProfileUiState.conProfilo(utente: Utente) = copy(
+        id = utente.id,
         name = utente.nomeCompleto,
         email = utente.email,
         ruolo = utente.ruolo ?: ruolo,
-        avatarUrl = utente.fotoProfiloUrl
+        avatarUrl = utente.fotoProfiloUrl,
+        isDarkModeEnabled = utente.tema?.equals("SCURO", ignoreCase = true) ?: isDarkModeEnabled
     )
 
     /**

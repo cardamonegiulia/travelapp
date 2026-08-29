@@ -160,9 +160,7 @@ fun LoginScreen(
                     // Pulsante login con animazione
                     Button(
                         onClick = {
-                            // forzaLogin = true: senza, dopo un logout Keycloak riusa la
-                            // sessione SSO ancora viva nel browser e ri-autentica in
-                            // silenzio, senza richiedere le credenziali.
+                            // forza le credenziali anche se la sessione Keycloak è ancora viva
                             val intent = viewModel.creaIntentLogin(emailPreCompilata, forzaLogin = true)
                             launcher.launch(intent)
                         },

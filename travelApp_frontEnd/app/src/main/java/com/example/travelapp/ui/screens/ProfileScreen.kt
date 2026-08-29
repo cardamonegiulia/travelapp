@@ -54,6 +54,7 @@ import com.example.travelapp.ui.theme.IconTeal
 
 /** Stato osservabile della schermata profilo. */
 data class ProfileUiState(
+    val id: Long? = null,
     val name: String = "",
     val email: String = "",
     /** Ruolo utente: "VIAGGIATORE", "ORGANIZZATORE" o "ADMIN" */

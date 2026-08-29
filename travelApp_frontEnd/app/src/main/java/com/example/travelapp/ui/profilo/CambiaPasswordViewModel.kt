@@ -15,12 +15,7 @@ sealed class CambiaPasswordUiState {
     data class Error(val messaggio: String) : CambiaPasswordUiState()
 }
 
-/**
- * Se il cambio password va a buon fine, il backend chiude tutte le sessioni dell'utente
- * (vedi `UtenteController.cambiaPassword`): il token attuale smette di essere valido, quindi
- * dopo [CambiaPasswordUiState.Success] il chiamante deve riportare l'utente al login, non
- * solo mostrare un messaggio.
- */
+// A Success il backend ha già chiuso tutte le sessioni: il chiamante deve riportare al login.
 class CambiaPasswordViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = UtenteRepository(application)

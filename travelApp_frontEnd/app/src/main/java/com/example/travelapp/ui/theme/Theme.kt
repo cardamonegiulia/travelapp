@@ -11,50 +11,62 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+// Valori grezzi usati solo per costruire i due schemi qui sotto.
+private val BackgroundLightRaw = Color(0xFFF7F8FA)
+private val SurfaceLightRaw = Color(0xFFFFFFFF)
+private val TextPrimaryLightRaw = Color(0xFF1A1D1F)
+private val TextSecondaryLightRaw = Color(0xFF6B7280)
+private val DividerLightRaw = Color(0xFFE5E7EB)
+
+private val BackgroundDarkRaw = Color(0xFF121417)
+private val SurfaceDarkRaw = Color(0xFF1C1F23)
+private val TextPrimaryDarkRaw = Color(0xFFF2F3F4)
+private val TextSecondaryDarkRaw = Color(0xFF9CA3AF)
+
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryBlue,
-    onPrimary = SurfaceLight,
+    onPrimary = SurfaceLightRaw,
     primaryContainer = Color(0xFFD0E8F5),
     onPrimaryContainer = PrimaryDark,
 
     secondary = AccentOrange,
-    onSecondary = SurfaceLight,
+    onSecondary = SurfaceLightRaw,
     secondaryContainer = Color(0xFFFFE8D0),
     onSecondaryContainer = Color(0xFF7A3D00),
 
-    background = BackgroundLight,
-    onBackground = TextPrimaryLight,
+    background = BackgroundLightRaw,
+    onBackground = TextPrimaryLightRaw,
 
-    surface = SurfaceLight,
-    onSurface = TextPrimaryLight,
-    onSurfaceVariant = TextSecondaryLight,
+    surface = SurfaceLightRaw,
+    onSurface = TextPrimaryLightRaw,
+    onSurfaceVariant = TextSecondaryLightRaw,
 
     error = ErrorRed,
-    onError = SurfaceLight,
+    onError = SurfaceLightRaw,
     errorContainer = Color(0xFFFFEAEA),
     onErrorContainer = ErrorRed,
 
-    outline = DividerColor,
+    outline = DividerLightRaw,
 )
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryLight,
-    onPrimary = BackgroundDark,
+    onPrimary = BackgroundDarkRaw,
     primaryContainer = PrimaryDark,
     onPrimaryContainer = Color(0xFFD0E8F5),
 
     secondary = AccentOrangeDark,
-    onSecondary = BackgroundDark,
+    onSecondary = BackgroundDarkRaw,
 
-    background = BackgroundDark,
-    onBackground = TextPrimaryDark,
+    background = BackgroundDarkRaw,
+    onBackground = TextPrimaryDarkRaw,
 
-    surface = SurfaceDark,
-    onSurface = TextPrimaryDark,
-    onSurfaceVariant = TextSecondaryDark,
+    surface = SurfaceDarkRaw,
+    onSurface = TextPrimaryDarkRaw,
+    onSurfaceVariant = TextSecondaryDarkRaw,
 
     error = ErrorRed,
-    onError = BackgroundDark,
+    onError = BackgroundDarkRaw,
     errorContainer = Color(0xFF4A1515),
     onErrorContainer = Color(0xFFFFB4B4),
 
