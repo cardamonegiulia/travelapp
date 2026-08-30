@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.travelapp.data.remote.dto.dataLeggibile
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
 
@@ -97,6 +98,18 @@ fun ItinerarioCard(
                             color = MaterialTheme.colorScheme.outline
                         )
                     }
+                }
+
+                // Periodo del viaggio, quando l'organizzatore lo ha indicato
+                val partenza = dataLeggibile(itinerario.dataInizio)
+                val rientro = dataLeggibile(itinerario.dataFine)
+                if (partenza != null && rientro != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Dal $partenza al $rientro",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
                 }
             }
         }

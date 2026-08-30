@@ -105,6 +105,20 @@ public class PrenotazioneService {
         sessione.setPostiDisponibili(calcolaPostiResidui(sessione.getPostiDisponibili(),numeroPartecipanti));
     }
 
+    // Oltre il termine fissato dall'organizzatore - o, se non ne ha fissato uno, oltre la
+    // partenza - la disponibilita' non e' piu' prenotabile.
+    private void controllaTerminePrenotazioni(DisponibilitaItinerario disp) {
+        LocalDateTime termine = disp.getDataLimitePrenotazione() != null
+                ? disp.getDataLimitePrenotazione()
+                : disp.getDataInizio();
+
+        if (termine != null && LocalDateTime.now().isAfter(termine)) {
+            throw new RichiestaPrenotazioneNonValidaException(
+                    "Le prenotazioni per questa partenza sono chiuse"
+            );
+        }
+    }
+
     private void controllaEScalaPostiItinerario(DisponibilitaItinerario disp, Integer numeroPartecipanti) {
         disp.setPostiDisponibili(calcolaPostiResidui(disp.getPostiDisponibili(), numeroPartecipanti));
     }
@@ -210,6 +224,8 @@ public class PrenotazioneService {
         if (isItinerario) {
             disponibilitaItinerario =
                     recuperaDisponibilita(req.getDisponibilitaItinerarioId());
+
+            controllaTerminePrenotazioni(disponibilitaItinerario);
 
             controllaEScalaPostiItinerario(
                     disponibilitaItinerario,

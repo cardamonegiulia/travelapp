@@ -10,6 +10,9 @@ data class Itinerario(
     val destinazionePrincipale: String?,
     val prezzoBase: BigDecimal?,
     val durataGiorni: Int?,
+    val dataInizio: String? = null,
+    val dataFine: String? = null,
+    val dataLimitePrenotazione: String? = null,
     val maxPartecipanti: Int?,
     val stato: String?,
     val immagini: List<ImmagineResponse> = emptyList()

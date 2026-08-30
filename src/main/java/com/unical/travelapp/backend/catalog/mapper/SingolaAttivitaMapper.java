@@ -1,10 +1,14 @@
 package com.unical.travelapp.backend.catalog.mapper;
 
+import com.unical.travelapp.backend.catalog.dto.SessioneSingolaAttivitaDTO;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaDTO;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaRequestDTO;
+import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
 import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
 import com.unical.travelapp.backend.experience.mapper.ImmagineMapper;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class SingolaAttivitaMapper {
@@ -45,5 +49,22 @@ public class SingolaAttivitaMapper {
             dto.setOrganizzatoreId(attivita.getOrganizzatore().getId());
         }
         return dto;
+    }
+
+    public SessioneSingolaAttivitaDTO toSessioneDTO(SessioneSingolaAttivita sessione) {
+        if (sessione == null) return null;
+
+        SessioneSingolaAttivitaDTO dto = new SessioneSingolaAttivitaDTO();
+        dto.setId(sessione.getId());
+        dto.setDataInizio(sessione.getDataInizio());
+        dto.setDataFine(sessione.getDataFine());
+        dto.setPostiDisponibili(sessione.getPostiDisponibili());
+        dto.setStato(sessione.getStato());
+        return dto;
+    }
+
+    public List<SessioneSingolaAttivitaDTO> toSessioneDTO(List<SessioneSingolaAttivita> sessioni) {
+        if (sessioni == null) return List.of();
+        return sessioni.stream().map(this::toSessioneDTO).toList();
     }
 }

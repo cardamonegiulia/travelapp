@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,6 +59,9 @@ public class ItinerarioService {
         if (itinerario.getTappe() != null) {
             itinerario.getTappe().forEach(tappa -> tappa.setItinerario(itinerario));
         }
+        if (itinerario.getDisponibilita() != null) {
+            itinerario.getDisponibilita().forEach(periodo -> periodo.setItinerario(itinerario));
+        }
         return itinerarioRepository.save(itinerario);
     }
 
@@ -79,7 +84,41 @@ public class ItinerarioService {
         esistente.setDurataGiorni(datiAggiornati.getDurataGiorni());
         esistente.setMaxPartecipanti(datiAggiornati.getMaxPartecipanti());
 
+        aggiornaPeriodo(esistente, datiAggiornati.getDisponibilita());
+
         return itinerarioRepository.save(esistente);
+    }
+
+    // Il periodo arriva dalla richiesta come singola disponibilita': se l'itinerario ne ha gia'
+    // una si spostano solo le date, perche' i posti disponibili seguono le prenotazioni gia'
+    // fatte e sovrascriverli le cancellerebbe di fatto.
+    private void aggiornaPeriodo(Itinerario esistente, List<DisponibilitaItinerario> periodoRichiesto) {
+        if (periodoRichiesto == null || periodoRichiesto.isEmpty()) {
+            return;
+        }
+
+        DisponibilitaItinerario richiesto = periodoRichiesto.get(0);
+
+        if (esistente.getDisponibilita() == null) {
+            esistente.setDisponibilita(new ArrayList<>());
+        }
+        List<DisponibilitaItinerario> attuali = esistente.getDisponibilita();
+
+        if (attuali.isEmpty()) {
+            richiesto.setItinerario(esistente);
+            attuali.add(richiesto);
+            return;
+        }
+
+        DisponibilitaItinerario periodo = attuali.stream()
+                .filter(d -> d.getDataInizio() != null)
+                .min(Comparator.comparing(DisponibilitaItinerario::getDataInizio))
+                .orElse(attuali.get(0));
+
+        periodo.setDataInizio(richiesto.getDataInizio());
+        periodo.setDataFine(richiesto.getDataFine());
+        // il termine assente nella richiesta significa "nessun limite": va azzerato anche qui
+        periodo.setDataLimitePrenotazione(richiesto.getDataLimitePrenotazione());
     }
 
     @Transactional

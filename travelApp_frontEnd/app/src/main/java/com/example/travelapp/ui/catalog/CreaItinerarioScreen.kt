@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
@@ -41,6 +42,16 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
+private const val GIORNO_MILLIS = 24L * 60 * 60 * 1000
+
+// Le date viaggiano verso il backend in ISO e sono giorni pieni: le trattiamo sempre a
+// mezzanotte UTC, come fa il DatePicker, per non perdere o guadagnare un giorno.
+private fun formatterIso() =
+    SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }
+
+private fun dataIsoInMillis(iso: String?): Long? =
+    iso?.let { runCatching { formatterIso().parse(it)?.time }.getOrNull() }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreaItinerarioScreen(
@@ -52,7 +63,10 @@ fun CreaItinerarioScreen(
     val isModifica = itinerarioDaModificare != null
     val uiState by viewModel.uiState.collectAsState()
 
-    val displayDateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
+    val displayDateFormat = remember {
+        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply { timeZone = TimeZone.getTimeZone("UTC") }
+    }
+    val isoDateFormat = remember { formatterIso() }
 
     val oggiMillis = remember {
         Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
@@ -63,14 +77,32 @@ fun CreaItinerarioScreen(
         }.timeInMillis
     }
 
-    var dataPartenzaMillis by remember { mutableStateOf(oggiMillis + (7L * 24 * 60 * 60 * 1000)) }
-    var mostraDatePicker by remember { mutableStateOf(false) }
+    // In modifica riprendiamo il periodo salvato; se l'itinerario non ne ha uno ripieghiamo
+    // sulla durata gia' registrata, partendo fra una settimana.
+    val durataIniziale = (itinerarioDaModificare?.durataGiorni ?: 7).coerceAtLeast(1)
+    val inizioIniziale = remember {
+        dataIsoInMillis(itinerarioDaModificare?.dataInizio) ?: (oggiMillis + 7L * GIORNO_MILLIS)
+    }
+    val fineIniziale = remember {
+        dataIsoInMillis(itinerarioDaModificare?.dataFine)
+            ?: (inizioIniziale + (durataIniziale - 1) * GIORNO_MILLIS)
+    }
+
+    // Il termine per prenotare e' facoltativo: se non impostato si prenota fino alla partenza.
+    val limiteIniziale = remember { dataIsoInMillis(itinerarioDaModificare?.dataLimitePrenotazione) }
+
+    var dataInizioMillis by remember { mutableStateOf(inizioIniziale) }
+    var dataFineMillis by remember { mutableStateOf(fineIniziale) }
+    var dataLimiteMillis by remember { mutableStateOf(limiteIniziale) }
+
+    var mostraDatePickerInizio by remember { mutableStateOf(false) }
+    var mostraDatePickerFine by remember { mutableStateOf(false) }
+    var mostraDatePickerLimite by remember { mutableStateOf(false) }
 
     var titolo by remember { mutableStateOf(itinerarioDaModificare?.titolo ?: "") }
     var descrizione by remember { mutableStateOf(itinerarioDaModificare?.descrizione ?: "") }
     var destinazione by remember { mutableStateOf(itinerarioDaModificare?.destinazionePrincipale ?: "") }
     var prezzoInput by remember { mutableStateOf(itinerarioDaModificare?.prezzoBase?.toString() ?: "") }
-    var durataInput by remember { mutableStateOf(itinerarioDaModificare?.durataGiorni?.toString() ?: "7") }
     var maxPartecipantiInput by remember { mutableStateOf(itinerarioDaModificare?.maxPartecipanti?.toString() ?: "20") }
     var immagineUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -81,17 +113,21 @@ fun CreaItinerarioScreen(
     val prezzoNumerico = prezzoInput.replace(",", ".").toDoubleOrNull()
     val isPrezzoValido = prezzoNumerico != null && prezzoNumerico > 0.0
 
-    val durataNumerica = durataInput.toIntOrNull()
-    val isDurataValida = durataNumerica != null && durataNumerica > 0
+    // La durata mostrata e' quella che ricavera' anche il server dalle due date, estremi inclusi.
+    val durataCalcolata = (((dataFineMillis - dataInizioMillis) / GIORNO_MILLIS) + 1).toInt()
+    val isInizioValido = dataInizioMillis >= oggiMillis
+    val isPeriodoValido = isInizioValido && dataFineMillis >= dataInizioMillis
+    // Chiudere le prenotazioni dopo la partenza non avrebbe senso: il server lo rifiuta comunque.
+    val isLimiteValido = dataLimiteMillis?.let { it in oggiMillis..dataInizioMillis } ?: true
 
     val partecipantiNumerici = maxPartecipantiInput.toIntOrNull()
     val isPartecipantiValidi = partecipantiNumerici != null && partecipantiNumerici > 0
 
-    val isFormValido = titolo.isNotBlank() && destinazione.isNotBlank() && isPrezzoValido && isDurataValida && isPartecipantiValidi
+    val isFormValido = titolo.isNotBlank() && destinazione.isNotBlank() && isPrezzoValido && isPeriodoValido && isLimiteValido && isPartecipantiValidi
 
-    if (mostraDatePicker) {
+    if (mostraDatePickerInizio) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = dataPartenzaMillis,
+            initialSelectedDateMillis = dataInizioMillis,
             selectableDates = object : SelectableDates {
                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                     return utcTimeMillis >= oggiMillis
@@ -99,24 +135,95 @@ fun CreaItinerarioScreen(
             }
         )
         DatePickerDialog(
-            onDismissRequest = { mostraDatePicker = false },
+            onDismissRequest = { mostraDatePickerInizio = false },
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { selected ->
-                        dataPartenzaMillis = selected
+                        val durataPrecedente = (dataFineMillis - dataInizioMillis) / GIORNO_MILLIS
+                        dataInizioMillis = selected
+                        // Spostando l'inizio trasciniamo la fine, per non lasciare un intervallo negativo.
+                        if (dataFineMillis < selected) {
+                            dataFineMillis = selected + durataPrecedente.coerceAtLeast(0) * GIORNO_MILLIS
+                        }
+                        dataLimiteMillis = dataLimiteMillis?.coerceAtMost(selected)
                     }
-                    mostraDatePicker = false
+                    mostraDatePickerInizio = false
                 }) {
                     Text("OK", color = TravelBlue)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { mostraDatePicker = false }) {
+                TextButton(onClick = { mostraDatePickerInizio = false }) {
                     Text("Annulla")
                 }
             }
         ) {
-            DatePicker(state = datePickerState, title = { Text("Seleziona data di partenza", modifier = Modifier.padding(16.dp)) })
+            DatePicker(state = datePickerState, title = { Text("Seleziona data di inizio", modifier = Modifier.padding(16.dp)) })
+        }
+    }
+
+    if (mostraDatePickerFine) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = dataFineMillis,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis >= maxOf(dataInizioMillis, oggiMillis)
+                }
+            }
+        )
+        DatePickerDialog(
+            onDismissRequest = { mostraDatePickerFine = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { selected ->
+                        dataFineMillis = selected
+                    }
+                    mostraDatePickerFine = false
+                }) {
+                    Text("OK", color = TravelBlue)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostraDatePickerFine = false }) {
+                    Text("Annulla")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState, title = { Text("Seleziona data di fine", modifier = Modifier.padding(16.dp)) })
+        }
+    }
+
+    if (mostraDatePickerLimite) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = dataLimiteMillis ?: dataInizioMillis,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis in oggiMillis..dataInizioMillis
+                }
+            }
+        )
+        DatePickerDialog(
+            onDismissRequest = { mostraDatePickerLimite = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { selected ->
+                        dataLimiteMillis = selected
+                    }
+                    mostraDatePickerLimite = false
+                }) {
+                    Text("OK", color = TravelBlue)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostraDatePickerLimite = false }) {
+                    Text("Annulla")
+                }
+            }
+        ) {
+            DatePicker(
+                state = datePickerState,
+                title = { Text("Ultimo giorno per prenotare", modifier = Modifier.padding(16.dp)) }
+            )
         }
     }
 
@@ -224,30 +331,77 @@ fun CreaItinerarioScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedTextField(
-                    value = displayDateFormat.format(Date(dataPartenzaMillis)),
+                    value = displayDateFormat.format(Date(dataInizioMillis)),
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("PRIMA PARTENZA") },
+                    isError = !isInizioValido,
+                    label = { Text("DATA INIZIO") },
                     trailingIcon = {
-                        IconButton(onClick = { mostraDatePicker = true }) {
-                            Icon(Icons.Default.DateRange, contentDescription = "Scegli data partenza", tint = TravelBlue)
+                        IconButton(onClick = { mostraDatePickerInizio = true }) {
+                            Icon(Icons.Default.DateRange, contentDescription = "Scegli data inizio", tint = TravelBlue)
                         }
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { mostraDatePicker = true }
+                        .clickable { mostraDatePickerInizio = true }
                 )
 
                 OutlinedTextField(
-                    value = durataInput,
-                    onValueChange = { input -> if (input.all { it.isDigit() }) durataInput = input },
-                    label = { Text("DURATA (GIORNI)") },
-                    placeholder = { Text("7") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f),
-                    isError = durataInput.isNotEmpty() && !isDurataValida
+                    value = displayDateFormat.format(Date(dataFineMillis)),
+                    onValueChange = {},
+                    readOnly = true,
+                    isError = !isPeriodoValido,
+                    label = { Text("DATA FINE") },
+                    trailingIcon = {
+                        IconButton(onClick = { mostraDatePickerFine = true }) {
+                            Icon(Icons.Default.DateRange, contentDescription = "Scegli data fine", tint = TravelBlue)
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { mostraDatePickerFine = true }
                 )
             }
+
+            Text(
+                text = when {
+                    !isInizioValido -> "La data di inizio non puo' essere nel passato"
+                    !isPeriodoValido -> "La data di fine non puo' precedere quella di inizio"
+                    else -> "Durata: $durataCalcolata giorni"
+                },
+                color = if (isPeriodoValido) TravelTextMuted else MaterialTheme.colorScheme.error,
+                fontSize = 13.sp
+            )
+
+            OutlinedTextField(
+                value = dataLimiteMillis?.let { displayDateFormat.format(Date(it)) }
+                    ?: "Nessun limite: si prenota fino alla partenza",
+                onValueChange = {},
+                readOnly = true,
+                isError = !isLimiteValido,
+                label = { Text("PRENOTAZIONI ENTRO IL") },
+                supportingText = {
+                    Text(
+                        if (isLimiteValido) "Facoltativo: dopo questa data l'itinerario non e' piu' prenotabile"
+                        else "Il termine deve cadere fra oggi e la data di inizio"
+                    )
+                },
+                trailingIcon = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (dataLimiteMillis != null) {
+                            IconButton(onClick = { dataLimiteMillis = null }) {
+                                Icon(Icons.Default.Close, contentDescription = "Rimuovi il termine", tint = TravelTextMuted)
+                            }
+                        }
+                        IconButton(onClick = { mostraDatePickerLimite = true }) {
+                            Icon(Icons.Default.DateRange, contentDescription = "Scegli il termine", tint = TravelBlue)
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { mostraDatePickerLimite = true }
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -308,7 +462,9 @@ fun CreaItinerarioScreen(
                                 descrizione = descrizione,
                                 destinazionePrincipale = destinazione,
                                 prezzoBase = BigDecimal(prezzoNumerico!!),
-                                durataGiorni = durataNumerica!!,
+                                dataInizio = isoDateFormat.format(Date(dataInizioMillis)),
+                                dataFine = isoDateFormat.format(Date(dataFineMillis)),
+                                dataLimitePrenotazione = dataLimiteMillis?.let { isoDateFormat.format(Date(it)) },
                                 maxPartecipanti = partecipantiNumerici!!
                             ),
                             immagineUri = immagineUri

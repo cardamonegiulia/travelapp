@@ -26,6 +26,11 @@ public class DisponibilitaItinerario {
     @Column(name = "data_fine")
     private LocalDateTime dataFine;
 
+    // Ultimo istante utile per prenotare questa partenza. Se assente si puo' prenotare
+    // fino alla data di inizio.
+    @Column(name = "data_limite_prenotazione")
+    private LocalDateTime dataLimitePrenotazione;
+
     @Column(name = "posti_disponibili")
     private Integer postiDisponibili;
 }

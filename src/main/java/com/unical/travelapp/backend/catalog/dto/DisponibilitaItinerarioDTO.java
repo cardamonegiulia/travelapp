@@ -1,69 +1,21 @@
 package com.unical.travelapp.backend.catalog.dto;
 
+import lombok.Data;
+
 import java.time.LocalDateTime;
 
+// Vista di una partenza per chi la deve prenotare. Non si restituisce l'entita': porta con se'
+// il riferimento all'itinerario, che a sua volta contiene le disponibilita' (ciclo infinito
+// in serializzazione, oltre a esporre dati di audit).
+@Data
 public class DisponibilitaItinerarioDTO {
 
     private Long id;
     private LocalDateTime dataInizio;
     private LocalDateTime dataFine;
+
+    // Termine ultimo per prenotare: assente se si prenota fino alla partenza.
+    private LocalDateTime dataLimitePrenotazione;
+
     private Integer postiDisponibili;
-    private String stato;
-
-    public DisponibilitaItinerarioDTO() {
-    }
-
-    public DisponibilitaItinerarioDTO(
-            Long id,
-            LocalDateTime dataInizio,
-            LocalDateTime dataFine,
-            Integer postiDisponibili,
-            String stato
-    ) {
-        this.id = id;
-        this.dataInizio = dataInizio;
-        this.dataFine = dataFine;
-        this.postiDisponibili = postiDisponibili;
-        this.stato = stato;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public LocalDateTime getDataInizio() {
-        return dataInizio;
-    }
-
-    public void setDataInizio(LocalDateTime dataInizio) {
-        this.dataInizio = dataInizio;
-    }
-
-    public LocalDateTime getDataFine() {
-        return dataFine;
-    }
-
-    public void setDataFine(LocalDateTime dataFine) {
-        this.dataFine = dataFine;
-    }
-
-    public Integer getPostiDisponibili() {
-        return postiDisponibili;
-    }
-
-    public void setPostiDisponibili(Integer postiDisponibili) {
-        this.postiDisponibili = postiDisponibili;
-    }
-
-    public String getStato() {
-        return stato;
-    }
-
-    public void setStato(String stato) {
-        this.stato = stato;
-    }
 }

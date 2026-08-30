@@ -4,6 +4,7 @@ import com.unical.travelapp.backend.experience.models.DTO.ImmagineResponse;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,15 @@ public class ItinerarioDTO {
     private String destinazionePrincipale;
     private BigDecimal prezzoBase;
     private Integer durataGiorni;
+
+    // Periodo del viaggio: ricavato dalla disponibilità dell'itinerario, quindi assente
+    // finché l'organizzatore non ne ha indicata una.
+    private LocalDate dataInizio;
+    private LocalDate dataFine;
+
+    // Termine ultimo per prenotare la prima partenza: assente se non ne e' stato indicato uno.
+    private LocalDate dataLimitePrenotazione;
+
     private Integer maxPartecipanti;
     private String stato;
 

@@ -30,6 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.travelapp.data.remote.dto.dataLeggibile
+import com.example.travelapp.data.remote.dto.isPrenotabile
+import com.example.travelapp.data.remote.dto.prenotazioniAperte
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.theme.*
@@ -215,7 +218,7 @@ fun ItinerarioDetailScreen(
 
                 // Date e Disponibilità Reali
                 Text(
-                    text = "Date disponibili",
+                    text = "Date e posti disponibili",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = TravelTextDark
@@ -238,9 +241,23 @@ fun ItinerarioDetailScreen(
                     ) {
                         items(uiState.disponibilitaItinerario) { disp ->
                             val isSelected = uiState.idSelezionato == disp.id
+                            val aperte = disp.prenotazioniAperte()
+                            val termine = dataLeggibile(disp.dataLimitePrenotazione)
+
                             SlotDateCard(
-                                title = "${disp.dataInizio} - ${disp.dataFine}",
-                                subtitle = "${disp.postiDisponibili} posti rimasti",
+                                title = "${dataLeggibile(disp.dataInizio) ?: "-"} → ${dataLeggibile(disp.dataFine) ?: "-"}",
+                                subtitle = if (disp.postiDisponibili > 0) {
+                                    "${disp.postiDisponibili} posti disponibili"
+                                } else {
+                                    "Nessun posto disponibile"
+                                },
+                                nota = when {
+                                    !aperte -> "Prenotazioni chiuse"
+                                    disp.postiDisponibili <= 0 -> "Esaurito"
+                                    termine != null -> "Prenota entro il $termine"
+                                    else -> null
+                                },
+                                enabled = disp.isPrenotabile(),
                                 isSelected = isSelected,
                                 onClick = { viewModel.selezionaSlot(disp.id) }
                             )
@@ -491,11 +508,13 @@ private fun SlotDateCard(
     title: String,
     subtitle: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    nota: String? = null,
+    enabled: Boolean = true
 ) {
     Surface(
         modifier = Modifier
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .border(
                 width = if (isSelected) 2.dp else 1.dp,
                 color = if (isSelected) TravelBlue else TravelBorder,
@@ -512,7 +531,11 @@ private fun SlotDateCard(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                color = if (isSelected) TravelBlue else TravelTextDark
+                color = when {
+                    !enabled -> TravelTextMuted
+                    isSelected -> TravelBlue
+                    else -> TravelTextDark
+                }
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -520,6 +543,15 @@ private fun SlotDateCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = TravelTextMuted
             )
+            if (nota != null) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = nota,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (enabled) TravelBlue else MaterialTheme.colorScheme.error
+                )
+            }
         }
     }
 }

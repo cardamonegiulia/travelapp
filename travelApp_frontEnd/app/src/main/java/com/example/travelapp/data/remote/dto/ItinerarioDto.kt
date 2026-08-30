@@ -13,6 +13,9 @@ data class ItinerarioResponseDto(
     val destinazionePrincipale: String?,
     val prezzoBase: BigDecimal?,
     val durataGiorni: Int?,
+    val dataInizio: String? = null,
+    val dataFine: String? = null,
+    val dataLimitePrenotazione: String? = null,
     val maxPartecipanti: Int?,
     val stato: String?,
     val immagini: List<ImmagineDto>? = null
@@ -25,6 +28,9 @@ data class ItinerarioResponseDto(
         destinazionePrincipale = destinazionePrincipale,
         prezzoBase = prezzoBase,
         durataGiorni = durataGiorni,
+        dataInizio = dataInizio,
+        dataFine = dataFine,
+        dataLimitePrenotazione = dataLimitePrenotazione,
         maxPartecipanti = maxPartecipanti,
         stato = stato,
         immagini = immagini?.map { img ->
@@ -42,7 +48,11 @@ data class ItinerarioRequestDto(
     val descrizione: String?,
     val destinazionePrincipale: String,
     val prezzoBase: BigDecimal,
-    val durataGiorni: Int,
+    // Il periodo del viaggio (formato ISO yyyy-MM-dd): il server ne ricava la durata in giorni.
+    val dataInizio: String,
+    val dataFine: String,
+    // Termine per le prenotazioni: null significa "fino alla partenza".
+    val dataLimitePrenotazione: String?,
     val maxPartecipanti: Int
 )
 

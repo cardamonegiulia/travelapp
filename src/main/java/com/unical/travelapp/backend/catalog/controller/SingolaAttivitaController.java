@@ -1,8 +1,8 @@
 package com.unical.travelapp.backend.catalog.controller;
 
+import com.unical.travelapp.backend.catalog.dto.SessioneSingolaAttivitaDTO;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaDTO;
 import com.unical.travelapp.backend.catalog.dto.SingolaAttivitaRequestDTO;
-import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
 import com.unical.travelapp.backend.catalog.entity.SingolaAttivita;
 import com.unical.travelapp.backend.catalog.exception.SingolaAttivitaNonTrovataException;
 import com.unical.travelapp.backend.catalog.mapper.SingolaAttivitaMapper;
@@ -70,8 +70,9 @@ public class SingolaAttivitaController {
 
     @GetMapping("/{id}/sessioni")
     @Operation(summary = "Restituisce le sessioni di un'attività")
-    public ResponseEntity<List<SessioneSingolaAttivita>> getSessioniByAttivita(@PathVariable Long id) {
-        return ResponseEntity.ok(attivitaService.getSessioniByAttivitaId(id));
+    public ResponseEntity<List<SessioneSingolaAttivitaDTO>> getSessioniByAttivita(@PathVariable Long id) {
+        return ResponseEntity.ok(attivitaMapper.toSessioneDTO(
+                attivitaService.getSessioniByAttivitaId(id)));
     }
 
     @PostMapping("/con-sessioni")

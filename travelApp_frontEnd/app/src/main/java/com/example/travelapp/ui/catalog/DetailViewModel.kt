@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.remote.dto.DisponibilitaItinerarioResponseDto
+import com.example.travelapp.data.remote.dto.isPrenotabile
 import com.example.travelapp.data.remote.dto.SessioneAttivitaResponseDto
 import com.example.travelapp.data.repository.ItinerarioRepository
 import com.example.travelapp.data.repository.SingolaAttivitaRepository
@@ -48,7 +49,8 @@ class DetailViewModel(
                     it.copy(
                         isLoading = false,
                         disponibilitaItinerario = list,
-                        idSelezionato = list.firstOrNull()?.id
+                        // preselezioniamo la prima partenza ancora prenotabile, non la prima in lista
+                        idSelezionato = list.firstOrNull { disp -> disp.isPrenotabile() }?.id
                     )
                 }
             } else {

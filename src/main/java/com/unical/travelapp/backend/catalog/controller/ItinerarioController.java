@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.catalog.controller;
 
+import com.unical.travelapp.backend.catalog.dto.DisponibilitaItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
@@ -78,18 +79,22 @@ public class ItinerarioController {
 
     // --- Endpoint per recuperare le disponibilità (richiesto per il booking) ---
     @GetMapping("/{id}/disponibilita")
-    @Operation(summary = "Restituisce le disponibilità di un itinerario")
-    public ResponseEntity<List<com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario>> getDisponibilitaByItinerario(
+    @Operation(
+            summary = "Restituisce le disponibilità di un itinerario",
+            description = "Per ogni partenza: date, posti ancora liberi ed eventuale termine per prenotare."
+    )
+    public ResponseEntity<List<DisponibilitaItinerarioDTO>> getDisponibilitaByItinerario(
             @PathVariable Long id
     ) {
-        return ResponseEntity.ok(itinerarioService.getDisponibilitaByItinerarioId(id));
+        return ResponseEntity.ok(itinerarioMapper.toDisponibilitaDTO(
+                itinerarioService.getDisponibilitaByItinerarioId(id)));
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(
             summary = "Crea un nuovo itinerario",
-            description = "Accessibile solo da ORGANIZZATORE o ADMIN. L'organizzatore viene impostato automaticamente dal server tramite il token JWT. Lo stato iniziale è sempre BOZZA."
+            description = "Accessibile solo da ORGANIZZATORE o ADMIN. L'organizzatore viene impostato automaticamente dal server tramite il token JWT. Lo stato iniziale è sempre BOZZA. Indicando dataInizio e dataFine (non nel passato, estremi inclusi) il server calcola la durata in giorni e registra la disponibilità corrispondente."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Itinerario creato con successo"),
@@ -111,7 +116,7 @@ public class ItinerarioController {
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(
             summary = "Aggiorna un itinerario esistente",
-            description = "Accessibile da ORGANIZZATORE (solo i propri itinerari) o ADMIN."
+            description = "Accessibile da ORGANIZZATORE (solo i propri itinerari) o ADMIN. Le date del viaggio spostano la disponibilità esistente, lasciandone invariati i posti."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Itinerario aggiornato con successo"),
