@@ -15,11 +15,7 @@ data class ItinerarioResponseDto(
     val durataGiorni: Int?,
     val maxPartecipanti: Int?,
     val stato: String?,
-    // Nullable di proposito: Gson costruisce l'oggetto senza passare dal
-    // costruttore Kotlin, quindi un default non-null non lo proteggerebbe da una
-    // risposta priva del campo: il valore resterebbe null e schianterebbe qui
-    // sotto. Il backend lo manda sempre, ma non e' detto sia aggiornato.
-    val immagini: List<ImmagineResponse>? = null
+    val immagini: List<ImmagineDto>? = null
 ) {
     fun toDomain(): Itinerario = Itinerario(
         id = id,
@@ -31,11 +27,13 @@ data class ItinerarioResponseDto(
         durataGiorni = durataGiorni,
         maxPartecipanti = maxPartecipanti,
         stato = stato,
-        // Il backend restituisce un percorso relativo (/api/immagini/1/contenuto):
-        // a Coil serve un URL assoluto, come gia' si fa per la foto profilo.
-        immagini = immagini.orEmpty().map { immagine ->
-            immagine.copy(url = immagine.url?.let { ApiClient.urlAssoluto(it) })
-        }
+        immagini = immagini?.map { img ->
+            ImmagineResponse(
+                id = img.id,
+                url = ApiClient.urlAssoluto(img.url),
+                tipo = img.contentType
+            )
+        } ?: emptyList()
     )
 }
 

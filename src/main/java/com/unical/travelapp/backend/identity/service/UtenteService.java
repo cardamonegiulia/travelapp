@@ -180,11 +180,14 @@ public class UtenteService {
 
     public Utente ottieniUtenteDaToken(Jwt jwt) {
         String keycloakId = jwt.getSubject();
+        String email = normalizzaEmail(jwt.getClaimAsString("email"));
+
         return utenteRepository.findByKeycloakId(keycloakId)
+                .or(() -> !email.isBlank() ? utenteRepository.findByEmail(email) : Optional.empty())
                 .orElseThrow(() -> new UtenteNonTrovatoException("Utente loggato non trovato nel database locale"));
     }
 
-    public Utente getUtenteSessione(){
+    public Utente getUtenteSessione() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Jwt jwt = (Jwt) authentication.getPrincipal();
         return ottieniUtenteDaToken(jwt);
@@ -202,44 +205,108 @@ public class UtenteService {
 
     public UtenteResponseDto sincronizzaUtente(Jwt jwt) {
         String keycloakId = jwt.getSubject();
+        String email = normalizzaEmail(jwt.getClaimAsString("email"));
 
-        return utenteRepository.findByKeycloakId(keycloakId)
-                .map(this::riallineaRuolo)
-                .map(utenteMapper::toResponseDto)
-                .orElseGet(() -> utenteMapper.toResponseDto(creaDaToken(keycloakId, jwt)));
+        // 1. Cerca per keycloakId
+        Optional<Utente> perKeycloak = utenteRepository.findByKeycloakId(keycloakId);
+        if (perKeycloak.isPresent()) {
+            Utente utente = riallineaDatiUtente(perKeycloak.get(), jwt);
+            return utenteMapper.toResponseDto(utente);
+        }
+
+        // 2. Se non trovato per keycloakId, cerca per email per evitare violazione del vincolo UNIQUE
+        if (!email.isBlank()) {
+            Optional<Utente> perEmail = utenteRepository.findByEmail(email);
+            if (perEmail.isPresent()) {
+                Utente utente = perEmail.get();
+                utente.setKeycloakId(keycloakId);
+                utente = riallineaDatiUtente(utente, jwt);
+                return utenteMapper.toResponseDto(utente);
+            }
+        }
+
+        // 3. Altrimenti crea il nuovo record
+        Utente nuovo = creaDaToken(keycloakId, jwt);
+        return utenteMapper.toResponseDto(nuovo);
     }
 
-    private Utente riallineaRuolo(Utente utente) {
-        return ruoloDalTokenCorrente()
-                .filter(ruoloDelToken -> ruoloDelToken != utente.getRuolo())
-                .map(ruoloDelToken -> {
-                    log.info("Ruolo locale dell'utente {} riallineato da {} a {} (fonte: token)",
-                            utente.getId(), utente.getRuolo(), ruoloDelToken);
-                    utente.setRuolo(ruoloDelToken);
-                    return utenteRepository.save(utente);
-                })
-                .orElse(utente);
+    private Utente riallineaDatiUtente(Utente utente, Jwt jwt) {
+        boolean modificato = false;
+
+        Optional<Ruolo> ruoloToken = ruoloDalTokenCorrente();
+        if (ruoloToken.isPresent() && ruoloToken.get() != utente.getRuolo()) {
+            log.info("Ruolo locale dell'utente {} riallineato da {} a {} (fonte: token)",
+                    utente.getId(), utente.getRuolo(), ruoloToken.get());
+            utente.setRuolo(ruoloToken.get());
+            modificato = true;
+        }
+
+        String nome = estraiNome(jwt);
+        String cognome = estraiCognome(jwt);
+
+        if ((utente.getNome() == null || utente.getNome().isBlank()) && !nome.isBlank()) {
+            utente.setNome(nome);
+            modificato = true;
+        }
+        if ((utente.getCognome() == null || utente.getCognome().isBlank()) && !cognome.isBlank()) {
+            utente.setCognome(cognome);
+            modificato = true;
+        }
+
+        return modificato ? utenteRepository.save(utente) : utente;
     }
 
     private Utente creaDaToken(String keycloakId, Jwt jwt) {
         String email = normalizzaEmail(jwt.getClaimAsString("email"));
 
         if (email.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Il token non contiene l'email necessaria a creare l'account locale");
-        }
-        if (utenteRepository.existsByEmail(email)) {
-            throw new UtenteGiaEsistenteException("Esiste già un utente registrato con questa email");
+            email = claimOppureVuoto(jwt, "preferred_username");
+            if (email.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Il token non contiene l'email necessaria a creare l'account locale");
+            }
         }
 
         Utente nuovo = new Utente();
         nuovo.setKeycloakId(keycloakId);
-        nuovo.setNome(claimOppureVuoto(jwt, "given_name"));
-        nuovo.setCognome(claimOppureVuoto(jwt, "family_name"));
+        nuovo.setNome(estraiNome(jwt));
+        nuovo.setCognome(estraiCognome(jwt));
         nuovo.setEmail(email);
-        nuovo.setRuolo(ruoloDalTokenCorrente().orElse(Ruolo.VIAGGIATORE));
+        nuovo.setRuolo(ruoloDalTokenCorrente().orElse(Ruolo.ORGANIZZATORE));
         nuovo.setTema(Tema.CHIARO);
         return utenteRepository.save(nuovo);
+    }
+
+    private String estraiNome(Jwt jwt) {
+        String given = claimOppureVuoto(jwt, "given_name");
+        if (!given.isBlank()) return given;
+
+        String name = claimOppureVuoto(jwt, "name");
+        if (!name.isBlank()) {
+            String[] parts = name.split(" ", 2);
+            return parts[0];
+        }
+
+        String username = claimOppureVuoto(jwt, "preferred_username");
+        if (!username.isBlank()) return username;
+
+        String email = claimOppureVuoto(jwt, "email");
+        if (email.contains("@")) return email.substring(0, email.indexOf('@'));
+
+        return "";
+    }
+
+    private String estraiCognome(Jwt jwt) {
+        String family = claimOppureVuoto(jwt, "family_name");
+        if (!family.isBlank()) return family;
+
+        String name = claimOppureVuoto(jwt, "name");
+        if (!name.isBlank()) {
+            String[] parts = name.split(" ", 2);
+            if (parts.length > 1) return parts[1];
+        }
+
+        return "";
     }
 
     private Optional<Ruolo> ruoloDalTokenCorrente() {

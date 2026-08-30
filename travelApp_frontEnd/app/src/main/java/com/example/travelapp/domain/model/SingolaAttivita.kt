@@ -10,5 +10,6 @@ data class SingolaAttivita(
     val luogo: String?,
     val prezzo: BigDecimal?,
     val durataMinuti: Int?,
-    val maxPartecipanti: Int?
+    val maxPartecipanti: Int?,
+    val immagini: List<ImmagineResponse> = emptyList()
 )

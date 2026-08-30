@@ -15,7 +15,6 @@ import com.unical.travelapp.backend.identity.entity.Utente;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,7 +44,6 @@ public class ItinerarioService {
     public Optional<Itinerario> getItinerarioById(Long id) {
         return itinerarioRepository.findById(id);
     }
-
 
     public List<DisponibilitaItinerario> getDisponibilitaByItinerarioId(Long itinerarioId) {
         if (!itinerarioRepository.existsById(itinerarioId)) {
@@ -103,14 +101,14 @@ public class ItinerarioService {
 
     // --- Immagini dell'itinerario ---------------------------------------------------------
 
-    @Transactional
+    @Transactional(timeoutString = "${app.storage.immagini.upload-timeout-secondi:30}")
     public ImmagineResponse aggiungiImmagine(Long id, MultipartFile file, Utente richiedente, boolean isAdmin) {
         Itinerario itinerario = itinerarioModificabile(id, richiedente, isAdmin);
         immagineService.verificaLimite(itinerario.getImmagini().size());
 
         Immagine immagine = immagineService.caricaEntita(file);
         itinerario.getImmagini().add(immagine);
-        itinerarioRepository.save(itinerario);
+        itinerarioRepository.saveAndFlush(itinerario);
 
         return immagineMapper.toResponse(immagine);
     }
@@ -132,7 +130,7 @@ public class ItinerarioService {
                         "Immagine non trovata sull'itinerario: " + immagineId));
 
         itinerario.getImmagini().remove(immagine);
-        itinerarioRepository.save(itinerario);
+        itinerarioRepository.saveAndFlush(itinerario);
 
         immagineService.eliminaEntita(immagine);
     }

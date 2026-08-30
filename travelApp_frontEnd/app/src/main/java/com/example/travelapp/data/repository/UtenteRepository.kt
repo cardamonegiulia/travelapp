@@ -15,7 +15,7 @@ import retrofit2.Response
 
 class UtenteRepository(
     context: Context,
-    private val api: UtenteApi =  ApiClient.getUtenteApi(context)
+    private val api: UtenteApi = ApiClient.getUtenteApi(context)
 ) {
     private val context: Context = context.applicationContext
 
@@ -25,12 +25,8 @@ class UtenteRepository(
 
     suspend fun impostaFotoProfilo(uri: Uri): Result<Utente> {
         val parte = try {
-            // decodifica, ridimensionamento e ricompressione sono lavoro di CPU su qualche
-            // megabyte: il chiamante è il viewModelScope, cioè il thread principale
             withContext(Dispatchers.IO) { CorpoImmagine.da(context, uri) }
         } catch (e: ImmagineNonCaricabile) {
-            // file illeggibile o non decodificabile: è un errore da mostrare all'utente, non
-            // un guasto, e non vale la pena disturbare il backend per farselo dire
             return Result.failure(e)
         }
         return chiamata("Errore nel caricamento della foto") { api.impostaFotoProfilo(parte) }

@@ -2,7 +2,7 @@ package com.example.travelapp.ui.catalog
 
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.remote.dto.SingolaAttivitaRequestDto
@@ -12,10 +12,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 data class CreaAttivitaUiState(
     val isSalvataggioInCorso: Boolean = false,
@@ -25,7 +21,7 @@ data class CreaAttivitaUiState(
 
 class CreaAttivitaViewModel(
     application: android.app.Application
-) : androidx.lifecycle.AndroidViewModel(application) {
+) : AndroidViewModel(application) {
 
     private val repository =
         SingolaAttivitaRepository(
@@ -39,6 +35,8 @@ class CreaAttivitaViewModel(
         context: Context,
         idDaModificare: Long?,
         request: SingolaAttivitaRequestDto,
+        dataInizio: String,
+        dataFine: String,
         giorniSettimana: Set<Int>,
         immagineUri: Uri?
     ) {
@@ -48,25 +46,19 @@ class CreaAttivitaViewModel(
             val result = if (idDaModificare != null) {
                 repository.updateAttivita(idDaModificare, request)
             } else {
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                val oggi = Date()
-                val cal = Calendar.getInstance().apply {
-                    time = oggi
-                    add(Calendar.DAY_OF_YEAR, 30)
-                }
-
-                val inizio = dateFormat.format(oggi)
-                val fine = dateFormat.format(cal.time)
-
                 repository.createAttivitaConSessioni(
                     request = request,
-                    inizio = inizio,
-                    fine = fine,
-                    giorni = giorniSettimana.toList()
+                    inizio = dataInizio,
+                    fine = dataFine,
+                    giorni = giorniSettimana.toList().sorted()
                 )
             }
 
             if (result.isSuccess) {
+                val attivitaSalvata = result.getOrNull()
+                if (immagineUri != null && attivitaSalvata != null) {
+                    repository.caricaImmagine(context, attivitaSalvata.id, immagineUri)
+                }
                 _uiState.update { it.copy(isSalvataggioInCorso = false, salvataggioCompletato = true) }
             } else {
                 _uiState.update {

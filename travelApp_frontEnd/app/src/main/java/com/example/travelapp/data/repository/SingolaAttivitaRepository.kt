@@ -1,9 +1,16 @@
 package com.example.travelapp.data.repository
 
+import android.content.Context
+import android.net.Uri
+import com.example.travelapp.data.remote.CorpoImmagine
+import com.example.travelapp.data.remote.ImmagineNonCaricabile
 import com.example.travelapp.data.remote.api.SingolaAttivitaApi
 import com.example.travelapp.data.remote.dto.SessioneAttivitaResponseDto
 import com.example.travelapp.data.remote.dto.SingolaAttivitaRequestDto
+import com.example.travelapp.domain.model.ImmagineResponse
 import com.example.travelapp.domain.model.SingolaAttivita
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class SingolaAttivitaRepository(
     private val api: SingolaAttivitaApi
@@ -86,6 +93,28 @@ class SingolaAttivitaRepository(
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Errore eliminazione attività: HTTP ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun caricaImmagine(context: Context, id: Long, uri: Uri): Result<ImmagineResponse> {
+        val parte = try {
+            withContext(Dispatchers.IO) { CorpoImmagine.da(context, uri) }
+        } catch (e: ImmagineNonCaricabile) {
+            return Result.failure(e)
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
+
+        return try {
+            val response = api.caricaImmagine(id, parte)
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
+                Result.success(body)
+            } else {
+                Result.failure(Exception("Errore upload immagine attività: HTTP ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

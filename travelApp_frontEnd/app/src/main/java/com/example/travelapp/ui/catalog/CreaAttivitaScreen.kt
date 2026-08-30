@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +35,11 @@ import com.example.travelapp.data.remote.dto.SingolaAttivitaRequestDto
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.theme.*
 import java.math.BigDecimal
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +51,26 @@ fun CreaAttivitaScreen(
     val context = LocalContext.current
     val isModifica = attivitaDaModificare != null
     val uiState by viewModel.uiState.collectAsState()
+
+    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    val displayDateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
+
+    val oggiMillis = remember {
+        Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    val fineDefaultMillis = remember { oggiMillis + (30L * 24 * 60 * 60 * 1000) }
+
+    var dataInizioMillis by remember { mutableStateOf(oggiMillis) }
+    var dataFineMillis by remember { mutableStateOf(fineDefaultMillis) }
+
+    var mostraDatePickerInizio by remember { mutableStateOf(false) }
+    var mostraDatePickerFine by remember { mutableStateOf(false) }
 
     var titolo by remember { mutableStateOf(attivitaDaModificare?.titolo ?: "") }
     var luogo by remember { mutableStateOf(attivitaDaModificare?.luogo ?: "") }
@@ -72,7 +98,15 @@ fun CreaAttivitaScreen(
     val durataOre = durataOreInput.replace(",", ".").toDoubleOrNull()
     val isDurataValida = durataOre != null && durataOre > 0.0
 
-    val isFormValido = titolo.isNotBlank() && luogo.isNotBlank() && isPrezzoValido && isPostiValidi && isDurataValida && giorniSelezionati.isNotEmpty()
+    val isDateRangeValido = dataFineMillis >= dataInizioMillis
+
+    val isFormValido = titolo.isNotBlank() &&
+            luogo.isNotBlank() &&
+            isPrezzoValido &&
+            isPostiValidi &&
+            isDurataValida &&
+            isDateRangeValido &&
+            giorniSelezionati.isNotEmpty()
 
     LaunchedEffect(uiState.salvataggioCompletato) {
         if (uiState.salvataggioCompletato) {
@@ -89,6 +123,71 @@ fun CreaAttivitaScreen(
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    if (mostraDatePickerInizio) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = dataInizioMillis,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis >= oggiMillis
+                }
+            }
+        )
+        DatePickerDialog(
+            onDismissRequest = { mostraDatePickerInizio = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { selected ->
+                        dataInizioMillis = selected
+                        if (dataFineMillis < selected) {
+                            dataFineMillis = selected + (7L * 24 * 60 * 60 * 1000)
+                        }
+                    }
+                    mostraDatePickerInizio = false
+                }) {
+                    Text("OK", color = TravelBlue)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostraDatePickerInizio = false }) {
+                    Text("Annulla")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState, title = { Text("Seleziona data inizio", modifier = Modifier.padding(16.dp)) })
+        }
+    }
+
+    if (mostraDatePickerFine) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = dataFineMillis,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis >= dataInizioMillis
+                }
+            }
+        )
+        DatePickerDialog(
+            onDismissRequest = { mostraDatePickerFine = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { selected ->
+                        dataFineMillis = selected
+                    }
+                    mostraDatePickerFine = false
+                }) {
+                    Text("OK", color = TravelBlue)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostraDatePickerFine = false }) {
+                    Text("Annulla")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState, title = { Text("Seleziona data fine", modifier = Modifier.padding(16.dp)) })
         }
     }
 
@@ -185,7 +284,7 @@ fun CreaAttivitaScreen(
             OutlinedTextField(
                 value = postiInput,
                 onValueChange = { input -> if (input.all { it.isDigit() }) postiInput = input },
-                label = { Text("Posti disponibili (Max partecipanti)") },
+                label = { Text("Posti disponibili per sessione") },
                 placeholder = { Text("Es. 15") },
                 isError = postiInput.isNotEmpty() && !isPostiValidi,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -203,6 +302,43 @@ fun CreaAttivitaScreen(
             )
 
             if (!isModifica) {
+                Text("Periodo di disponibilità", fontWeight = FontWeight.Bold, color = TravelTextDark, fontSize = 14.sp)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedTextField(
+                        value = displayDateFormat.format(Date(dataInizioMillis)),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("DATA INIZIO") },
+                        trailingIcon = {
+                            IconButton(onClick = { mostraDatePickerInizio = true }) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Scegli data inizio", tint = TravelBlue)
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { mostraDatePickerInizio = true }
+                    )
+
+                    OutlinedTextField(
+                        value = displayDateFormat.format(Date(dataFineMillis)),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("DATA FINE") },
+                        trailingIcon = {
+                            IconButton(onClick = { mostraDatePickerFine = true }) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Scegli data fine", tint = TravelBlue)
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { mostraDatePickerFine = true }
+                    )
+                }
+
                 Text("Giorni operativi", fontWeight = FontWeight.Bold, color = TravelTextDark, fontSize = 14.sp)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -238,6 +374,9 @@ fun CreaAttivitaScreen(
                 onClick = {
                     if (isFormValido && !uiState.isSalvataggioInCorso) {
                         val minutiTotali = (durataOre!! * 60).toInt()
+                        val strInizio = dateFormat.format(Date(dataInizioMillis))
+                        val strFine = dateFormat.format(Date(dataFineMillis))
+
                         viewModel.salvaAttivita(
                             context = context,
                             idDaModificare = attivitaDaModificare?.id,
@@ -249,6 +388,8 @@ fun CreaAttivitaScreen(
                                 durataMinuti = minutiTotali,
                                 maxPartecipanti = postiNumerici!!
                             ),
+                            dataInizio = strInizio,
+                            dataFine = strFine,
                             giorniSettimana = giorniSelezionati,
                             immagineUri = immagineUri
                         )
