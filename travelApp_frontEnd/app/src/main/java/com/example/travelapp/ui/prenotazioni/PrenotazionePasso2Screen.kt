@@ -53,29 +53,17 @@ fun PrenotazionePasso2Screen(
     var intestatario by remember { mutableStateOf("") }
     var scadenza by remember { mutableStateOf("") }
     var cvv by remember { mutableStateOf("") }
-    val numeroCartaValido =
-        numeroCarta.filter { it.isDigit() }.length == 16
-
-    val scadenzaValida =
-        scadenza.matches(
-            Regex("""\d{2}/\d{2}""")
-        ) &&
-                scadenza.take(2).toIntOrNull() in 1..12
-
-    val datiCartaValidi =
-        numeroCartaValido &&
-                intestatario.isNotBlank() &&
-                scadenzaValida &&
-                cvv.isNotBlank()
-
+    val numeroCartaValido = numeroCarta.length == 16
+    val meseScadenza = scadenza.take(2).toIntOrNull()
+    val scadenzaValida = scadenza.length == 4 && meseScadenza in 1..12
+    val cvvValido = cvv.length == 3
+    val datiCartaValidi = numeroCartaValido && intestatario.isNotBlank() && scadenzaValida && cvvValido
     val pagamentoConsentito =
         when (uiState.metodoPagamento) {
             MetodoPagamentoUi.CARTA_CREDITO ->
                 datiCartaValidi
-
             MetodoPagamentoUi.PAYPAL ->
                 true
-
             MetodoPagamentoUi.BONIFICO ->
                 true
         }
@@ -477,26 +465,27 @@ private fun CartaPagamentoForm(
                 value = numeroCarta,
 
                 onValueChange = { nuovoValore ->
-
-                    val cifre = nuovoValore
-                        .filter { it.isDigit() }
-                        .take(16)
-
-                    val formattato = cifre
-                        .chunked(4)
-                        .joinToString(" ")
-
-                    onNumeroCartaChange(formattato)
+                    onNumeroCartaChange(
+                        nuovoValore
+                            .filter { it.isDigit() }
+                            .take(16)
+                    )
                 },
+
                 label = {
                     Text("Numero carta")
                 },
+
                 placeholder = {
                     Text("1234 5678 9012 3456")
                 },
+
+                visualTransformation = NumeroCartaVisualTransformation(),
+
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number
                 ),
+
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -523,19 +512,11 @@ private fun CartaPagamentoForm(
                     value = scadenza,
 
                     onValueChange = { nuovoValore ->
-
-                        val cifre = nuovoValore
-                            .filter { it.isDigit() }
-                            .take(4)
-
-                        val formattato =
-                            if (cifre.length > 2) {
-                                "${cifre.take(2)}/${cifre.drop(2)}"
-                            } else {
-                                cifre
-                            }
-
-                        onScadenzaChange(formattato)
+                        onScadenzaChange(
+                            nuovoValore
+                                .filter { it.isDigit() }
+                                .take(4)
+                        )
                     },
 
                     label = {
@@ -545,6 +526,8 @@ private fun CartaPagamentoForm(
                     placeholder = {
                         Text("MM/AA")
                     },
+
+                    visualTransformation = ScadenzaVisualTransformation(),
 
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
@@ -556,7 +539,13 @@ private fun CartaPagamentoForm(
 
                 OutlinedTextField(
                     value = cvv,
-                    onValueChange = onCvvChange,
+                    onValueChange = { nuovoValore ->
+                        onCvvChange(
+                            nuovoValore
+                                .filter { it.isDigit() }
+                                .take(3)
+                        )
+                    },
                     label = {
                         Text("CVV")
                     },
