@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
             TravelAppTheme(darkTheme = temaScuro) {
                 AppNavigation(
                     onExit = { finish() },
+                    temaSistema = temaSistema,
                     onDarkModeChanged = { temaScuro = it }
                 )
             }
@@ -39,6 +40,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation(
     onExit: () -> Unit,
+    temaSistema: Boolean,
     onDarkModeChanged: (Boolean) -> Unit
 ) {
 
@@ -109,6 +111,7 @@ fun AppNavigation(
                 onLogout = {
                     emailAppenaRegistrata = null
                     schermataCorrente = "login"
+                    onDarkModeChanged(temaSistema)
                 },
                 onDarkModeChanged = onDarkModeChanged
             )
