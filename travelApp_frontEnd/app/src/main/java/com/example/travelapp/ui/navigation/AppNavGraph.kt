@@ -611,34 +611,29 @@ fun AppNavGraph(
 
                             onBack = onBack,
 
-                            onPrenota = { disponibilitaId ->
+                            onPrenota = { disponibilita ->
 
-                                /*
-                                 * Booking reale:
-                                 * conserviamo l'id della disponibilità
-                                 * selezionata nel ViewModel.
-                                 */
                                 bookingViewModel.inizializzaBooking(
-
-                                    titolo =
-                                        item.titolo,
-
-                                    luogo =
-                                        item.destinazionePrincipale
-                                            ?: "",
-
+                                    titolo = item.titolo,
+                                    luogo = item.destinazionePrincipale ?: "",
                                     prezzoBaseUnitario =
-                                        item.prezzoBase
-                                            ?.toDouble()
-                                            ?: 0.0,
+                                        item.prezzoBase?.toDouble() ?: 0.0,
 
                                     disponibilitaItinerarioId =
-                                        disponibilitaId,
+                                        disponibilita.id,
 
                                     sessioneSingolaAttivitaId =
-                                        null
-                                )
+                                        null,
 
+                                    dataInizio =
+                                        disponibilita.dataInizio,
+
+                                    dataFine =
+                                        disponibilita.dataFine,
+
+                                    postiDisponibili =
+                                        disponibilita.postiDisponibili
+                                )
 
                                 navController.navigate(
                                     AppDestination.BookingStep1.route
@@ -670,34 +665,29 @@ fun AppNavGraph(
 
                             onBack = onBack,
 
-                            onPrenota = { sessioneId ->
+                            onPrenota = { sessione ->
 
-                                /*
-                                 * Booking reale:
-                                 * conserviamo l'id della sessione
-                                 * selezionata.
-                                 */
                                 bookingViewModel.inizializzaBooking(
-
-                                    titolo =
-                                        item.titolo,
-
-                                    luogo =
-                                        item.luogo
-                                            ?: "",
-
+                                    titolo = item.titolo,
+                                    luogo = item.luogo ?: "",
                                     prezzoBaseUnitario =
-                                        item.prezzo
-                                            ?.toDouble()
-                                            ?: 0.0,
+                                        item.prezzo?.toDouble() ?: 0.0,
 
                                     disponibilitaItinerarioId =
                                         null,
 
                                     sessioneSingolaAttivitaId =
-                                        sessioneId
-                                )
+                                        sessione.id,
 
+                                    dataInizio =
+                                        sessione.dataInizio,
+
+                                    dataFine =
+                                        null,
+
+                                    postiDisponibili =
+                                        sessione.postiDisponibili
+                                )
 
                                 navController.navigate(
                                     AppDestination.BookingStep1.route

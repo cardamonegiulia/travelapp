@@ -1,13 +1,13 @@
 package com.example.travelapp.ui.prenotazioni
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.travelapp.data.remote.dto.CreaPrenotazioneDto
+import com.example.travelapp.data.repository.PagamentoRepository
 import com.example.travelapp.data.repository.PrenotazioneRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import androidx.lifecycle.viewModelScope
-import com.example.travelapp.data.remote.dto.CreaPrenotazioneDto
-import com.example.travelapp.data.repository.PagamentoRepository
 import kotlinx.coroutines.launch
 
 class PrenotazioniViewModel(
@@ -47,7 +47,10 @@ class PrenotazioniViewModel(
         luogo: String,
         prezzoBaseUnitario: Double,
         disponibilitaItinerarioId: Long? = null,
-        sessioneSingolaAttivitaId: Long? = null
+        sessioneSingolaAttivitaId: Long? = null,
+        dataInizio: String? = null,
+        dataFine: String? = null,
+        postiDisponibili: Int? = null
     ) {
         _uiState.value = BookingUiState(
             titolo = titolo,
@@ -56,7 +59,10 @@ class PrenotazioniViewModel(
             prezzoBase = prezzoBaseUnitario,
             prezzoTotaleVisualizzato = prezzoBaseUnitario,
             disponibilitaItinerarioId = disponibilitaItinerarioId,
-            sessioneSingolaAttivitaId = sessioneSingolaAttivitaId
+            sessioneSingolaAttivitaId = sessioneSingolaAttivitaId,
+            dataInizio = dataInizio,
+            dataFine = dataFine,
+            postiDisponibili = postiDisponibili
         )
     }
 
@@ -71,8 +77,19 @@ class PrenotazioniViewModel(
     }
 
     fun incrementaPartecipanti() {
-        _uiState.value = _uiState.value.copy(
-            numeroPartecipanti = _uiState.value.numeroPartecipanti + 1
+        val stato = _uiState.value
+        val massimo = stato.postiDisponibili
+
+        if (
+            massimo != null &&
+            stato.numeroPartecipanti >= massimo
+        ) {
+            return
+        }
+
+        _uiState.value = stato.copy(
+            numeroPartecipanti =
+                stato.numeroPartecipanti + 1
         )
         ricalcolaTotale()
     }

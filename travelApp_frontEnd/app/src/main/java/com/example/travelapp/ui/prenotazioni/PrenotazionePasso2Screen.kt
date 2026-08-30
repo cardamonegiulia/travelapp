@@ -40,6 +40,7 @@ import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 import com.example.travelapp.ui.theme.WarningBackground
 import com.example.travelapp.ui.theme.WarningYellow
+import com.example.travelapp.ui.util.formattaData
 
 @Composable
 fun PrenotazionePasso2Screen(
@@ -52,10 +53,19 @@ fun PrenotazionePasso2Screen(
     var intestatario by remember { mutableStateOf("") }
     var scadenza by remember { mutableStateOf("") }
     var cvv by remember { mutableStateOf("") }
+    val numeroCartaValido =
+        numeroCarta.filter { it.isDigit() }.length == 16
+
+    val scadenzaValida =
+        scadenza.matches(
+            Regex("""\d{2}/\d{2}""")
+        ) &&
+                scadenza.take(2).toIntOrNull() in 1..12
+
     val datiCartaValidi =
-        numeroCarta.isNotBlank() &&
+        numeroCartaValido &&
                 intestatario.isNotBlank() &&
-                scadenza.isNotBlank() &&
+                scadenzaValida &&
                 cvv.isNotBlank()
 
     val pagamentoConsentito =
@@ -144,6 +154,19 @@ fun PrenotazionePasso2Screen(
                         text = uiState.luogo,
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary
+                    )
+                }
+
+                uiState.dataInizio?.let { data ->
+
+                    RigaRiepilogoPagamento(
+                        etichetta = "Data",
+                        valore =
+                            if (uiState.dataFine != null) {
+                                "${formattaData(data)} - ${formattaData(uiState.dataFine)}"
+                            } else {
+                                formattaData(data)
+                            }
                     )
                 }
 
@@ -452,7 +475,19 @@ private fun CartaPagamentoForm(
 
             OutlinedTextField(
                 value = numeroCarta,
-                onValueChange = onNumeroCartaChange,
+
+                onValueChange = { nuovoValore ->
+
+                    val cifre = nuovoValore
+                        .filter { it.isDigit() }
+                        .take(16)
+
+                    val formattato = cifre
+                        .chunked(4)
+                        .joinToString(" ")
+
+                    onNumeroCartaChange(formattato)
+                },
                 label = {
                     Text("Numero carta")
                 },
@@ -486,13 +521,35 @@ private fun CartaPagamentoForm(
 
                 OutlinedTextField(
                     value = scadenza,
-                    onValueChange = onScadenzaChange,
+
+                    onValueChange = { nuovoValore ->
+
+                        val cifre = nuovoValore
+                            .filter { it.isDigit() }
+                            .take(4)
+
+                        val formattato =
+                            if (cifre.length > 2) {
+                                "${cifre.take(2)}/${cifre.drop(2)}"
+                            } else {
+                                cifre
+                            }
+
+                        onScadenzaChange(formattato)
+                    },
+
                     label = {
                         Text("Scadenza")
                     },
+
                     placeholder = {
                         Text("MM/AA")
                     },
+
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
+
                     singleLine = true,
                     modifier = Modifier.weight(1f)
                 )

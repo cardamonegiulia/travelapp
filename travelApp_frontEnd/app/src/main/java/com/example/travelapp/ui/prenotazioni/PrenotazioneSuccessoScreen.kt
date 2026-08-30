@@ -28,6 +28,7 @@ import com.example.travelapp.ui.theme.SuccessGreen
 import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
+import com.example.travelapp.ui.util.formattaData
 
 @Composable
 fun PrenotazioneSuccessoScreen(
@@ -128,6 +129,17 @@ fun PrenotazioneSuccessoScreen(
 
                     Text(
                         text = it.luogo,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+
+                    Text(
+                        text =
+                            if (it.dataFine != null) {
+                                "Data: ${formattaData(it.dataInizio)} - ${formattaData(it.dataFine)}"
+                            } else {
+                                "Data: ${formattaData(it.dataInizio)}"
+                            },
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary
                     )

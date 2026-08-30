@@ -13,9 +13,13 @@ data class BookingUiState(
 
     val titolo: String = "",
     val luogo: String = "",
+
+    val dataInizio: String? = null,
+    val dataFine: String? = null,
+    val postiDisponibili: Int? = null,
+
     val prezzoBaseUnitario: Double = 0.0,
     val prezzoBase: Double = 0.0,
-
     val prezzoExtra: Double = 0.0,
     val prezzoTotaleVisualizzato: Double = 0.0,
     val metodoPagamento: MetodoPagamentoUi = MetodoPagamentoUi.CARTA_CREDITO,
@@ -28,4 +32,9 @@ data class BookingUiState(
 ) {
     val attivitaExtraIds: List<Long>
         get() = extraSelezionati.keys.toList()
+
+    val puoIncrementarePartecipanti: Boolean
+        get() =
+            postiDisponibili == null ||
+                    numeroPartecipanti < postiDisponibili
 }
