@@ -37,6 +37,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.travelapp.data.remote.dto.DisponibilitaItinerarioResponseDto
+import com.example.travelapp.data.remote.dto.SessioneAttivitaResponseDto
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.ListaPreferiti
 import com.example.travelapp.domain.model.SingolaAttivita
@@ -49,7 +51,7 @@ fun ItinerarioDetailScreen(
     itinerario: Itinerario,
     viewModel: DetailViewModel = viewModel(),
     onBack: () -> Unit,
-    onPrenota: (disponibilitaId: Long) -> Unit
+    onPrenota: (DisponibilitaItinerarioResponseDto) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val copertinaUrl = itinerario.immagini.firstOrNull()?.url
@@ -107,7 +109,14 @@ fun ItinerarioDetailScreen(
 
                     Button(
                         onClick = {
-                            uiState.idSelezionato?.let { onPrenota(it) }
+                            val disponibilitaSelezionata =
+                                uiState.disponibilitaItinerario
+                                    .firstOrNull {
+                                        it.id == uiState.idSelezionato
+                                    }
+                            disponibilitaSelezionata?.let {
+                                onPrenota(it)
+                            }
                         },
                         enabled = uiState.idSelezionato != null,
                         colors = ButtonDefaults.buttonColors(containerColor = TravelOrange),
@@ -154,7 +163,7 @@ fun ItinerarioDetailScreen(
                         onClick = onBack,
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f), CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -167,7 +176,7 @@ fun ItinerarioDetailScreen(
                         onClick = { viewModel.apriSelettorePreferiti(itinerario.id) },
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f), CircleShape)
                     ) {
                         Icon(
                             imageVector = if (uiState.ePreferito) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -183,7 +192,7 @@ fun ItinerarioDetailScreen(
                     .fillMaxWidth()
                     .offset(y = (-16).dp)
                     .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                    .background(Color.White)
+                    .background(TravelSurface)
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -322,7 +331,7 @@ fun AttivitaDetailScreen(
     attivita: SingolaAttivita,
     viewModel: DetailViewModel = viewModel(),
     onBack: () -> Unit,
-    onPrenota: (sessioneId: Long) -> Unit
+    onPrenota: (SessioneAttivitaResponseDto) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val copertinaUrl = attivita.immagini.firstOrNull()?.url
@@ -361,7 +370,14 @@ fun AttivitaDetailScreen(
 
                     Button(
                         onClick = {
-                            uiState.idSelezionato?.let { onPrenota(it) }
+                            val sessioneSelezionata =
+                                uiState.sessioniAttivita
+                                    .firstOrNull {
+                                        it.id == uiState.idSelezionato
+                                    }
+                            sessioneSelezionata?.let {
+                                onPrenota(it)
+                            }
                         },
                         enabled = uiState.idSelezionato != null,
                         colors = ButtonDefaults.buttonColors(containerColor = TravelOrange),
@@ -408,7 +424,7 @@ fun AttivitaDetailScreen(
                         onClick = onBack,
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                            .background( MaterialTheme.colorScheme.surface.copy(alpha = 0.92f), CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -421,7 +437,7 @@ fun AttivitaDetailScreen(
                         onClick = { },
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                            .background( MaterialTheme.colorScheme.surface.copy(alpha = 0.92f), CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.FavoriteBorder,
@@ -437,7 +453,7 @@ fun AttivitaDetailScreen(
                     .fillMaxWidth()
                     .offset(y = (-16).dp)
                     .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                    .background(Color.White)
+                    .background(TravelSurface)
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -550,7 +566,7 @@ private fun SlotDateCard(
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = if (isSelected) TravelChipBg else Color.White
+        color = if (isSelected) { TravelChipBg } else { TravelSurface }
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
@@ -621,7 +637,7 @@ private fun DialogoSceltaLista(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        containerColor = TravelSurface,
         title = {
             Text(text = "Salva nei preferiti", fontWeight = FontWeight.Bold, color = TravelTextDark)
         },
