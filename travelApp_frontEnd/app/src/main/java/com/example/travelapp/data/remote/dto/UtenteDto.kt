@@ -30,6 +30,16 @@ data class UtenteResponseDto(
     )
 }
 
+/** Corpo di `PUT /api/utenti/{id}` per aggiornare solo il tema. */
+data class AggiornaTemaDto(
+    val tema: String
+)
+
+/** Corpo di `POST /api/utenti/me/password` (`CambioPasswordRequest` lato backend). */
+data class CambioPasswordDto(
+    val nuovaPassword: String
+)
+
 /** Metadati di un'immagine (`ImmagineResponse` lato backend). */
 data class ImmagineDto(
     val id: Long,

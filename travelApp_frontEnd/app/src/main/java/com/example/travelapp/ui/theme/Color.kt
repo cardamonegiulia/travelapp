@@ -1,5 +1,7 @@
 package com.example.travelapp.ui.theme
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 // ── Primari ──────────────────────────────────────────────────────────────────
@@ -19,11 +21,12 @@ val TravelOrange = Color(0xFFE87A30)
 val TravelOrangeHover = Color(0xFFCF661E)
 
 // ── Palette Travel ────────────────────────────────────────────────────────────
-val TravelBg = Color(0xFFF8F9FA)
-val TravelSurface = Color(0xFFFFFFFF)
-val TravelTextDark = Color(0xFF1E293B)
-val TravelTextMuted = Color(0xFF64748B)
-val TravelBorder = Color(0xFFE2E8F0)
+// Alias equivalenti a quelli di "Sfondi, superfici e testi" più sotto, con nomi diversi.
+val TravelBg: Color @Composable get() = MaterialTheme.colorScheme.background
+val TravelSurface: Color @Composable get() = MaterialTheme.colorScheme.surface
+val TravelTextDark: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+val TravelTextMuted: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+val TravelBorder: Color @Composable get() = MaterialTheme.colorScheme.outline
 val TravelChipBg = Color(0xFFEBF3F9)
 
 // ── Semantici ────────────────────────────────────────────────────────────────
@@ -35,27 +38,20 @@ val ErrorRed = Color(0xFFEB5757)
 val LogoutRed = ErrorRed
 val LogoutBackground = Color(0xFFFFEAEA)
 
-// ── Sfondi e superfici ───────────────────────────────────────────────────────
-val BackgroundLight = Color(0xFFF7F8FA)
-val BackgroundLavender = BackgroundLight
-val SurfaceLight = Color(0xFFFFFFFF)
-val SurfaceWhite = SurfaceLight
+// ── Sfondi, superfici e testi ────────────────────────────────────────────────
+// Seguono MaterialTheme.colorScheme (i valori grezzi sono in Theme.kt) invece di
+// restare fissi sulla versione chiara.
+val BackgroundLight: Color @Composable get() = MaterialTheme.colorScheme.background
+val BackgroundLavender: Color @Composable get() = MaterialTheme.colorScheme.background
+val SurfaceLight: Color @Composable get() = MaterialTheme.colorScheme.surface
+val SurfaceWhite: Color @Composable get() = MaterialTheme.colorScheme.surface
 
-val BackgroundDark = Color(0xFF121417)
-val SurfaceDark = Color(0xFF1C1F23)
-
-// ── Testi ────────────────────────────────────────────────────────────────────
-val TextPrimaryLight = Color(0xFF1A1D1F)
-val TextPrimary = TextPrimaryLight
-val TextSecondaryLight = Color(0xFF6B7280)
-val TextSecondary = TextSecondaryLight
-
-val TextPrimaryDark = Color(0xFFF2F3F4)
-val TextSecondaryDark = Color(0xFF9CA3AF)
+val TextPrimary: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+val TextSecondary: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 // ── Utility ──────────────────────────────────────────────────────────────────
-val DividerColor = Color(0xFFE5E7EB)
-val ChevronGrey = DividerColor
+val DividerColor: Color @Composable get() = MaterialTheme.colorScheme.outline
+val ChevronGrey: Color @Composable get() = MaterialTheme.colorScheme.outline
 val SkeletonColor = Color(0xFFE9EAEC)
 
 // ── Badge circolari ──────────────────────────────────────────────────────────

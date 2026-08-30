@@ -14,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import com.example.travelapp.data.remote.TokenManager
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.catalog.AdminDashboardScreen
@@ -48,10 +50,12 @@ import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModelFactory
 import com.example.travelapp.ui.preferiti.PreferitiViewModel
 import com.example.travelapp.ui.profilo.ProfiloViewModel
 import com.example.travelapp.ui.screens.BookingsScreen
+import com.example.travelapp.ui.screens.CambiaPasswordScreen
 import com.example.travelapp.ui.screens.ExploreScreen
 import com.example.travelapp.ui.screens.FavoritesScreen
 import com.example.travelapp.ui.screens.ProfileScreen
 import com.example.travelapp.ui.theme.BackgroundLavender
+import kotlinx.coroutines.launch
 
 
 object CatalogRoutes {
@@ -91,16 +95,36 @@ object CatalogRoutes {
 }
 
 
+object ProfiloRoutes {
+
+    const val CAMBIA_PASSWORD =
+        "profilo/cambia_password"
+}
+
+
 @Composable
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     profiloViewModel: ProfiloViewModel = viewModel(),
-    onExitApp: () -> Unit = {}
+    onExitApp: () -> Unit = {},
+    onLogout: () -> Unit = {},
+    onDarkModeChanged: (Boolean) -> Unit = {}
 ) {
 
     val context =
         LocalContext.current
+
+    val coroutineScope =
+        rememberCoroutineScope()
+
+    // Logout condiviso da Admin, Organizzatore e Profilo.
+    val eseguiLogout: () -> Unit = {
+        coroutineScope.launch {
+            TokenManager.cancellaToken(context)
+            onLogout()
+        }
+    }
 
     /*
      * Utilizziamo la stessa istanza del ProfiloViewModel
@@ -113,6 +137,14 @@ fun AppNavGraph(
     val onBack: () -> Unit = {
         if (!navController.popBackStack()) {
             onExitApp()
+        }
+    }
+
+    // Inoltra il tema a MainActivity. Aspetta il profilo vero (id != null) per non
+    // sovrascrivere per un istante il tema di sistema col placeholder iniziale.
+    LaunchedEffect(profiloState.isDarkModeEnabled, profiloState.id) {
+        if (profiloState.id != null) {
+            onDarkModeChanged(profiloState.isDarkModeEnabled)
         }
     }
 
@@ -277,9 +309,7 @@ fun AppNavGraph(
                         )
                     },
 
-                    onLogout = {
-                        onExitApp()
-                    }
+                    onLogout = eseguiLogout
                 )
             }
 
@@ -328,9 +358,7 @@ fun AppNavGraph(
                         )
                     },
 
-                    onLogout = {
-                        onExitApp()
-                    }
+                    onLogout = eseguiLogout
                 )
             }
 
@@ -447,8 +475,22 @@ fun AppNavGraph(
                         )
                     },
 
+                    onLogout = eseguiLogout,
+
                     viewModel =
                     profiloViewModel
+                )
+            }
+
+
+            composable(
+                ProfiloRoutes.CAMBIA_PASSWORD
+            ) {
+
+                CambiaPasswordScreen(
+                    onBack = onBack,
+                    // il backend chiude tutte le sessioni: da qui si esce col logout, non onBack
+                    onPasswordCambiata = eseguiLogout
                 )
             }
 
@@ -971,6 +1013,7 @@ private fun ProfileRoute(
     onBack: () -> Unit,
     onNavigateTo: (AppDestination) -> Unit,
     onNavigateToRoute: (String) -> Unit,
+    onLogout: () -> Unit,
     viewModel: ProfiloViewModel = viewModel()
 ) {
 
@@ -1087,9 +1130,11 @@ private fun ProfileRoute(
         onToggleDarkMode =
         viewModel::cambiaTemaScuro,
 
-        onChangePassword = {},
+        onChangePassword = {
+            onNavigateToRoute(ProfiloRoutes.CAMBIA_PASSWORD)
+        },
 
-        onLogout = {}
+        onLogout = onLogout
     )
 }
 
