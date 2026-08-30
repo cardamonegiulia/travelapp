@@ -473,7 +473,7 @@ private fun CartaPagamentoForm(
                     Text("Intestatario")
                 },
                 placeholder = {
-                    Text("Mario Rossi")
+                    Text("Nome sulla carta")
                 },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()

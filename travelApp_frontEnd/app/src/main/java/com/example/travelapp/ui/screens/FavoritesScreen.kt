@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,6 +65,7 @@ import com.example.travelapp.ui.theme.AccentOrange
 import com.example.travelapp.ui.theme.BackgroundLavender
 import com.example.travelapp.ui.theme.BadgeBlue
 import com.example.travelapp.ui.theme.ErrorRed
+import com.example.travelapp.ui.theme.FieldBorder
 import com.example.travelapp.ui.theme.LogoutBackground
 import com.example.travelapp.ui.theme.OutlineGrey
 import com.example.travelapp.ui.theme.PrimaryBlue
@@ -566,6 +568,7 @@ private fun DialogoNuovaLista(
                     onValueChange = { nome = it },
                     singleLine = true,
                     label = { Text(text = "Nome della lista") },
+                    colors = campoColori(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(14.dp))
@@ -636,6 +639,7 @@ private fun DialogoCondivisione(
                     onValueChange = { email = it },
                     singleLine = true,
                     label = { Text(text = "Email") },
+                    colors = campoColori(),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -653,6 +657,21 @@ private fun DialogoCondivisione(
         }
     )
 }
+
+/**
+ * Colori dei campi nei dialoghi. Il bordo di default segue `colorScheme.outline`, che qui
+ * e' il grigio dei separatori: sul tema chiaro il rettangolo del campo risultava invisibile.
+ */
+@Composable
+private fun campoColori() = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = PrimaryBlue,
+    unfocusedBorderColor = FieldBorder,
+    focusedLabelColor = PrimaryBlue,
+    unfocusedLabelColor = TextSecondary,
+    cursorColor = PrimaryBlue,
+    focusedTextColor = TextPrimary,
+    unfocusedTextColor = TextPrimary
+)
 
 // --- pezzi comuni -----------------------------------------------------------------------
 

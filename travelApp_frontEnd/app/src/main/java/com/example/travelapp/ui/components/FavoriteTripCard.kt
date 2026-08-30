@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,10 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.travelapp.ui.theme.AccentOrange
 import com.example.travelapp.ui.theme.CoverPlaceholderEnd
 import com.example.travelapp.ui.theme.CoverPlaceholderIcon
@@ -151,10 +154,8 @@ fun FavoriteTripCard(
 /**
  * Copertina del viaggio, con angoli arrotondati solo in alto.
  *
- * [imageUrl] fa gia' parte del modello, ma il modulo non dipende da una libreria
- * di image loading: finche' non viene aggiunta (es. Coil) si mostra un
- * segnaposto, e bastera' sostituirlo con
- * `AsyncImage(model = imageUrl, contentScale = ContentScale.Crop)`.
+ * Il gradiente resta come sfondo: si vede mentre la foto scende e quando
+ * l'itinerario non ne ha nessuna.
  */
 @Composable
 private fun TripCover(
@@ -171,13 +172,21 @@ private fun TripCover(
                 Brush.linearGradient(listOf(CoverPlaceholderStart, CoverPlaceholderEnd))
             )
     ) {
-        // TODO: sostituire con AsyncImage(model = imageUrl) quando Coil sara' disponibile.
-        Icon(
-            imageVector = Icons.Default.Place,
-            contentDescription = null,
-            tint = CoverPlaceholderIcon,
-            modifier = Modifier.size(40.dp)
-        )
+        if (imageUrl != null) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Default.Place,
+                contentDescription = null,
+                tint = CoverPlaceholderIcon,
+                modifier = Modifier.size(40.dp)
+            )
+        }
     }
 }
 

@@ -51,6 +51,13 @@ val TextSecondary: Color @Composable get() = MaterialTheme.colorScheme.onSurface
 
 // ── Utility ──────────────────────────────────────────────────────────────────
 val DividerColor: Color @Composable get() = MaterialTheme.colorScheme.outline
+
+/**
+ * Bordo dei campi di testo. [DividerColor] va bene per separare due righe, ma su una
+ * superficie chiara e' talmente tenue che il rettangolo del campo sparisce: qui serve
+ * un grigio con contrasto pieno, sia sul tema chiaro sia su quello scuro.
+ */
+val FieldBorder: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 val ChevronGrey: Color @Composable get() = MaterialTheme.colorScheme.outline
 val SkeletonColor = Color(0xFFE9EAEC)
 

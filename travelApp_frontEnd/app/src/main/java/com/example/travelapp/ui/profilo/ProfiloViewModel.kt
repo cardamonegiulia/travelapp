@@ -4,6 +4,8 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.travelapp.data.remote.DatiToken
+import com.example.travelapp.data.remote.GestoreSessione
 import com.example.travelapp.data.repository.UtenteRepository
 import com.example.travelapp.domain.model.Utente
 import com.example.travelapp.ui.screens.ProfileUiState
@@ -24,7 +26,7 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
 
     private val repository = UtenteRepository(application)
 
-    private val _state = MutableStateFlow(statoIniziale())
+    private val _state = MutableStateFlow(ProfileUiState())
     val state: StateFlow<ProfileUiState> = _state.asStateFlow()
 
     init {
@@ -32,13 +34,20 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Rilegge il profilo dal backend, foto compresa.
+     * Riempie la schermata con i dati dell'utente collegato.
      *
-     * Se la chiamata fallisce lo stato resta com'è: senza login (nessun token in `TokenManager`) la
-     * risposta è 401, e svuotare la schermata per questo non aiuterebbe nessuno.
+     * Prima dai claim del token salvato, che sono già sul dispositivo e non
+     * costano una chiamata di rete; poi dal backend, che è la fonte
+     * autorevole e aggiunge foto e tema.
+     *
+     * Se la chiamata al backend fallisce restano i dati del token: sono
+     * comunque quelli dell'utente vero, non un segnaposto.
      */
     fun caricaProfilo() {
         viewModelScope.launch {
+            GestoreSessione.datiUtenteDalToken(getApplication())
+                ?.let { dati -> _state.update { it.conToken(dati) } }
+
             repository.caricaProfilo().onSuccess { utente -> _state.update { it.conProfilo(utente) } }
         }
     }
@@ -132,15 +141,11 @@ class ProfiloViewModel(application: Application) : AndroidViewModel(application)
         isDarkModeEnabled = utente.tema?.equals("SCURO", ignoreCase = true) ?: isDarkModeEnabled
     )
 
-    /**
-     * Dati di esempio finché il login non esiste: senza token il backend risponde 401 e la
-     * schermata resterebbe vuota. Vengono sostituiti dal profilo vero al primo
-     * [caricaProfilo] andato a buon fine.
-     */
-    private fun statoIniziale() = ProfileUiState(
-        name = "Mario Rossi",
-        email = "mario@example.it",
-        avatarUrl = null,
-        isDarkModeEnabled = false
+    // Il token non porta foto né tema: quelli restano come sono finché non
+    // risponde il backend.
+    private fun ProfileUiState.conToken(dati: DatiToken) = copy(
+        name = dati.nomeCompleto.ifBlank { name },
+        email = dati.email.ifBlank { email },
+        ruolo = dati.ruolo
     )
 }

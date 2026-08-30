@@ -40,7 +40,11 @@ postman/environments/
 logs/
 
 ### Immagini caricate dagli utenti in sviluppo locale (default di app.storage.immagini.path)
-storage-immagini/
+### La cartella e' versionata (vuota, con .gitkeep) ma il contenuto no: deve esistere gia'
+### al clone, altrimenti su Linux la crea docker-compose come root e il backend lanciato
+### dall'IDE non riesce piu' a scriverci.
+storage-immagini/*
+!storage-immagini/.gitkeep
 docs/
 CLAUDE.md
 

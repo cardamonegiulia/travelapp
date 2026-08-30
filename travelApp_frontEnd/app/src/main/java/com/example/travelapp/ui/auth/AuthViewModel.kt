@@ -45,12 +45,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         KeycloakManager.scambiaCodicePToken(
             context = getApplication(),
             intent = intent,
-            onSuccess = { accessToken ->
+            onSuccess = { sessione ->
                 viewModelScope.launch {
-                    val ruolo = KeycloakManager.estraiRuolo(accessToken)
-                    TokenManager.salvaToken(
+                    val ruolo = KeycloakManager.estraiRuolo(sessione.accessToken)
+                    TokenManager.salvaSessione(
                         context = getApplication(),
-                        token = accessToken,
+                        accessToken = sessione.accessToken,
+                        refreshToken = sessione.refreshToken,
+                        scadenzaMs = sessione.scadenzaMs,
                         ruolo = ruolo
                     )
                     _uiState.value = AuthUiState.Success(ruolo = ruolo)

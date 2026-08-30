@@ -258,8 +258,8 @@ private fun ProfileScreenPreview() {
     var state by remember {
         mutableStateOf(
             ProfileUiState(
-                name = "Mario Rossi",
-                email = "mario@example.it",
+                name = "Nome Cognome",
+                email = "nome.cognome@email.it",
                 ruolo = "VIAGGIATORE",
                 avatarUrl = null,
                 isDarkModeEnabled = false
