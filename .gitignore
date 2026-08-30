@@ -59,6 +59,3 @@ CLAUDE.md
 /travelApp_frontEnd/local.properties
 /travelApp_frontEnd/**/build/
 
-### Variabili d'ambiente di docker compose: contengono credenziali reali
-### (database, client secret di Keycloak). Riferimento versionato: .env.example
-.env
