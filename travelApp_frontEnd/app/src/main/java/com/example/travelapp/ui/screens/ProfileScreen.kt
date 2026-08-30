@@ -199,19 +199,22 @@ fun ProfileScreen(
                 )
             }
 
-            // Sezione attività standard (Per tutti gli utenti)
-            SectionTitle(
-                text = "Le mie attività",
-                modifier = Modifier.padding(top = 14.dp)
-            )
-            activityItems.forEach { item ->
-                ProfileMenuRow(
-                    icon = item.icon,
-                    title = item.title,
-                    iconTint = item.iconTint,
-                    badgeColor = item.badgeColor,
-                    onClick = item.onClick
+            // Prenotazioni, pagamenti e recensioni sono attivita' da viaggiatore:
+            // per l'organizzatore la sezione non ha senso e resta nascosta.
+            if (!isOrganizzatore) {
+                SectionTitle(
+                    text = "Le mie attività",
+                    modifier = Modifier.padding(top = 14.dp)
                 )
+                activityItems.forEach { item ->
+                    ProfileMenuRow(
+                        icon = item.icon,
+                        title = item.title,
+                        iconTint = item.iconTint,
+                        badgeColor = item.badgeColor,
+                        onClick = item.onClick
+                    )
+                }
             }
 
             // Impostazioni

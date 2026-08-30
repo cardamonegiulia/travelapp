@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -277,9 +278,14 @@ fun AppNavGraph(
             startDestination =
             AppDestination.Explore.route,
 
+            // Lo Scaffold esterno ha gia' scostato il contenuto da status bar e
+            // navigation bar: senza consumare gli inset le schermate con Scaffold
+            // proprio (Organizzatore, Admin, Profilo...) li applicherebbero una
+            // seconda volta, lasciando una fascia vuota sopra la loro top bar.
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
         ) {
 
 
@@ -356,6 +362,15 @@ fun AppNavGraph(
                         navController.navigate(
                             CatalogRoutes.MODIFICA_ATTIVITA
                         )
+                    },
+
+                    onProfilo = {
+
+                        navController.navigate(
+                            AppDestination.Profile.route
+                        ) {
+                            launchSingleTop = true
+                        }
                     },
 
                     onLogout = eseguiLogout
