@@ -12,14 +12,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.travelapp.domain.model.Itinerario
+import com.example.travelapp.domain.model.ListaPreferiti
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.theme.*
 
@@ -46,6 +55,22 @@ fun ItinerarioDetailScreen(
 
     LaunchedEffect(itinerario.id) {
         viewModel.caricaDisponibilitaItinerario(itinerario.id)
+        // Il cuore deve nascere gia' rosso se l'itinerario e' stato salvato in passato.
+        viewModel.caricaPreferiti(itinerario.id)
+    }
+
+    if (uiState.selettorePreferitiAperto) {
+        DialogoSceltaLista(
+            liste = uiState.listePreferiti,
+            listeConItinerario = uiState.listeConItinerario,
+            inCaricamento = uiState.preferitiInCaricamento,
+            operazioneInCorso = uiState.operazionePreferitiInCorso,
+            messaggio = uiState.messaggioPreferiti,
+            errore = uiState.errorePreferiti,
+            onListaClick = { lista -> viewModel.cambiaAppartenenzaLista(lista, itinerario.id) },
+            onCreaLista = { nome -> viewModel.creaListaConItinerario(nome, itinerario.id) },
+            onDismiss = viewModel::chiudiSelettorePreferiti
+        )
     }
 
     Scaffold(
@@ -135,16 +160,25 @@ fun ItinerarioDetailScreen(
                         )
                     }
 
+                    // Cuore: pieno e rosso quando l'itinerario e' in almeno una lista.
                     IconButton(
-                        onClick = { },
+                        onClick = { viewModel.apriSelettorePreferiti(itinerario.id) },
                         modifier = Modifier
                             .size(40.dp)
                             .background(Color.White.copy(alpha = 0.9f), CircleShape)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.FavoriteBorder,
-                            contentDescription = "Preferiti",
-                            tint = TravelTextDark
+                            imageVector = if (uiState.ePreferito) {
+                                Icons.Default.Favorite
+                            } else {
+                                Icons.Default.FavoriteBorder
+                            },
+                            contentDescription = if (uiState.ePreferito) {
+                                "Gestisci le liste di preferiti"
+                            } else {
+                                "Aggiungi ai preferiti"
+                            },
+                            tint = if (uiState.ePreferito) FavoriteRed else TravelTextDark
                         )
                     }
                 }
@@ -549,5 +583,239 @@ private fun TappaItem(giorno: String, titolo: String, desc: String) {
                 color = TravelTextMuted
             )
         }
+    }
+}
+/**
+ * Selettore delle liste di preferiti, aperto dal cuore sulla copertina.
+ *
+ * Un itinerario puo' stare in piu' liste contemporaneamente, quindi non e' una scelta
+ * singola: ogni riga si accende o si spegne per conto suo, e la spunta racconta dove
+ * l'itinerario e' gia' salvato. Chi non ha ancora liste puo' crearne una da qui, senza
+ * passare dalla schermata "Preferiti".
+ */
+@Composable
+private fun DialogoSceltaLista(
+    liste: List<ListaPreferiti>,
+    listeConItinerario: Set<Long>,
+    inCaricamento: Boolean,
+    operazioneInCorso: Boolean,
+    messaggio: String?,
+    errore: String?,
+    onListaClick: (ListaPreferiti) -> Unit,
+    onCreaLista: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var creazioneAperta by remember { mutableStateOf(false) }
+    var nuovoNome by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        title = {
+            Text(
+                text = "Salva nei preferiti",
+                fontWeight = FontWeight.Bold,
+                color = TravelTextDark
+            )
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "In quale lista vuoi metterlo?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TravelTextMuted
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                when {
+                    inCaricamento -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = TravelBlue,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+
+                    liste.isEmpty() -> {
+                        Text(
+                            text = "Non hai ancora nessuna lista: creane una qui sotto.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TravelTextMuted
+                        )
+                    }
+
+                    else -> {
+                        Column(
+                            modifier = Modifier
+                                .heightIn(max = 260.dp)
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            liste.forEach { lista ->
+                                RigaLista(
+                                    lista = lista,
+                                    selezionata = lista.id in listeConItinerario,
+                                    abilitata = !operazioneInCorso,
+                                    onClick = { onListaClick(lista) }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = TravelBorder)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (creazioneAperta) {
+                    OutlinedTextField(
+                        value = nuovoNome,
+                        onValueChange = { nuovoNome = it },
+                        singleLine = true,
+                        label = { Text(text = "Nome della nuova lista") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = {
+                                onCreaLista(nuovoNome)
+                                nuovoNome = ""
+                                creazioneAperta = false
+                            },
+                            enabled = nuovoNome.isNotBlank() && !operazioneInCorso,
+                            colors = ButtonDefaults.buttonColors(containerColor = TravelBlue),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(text = "Crea e salva", color = Color.White)
+                        }
+                        TextButton(
+                            onClick = {
+                                creazioneAperta = false
+                                nuovoNome = ""
+                            }
+                        ) {
+                            Text(text = "Annulla", color = TravelTextMuted)
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable(enabled = !operazioneInCorso) { creazioneAperta = true }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            tint = TravelBlue,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Crea una nuova lista",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = TravelBlue
+                        )
+                    }
+                }
+
+                if (operazioneInCorso) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    LinearProgressIndicator(
+                        color = TravelBlue,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                val avviso = errore ?: messaggio
+                avviso?.let {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (errore != null) ErrorRed else TravelBlue
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "Fine", color = TravelBlue, fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+/** Una riga del selettore: spunta a sinistra, nome della lista, visibilita' a destra. */
+@Composable
+private fun RigaLista(
+    lista: ListaPreferiti,
+    selezionata: Boolean,
+    abilitata: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (selezionata) TravelChipBg else Color.Transparent)
+            .clickable(enabled = abilitata, onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(if (selezionata) TravelBlue else Color.Transparent)
+                .border(
+                    width = 1.5.dp,
+                    color = if (selezionata) TravelBlue else TravelBorder,
+                    shape = RoundedCornerShape(6.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selezionata) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = lista.nome,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = TravelTextDark
+            )
+            Text(
+                text = if (lista.numeroItinerari == 1) "1 itinerario" else "${lista.numeroItinerari} itinerari",
+                style = MaterialTheme.typography.labelSmall,
+                color = TravelTextMuted
+            )
+        }
+
+        Icon(
+            imageVector = if (lista.eCondivisa) Icons.Default.Share else Icons.Default.Lock,
+            contentDescription = if (lista.eCondivisa) "Lista condivisa" else "Lista privata",
+            tint = TravelTextMuted,
+            modifier = Modifier.size(16.dp)
+        )
     }
 }

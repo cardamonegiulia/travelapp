@@ -3,15 +3,27 @@ package com.example.travelapp.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.travelapp.R
+import com.example.travelapp.data.remote.GestoreSessione
 import com.example.travelapp.ui.auth.LoginScreen
 import com.example.travelapp.ui.auth.RegistrazioneScreen
+import com.example.travelapp.ui.components.CaricamentoLottie
 import com.example.travelapp.ui.navigation.AppNavGraph
 import com.example.travelapp.ui.theme.TravelAppTheme
 
@@ -44,8 +56,15 @@ fun AppNavigation(
     onDarkModeChanged: (Boolean) -> Unit
 ) {
 
+    val context = LocalContext.current
+
+    /*
+     * Si parte da "avvio": prima di mostrare qualcosa controlliamo se c'è
+     * una sessione salvata da ripristinare, così chi ha già fatto il login
+     * non se lo ritrova richiesto a ogni riapertura dell'app.
+     */
     var schermataCorrente by remember {
-        mutableStateOf("login")
+        mutableStateOf("avvio")
     }
 
     /*
@@ -62,7 +81,34 @@ fun AppNavigation(
         mutableStateOf(0)
     }
 
+    LaunchedEffect(Unit) {
+
+        schermataCorrente =
+            if (GestoreSessione.sessioneRipristinabile(context)) {
+                sessioneId++
+                "home"
+            } else {
+                "login"
+            }
+    }
+
     when (schermataCorrente) {
+
+        "avvio" -> {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center
+            ) {
+                CaricamentoLottie(
+                    dimensione = 120.dp,
+                    animazione = R.raw.flight
+                )
+            }
+        }
+
 
         "login" -> {
 

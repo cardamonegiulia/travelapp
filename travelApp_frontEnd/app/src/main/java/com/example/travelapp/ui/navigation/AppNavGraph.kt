@@ -26,7 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
-import com.example.travelapp.data.remote.TokenManager
+import com.example.travelapp.data.remote.GestoreSessione
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.catalog.AdminDashboardScreen
@@ -121,7 +121,7 @@ fun AppNavGraph(
     // Logout condiviso da Admin, Organizzatore e Profilo.
     val eseguiLogout: () -> Unit = {
         coroutineScope.launch {
-            TokenManager.cancellaToken(context)
+            GestoreSessione.logout(context)
             onLogout()
         }
     }
