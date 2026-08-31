@@ -1,8 +1,18 @@
 package com.example.travelapp.ui.catalog
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,97 +31,181 @@ fun ItinerarioCard(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         modifier = modifier.fillMaxWidth()
     ) {
+
         Column {
+
             // Immagine di copertina
             AuthedAsyncImage(
-                url = itinerario.immagini.firstOrNull()?.url,
+                url = itinerario.immagini
+                    .firstOrNull()
+                    ?.url,
                 contentDescription = itinerario.titolo,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 16.dp,
+                            topEnd = 16.dp
+                        )
+                    ),
                 contentScale = ContentScale.Crop
             )
 
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement =
+                        Arrangement.SpaceBetween,
+                    verticalAlignment =
+                        Alignment.CenterVertically
                 ) {
+
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer
+                        color =
+                            MaterialTheme
+                                .colorScheme
+                                .primaryContainer
                     ) {
+
                         Text(
                             text = "ITINERARIO",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .labelSmall,
+                            color =
+                                MaterialTheme
+                                    .colorScheme
+                                    .onPrimaryContainer,
+                            modifier =
+                                Modifier.padding(
+                                    horizontal = 8.dp,
+                                    vertical = 4.dp
+                                ),
                             fontWeight = FontWeight.Bold
                         )
                     }
 
-                    itinerario.prezzoBase?.let {
+                    itinerario.prezzoBase?.let { prezzo ->
+
                         Text(
-                            text = "€$it",
-                            style = MaterialTheme.typography.titleMedium,
+                            text = "€$prezzo",
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color =
+                                MaterialTheme
+                                    .colorScheme
+                                    .primary
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(
+                    modifier = Modifier.height(10.dp)
+                )
 
                 Text(
                     text = itinerario.titolo,
-                    style = MaterialTheme.typography.titleMedium,
+                    style =
+                        MaterialTheme
+                            .typography
+                            .titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                itinerario.descrizione?.let {
-                    Spacer(modifier = Modifier.height(4.dp))
+                itinerario.descrizione?.let { descrizione ->
+
+                    Spacer(
+                        modifier = Modifier.height(4.dp)
+                    )
+
                     Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = descrizione,
+                        style =
+                            MaterialTheme
+                                .typography
+                                .bodyMedium,
+                        color =
+                            MaterialTheme
+                                .colorScheme
+                                .onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                if (itinerario.destinazionePrincipale != null || itinerario.durataGiorni != null) {
-                    Spacer(modifier = Modifier.height(10.dp))
+                if (
+                    itinerario.destinazionePrincipale != null ||
+                    itinerario.durataGiorni != null
+                ) {
+
+                    Spacer(
+                        modifier = Modifier.height(10.dp)
+                    )
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement =
+                            Arrangement.SpaceBetween,
+                        verticalAlignment =
+                            Alignment.CenterVertically
                     ) {
-                        itinerario.destinazionePrincipale?.let {
-                            Text(
-                                text = "📍 $it",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
 
-                        itinerario.durataGiorni?.let {
-                            Text(
-                                text = "📅 $it giorni",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        itinerario
+                            .destinazionePrincipale
+                            ?.let { destinazione ->
+
+                                Text(
+                                    text = "📍 $destinazione",
+                                    style =
+                                        MaterialTheme
+                                            .typography
+                                            .bodySmall,
+                                    color =
+                                        MaterialTheme
+                                            .colorScheme
+                                            .onSurfaceVariant
+                                )
+                            }
+
+                        itinerario
+                            .durataGiorni
+                            ?.let { durata ->
+
+                                Text(
+                                    text = "📅 $durata giorni",
+                                    style =
+                                        MaterialTheme
+                                            .typography
+                                            .bodySmall,
+                                    color =
+                                        MaterialTheme
+                                            .colorScheme
+                                            .onSurfaceVariant
+                                )
+                            }
                     }
                 }
             }
@@ -125,97 +219,179 @@ fun SingolaAttivitaCard(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         modifier = modifier.fillMaxWidth()
     ) {
+
         Column {
+
             // Immagine di copertina
             AuthedAsyncImage(
-                url = attivita.immagini.firstOrNull()?.url,
+                url = attivita.immagini
+                    .firstOrNull()
+                    ?.url,
                 contentDescription = attivita.titolo,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 16.dp,
+                            topEnd = 16.dp
+                        )
+                    ),
                 contentScale = ContentScale.Crop
             )
 
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement =
+                        Arrangement.SpaceBetween,
+                    verticalAlignment =
+                        Alignment.CenterVertically
                 ) {
+
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer
+                        color =
+                            MaterialTheme
+                                .colorScheme
+                                .secondaryContainer
                     ) {
+
                         Text(
                             text = "ATTIVITÀ",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .labelSmall,
+                            color =
+                                MaterialTheme
+                                    .colorScheme
+                                    .onSecondaryContainer,
+                            modifier =
+                                Modifier.padding(
+                                    horizontal = 8.dp,
+                                    vertical = 4.dp
+                                ),
                             fontWeight = FontWeight.Bold
                         )
                     }
 
-                    attivita.prezzo?.let {
+                    attivita.prezzo?.let { prezzo ->
+
                         Text(
-                            text = "€$it",
-                            style = MaterialTheme.typography.titleMedium,
+                            text = "€$prezzo",
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary
+                            color =
+                                MaterialTheme
+                                    .colorScheme
+                                    .secondary
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(
+                    modifier = Modifier.height(10.dp)
+                )
 
                 Text(
                     text = attivita.titolo,
-                    style = MaterialTheme.typography.titleMedium,
+                    style =
+                        MaterialTheme
+                            .typography
+                            .titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                attivita.descrizione?.let {
-                    Spacer(modifier = Modifier.height(4.dp))
+                attivita.descrizione?.let { descrizione ->
+
+                    Spacer(
+                        modifier = Modifier.height(4.dp)
+                    )
+
                     Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = descrizione,
+                        style =
+                            MaterialTheme
+                                .typography
+                                .bodyMedium,
+                        color =
+                            MaterialTheme
+                                .colorScheme
+                                .onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                if (attivita.luogo != null || attivita.durataMinuti != null) {
-                    Spacer(modifier = Modifier.height(10.dp))
+                if (
+                    attivita.luogo != null ||
+                    attivita.durataMinuti != null
+                ) {
+
+                    Spacer(
+                        modifier = Modifier.height(10.dp)
+                    )
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement =
+                            Arrangement.SpaceBetween,
+                        verticalAlignment =
+                            Alignment.CenterVertically
                     ) {
-                        attivita.luogo?.let {
+
+                        attivita.luogo?.let { luogo ->
+
                             Text(
-                                text = "📍 $it",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = "📍 $luogo",
+                                style =
+                                    MaterialTheme
+                                        .typography
+                                        .bodySmall,
+                                color =
+                                    MaterialTheme
+                                        .colorScheme
+                                        .onSurfaceVariant
                             )
                         }
 
-                        attivita.durataMinuti?.let {
-                            Text(
-                                text = "⏱️ ${it} min",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        attivita
+                            .durataMinuti
+                            ?.let { durata ->
+
+                                Text(
+                                    text = "⏱️ $durata min",
+                                    style =
+                                        MaterialTheme
+                                            .typography
+                                            .bodySmall,
+                                    color =
+                                        MaterialTheme
+                                            .colorScheme
+                                            .onSurfaceVariant
+                                )
+                            }
                     }
                 }
             }

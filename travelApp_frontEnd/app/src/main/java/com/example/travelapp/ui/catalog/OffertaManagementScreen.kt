@@ -21,9 +21,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
-import com.example.travelapp.ui.components.AuthedAsyncImage
 import com.example.travelapp.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,10 +123,10 @@ fun OfferteManagementScreen(
                                             .fillMaxWidth()
                                             .height(140.dp)
                                     ) {
-                                        AuthedAsyncImage(
-                                            url = item.immagini.firstOrNull()?.url,
+                                        AsyncImage(
+                                            model = item.immagini.firstOrNull()?.url,
                                             contentDescription = item.titolo,
-                                            modifier = Modifier.fillMaxSize(),
+                                            modifier = Modifier.fillMaxSize().background(Color(0xFFCBD5E1)),
                                             contentScale = ContentScale.Crop
                                         )
 
@@ -134,6 +134,7 @@ fun OfferteManagementScreen(
                                             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
+                                            // Il tasto modifica compare SOLO se NON è Admin
                                             if (!isAdmin) {
                                                 IconButton(
                                                     onClick = { onModificaItinerario(item) },
@@ -192,17 +193,13 @@ fun OfferteManagementScreen(
                                             .fillMaxWidth()
                                             .height(140.dp)
                                     ) {
-                                        AuthedAsyncImage(
-                                            url = item.immagini.firstOrNull()?.url,
-                                            contentDescription = item.titolo,
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
-                                        )
+                                        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE2E8F0)))
 
                                         Row(
                                             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
+                                            // Il tasto modifica compare SOLO se NON è Admin
                                             if (!isAdmin) {
                                                 IconButton(
                                                     onClick = { onModificaAttivita(item) },

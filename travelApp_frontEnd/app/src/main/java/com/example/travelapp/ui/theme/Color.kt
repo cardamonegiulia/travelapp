@@ -117,6 +117,3 @@ val OutlineGrey = Color(0xFFE2E0EC)
 val CoverPlaceholderStart = Color(0xFFD9E4FF)
 val CoverPlaceholderEnd = Color(0xFFEFE3FF)
 val CoverPlaceholderIcon = Color(0xFFB4B1C8)
-
-/** Cuore dei preferiti attivo: rosso pieno, contro il grigio dello stato non salvato. */
-val FavoriteRed = Color(0xFFE53935)

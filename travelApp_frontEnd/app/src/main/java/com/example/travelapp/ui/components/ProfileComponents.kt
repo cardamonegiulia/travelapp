@@ -59,6 +59,7 @@ import com.example.travelapp.ui.theme.BadgeGrey
 import com.example.travelapp.ui.theme.IconGrey
 import com.example.travelapp.ui.theme.LogoutBackground
 import com.example.travelapp.ui.theme.LogoutRed
+import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TravelBorder
 import com.example.travelapp.ui.theme.TravelBlue
 import com.example.travelapp.ui.theme.TravelOrange
@@ -199,12 +200,6 @@ fun ProfileHeaderCard(
     modifier: Modifier = Modifier,
     isPhotoUploading: Boolean = false
 ) {
-    val displayTitle = when {
-        name.isNotBlank() -> name
-        email.isNotBlank() -> email
-        else -> "Utente"
-    }
-
     Card(
         shape = HeaderCardShape,
         colors = CardDefaults.cardColors(containerColor = TravelSurface),
@@ -220,19 +215,17 @@ fun ProfileHeaderCard(
             ProfileAvatar(avatarUrl = avatarUrl)
             Spacer(modifier = Modifier.height(14.dp))
             Text(
-                text = displayTitle,
+                text = name,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TravelTextDark
             )
-            if (email.isNotBlank() && displayTitle != email) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = email,
-                    fontSize = 13.sp,
-                    color = TravelTextMuted
-                )
-            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = email,
+                fontSize = 13.sp,
+                color = TravelTextMuted
+            )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = onAddProfilePhoto,
@@ -334,6 +327,11 @@ private fun decodeLocalImage(context: Context, url: String): ImageBitmap? = runC
     bitmap.asImageBitmap()
 }.getOrNull()
 
+/**
+ * La foto profilo arriva da `/api/immagini/{id}/contenuto`, che e' un endpoint autenticato
+ * come tutto il resto di `/api`: va scaricata con il client che allega il bearer token,
+ * altrimenti il backend risponde 401 e l'avatar resta vuoto senza dire perche'.
+ */
 private fun decodeRemoteImage(context: Context, url: String): ImageBitmap? = runCatching {
     val richiesta = Request.Builder().url(url).build()
     ApiClient.getHttpClient(context).newCall(richiesta).execute().use { risposta ->

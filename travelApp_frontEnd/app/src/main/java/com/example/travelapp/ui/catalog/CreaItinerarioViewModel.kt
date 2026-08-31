@@ -1,10 +1,8 @@
 package com.example.travelapp.ui.catalog
 
-import android.app.Application
 import android.content.Context
 import android.net.Uri
-import android.util.Log
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.remote.dto.ItinerarioRequestDto
@@ -14,6 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 data class CreaItinerarioUiState(
     val isSalvataggioInCorso: Boolean = false,
@@ -22,13 +23,14 @@ data class CreaItinerarioUiState(
 )
 
 class CreaItinerarioViewModel(
-    application: Application
-) : AndroidViewModel(application) {
+    application: android.app.Application
+) : androidx.lifecycle.AndroidViewModel(application) {
 
     private val repository =
         ItinerarioRepository(
             ApiClient.getItinerarioApi(application)
         )
+
 
     private val _uiState = MutableStateFlow(CreaItinerarioUiState())
     val uiState: StateFlow<CreaItinerarioUiState> = _uiState.asStateFlow()
@@ -51,11 +53,9 @@ class CreaItinerarioViewModel(
             if (result.isSuccess) {
                 val itinerarioSalvato = result.getOrNull()
 
+                // Upload immagine se selezionata
                 if (immagineUri != null && itinerarioSalvato != null) {
-                    val uploadResult = repository.caricaImmagine(context, itinerarioSalvato.id, immagineUri)
-                    uploadResult.onFailure { errore ->
-                        Log.e("UploadItinerario", "Upload fallito per itinerario ${itinerarioSalvato.id}: ${errore.message}")
-                    }
+                    caricaImmagineCopertina(context, itinerarioSalvato.id, immagineUri)
                 }
 
                 _uiState.update { it.copy(isSalvataggioInCorso = false, salvataggioCompletato = true) }
@@ -67,6 +67,25 @@ class CreaItinerarioViewModel(
                     )
                 }
             }
+        }
+    }
+
+    private suspend fun caricaImmagineCopertina(context: Context, itinerarioId: Long, uri: Uri) {
+        try {
+            val contentResolver = context.contentResolver
+            val inputStream = contentResolver.openInputStream(uri) ?: return
+            val bytes = inputStream.readBytes()
+            inputStream.close()
+
+            val type = contentResolver.getType(uri) ?: "image/jpeg"
+            val requestBody = bytes.toRequestBody(type.toMediaTypeOrNull())
+            val part = MultipartBody.Part.createFormData("file", "copertina.jpg", requestBody)
+
+            ApiClient
+                .getItinerarioApi(getApplication())
+                .caricaImmagine(itinerarioId, part)
+        } catch (_: Exception) {
+            // Se fallisce l'upload immagine l'itinerario rimane comunque creato
         }
     }
 

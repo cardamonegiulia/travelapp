@@ -3,7 +3,6 @@ package com.example.travelapp.ui.catalog
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,6 +35,11 @@ import com.example.travelapp.data.remote.dto.ItinerarioRequestDto
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.ui.theme.*
 import java.math.BigDecimal
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,21 +52,31 @@ fun CreaItinerarioScreen(
     val isModifica = itinerarioDaModificare != null
     val uiState by viewModel.uiState.collectAsState()
 
+    val displayDateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
+
+    val oggiMillis = remember {
+        Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    var dataPartenzaMillis by remember { mutableStateOf(oggiMillis + (7L * 24 * 60 * 60 * 1000)) }
+    var mostraDatePicker by remember { mutableStateOf(false) }
+
     var titolo by remember { mutableStateOf(itinerarioDaModificare?.titolo ?: "") }
     var descrizione by remember { mutableStateOf(itinerarioDaModificare?.descrizione ?: "") }
     var destinazione by remember { mutableStateOf(itinerarioDaModificare?.destinazionePrincipale ?: "") }
     var prezzoInput by remember { mutableStateOf(itinerarioDaModificare?.prezzoBase?.toString() ?: "") }
-    var durataInput by remember { mutableStateOf(itinerarioDaModificare?.durataGiorni?.toString() ?: "") }
+    var durataInput by remember { mutableStateOf(itinerarioDaModificare?.durataGiorni?.toString() ?: "7") }
     var maxPartecipantiInput by remember { mutableStateOf(itinerarioDaModificare?.maxPartecipanti?.toString() ?: "20") }
     var immagineUri by remember { mutableStateOf<Uri?>(null) }
 
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            immagineUri = uri
-        }
-    }
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? -> immagineUri = uri }
 
     val prezzoNumerico = prezzoInput.replace(",", ".").toDoubleOrNull()
     val isPrezzoValido = prezzoNumerico != null && prezzoNumerico > 0.0
@@ -73,6 +88,37 @@ fun CreaItinerarioScreen(
     val isPartecipantiValidi = partecipantiNumerici != null && partecipantiNumerici > 0
 
     val isFormValido = titolo.isNotBlank() && destinazione.isNotBlank() && isPrezzoValido && isDurataValida && isPartecipantiValidi
+
+    if (mostraDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = dataPartenzaMillis,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis >= oggiMillis
+                }
+            }
+        )
+        DatePickerDialog(
+            onDismissRequest = { mostraDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { selected ->
+                        dataPartenzaMillis = selected
+                    }
+                    mostraDatePicker = false
+                }) {
+                    Text("OK", color = TravelBlue)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostraDatePicker = false }) {
+                    Text("Annulla")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState, title = { Text("Seleziona data di partenza", modifier = Modifier.padding(16.dp)) })
+        }
+    }
 
     LaunchedEffect(uiState.salvataggioCompletato) {
         if (uiState.salvataggioCompletato) {
@@ -126,11 +172,7 @@ fun CreaItinerarioScreen(
                     .height(160.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color(0xFFE2E8F0))
-                    .clickable {
-                        photoPickerLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
+                    .clickable { imagePickerLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
                 val imageUrl = itinerarioDaModificare?.immagini?.firstOrNull()?.url
@@ -182,6 +224,36 @@ fun CreaItinerarioScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedTextField(
+                    value = displayDateFormat.format(Date(dataPartenzaMillis)),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("PRIMA PARTENZA") },
+                    trailingIcon = {
+                        IconButton(onClick = { mostraDatePicker = true }) {
+                            Icon(Icons.Default.DateRange, contentDescription = "Scegli data partenza", tint = TravelBlue)
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { mostraDatePicker = true }
+                )
+
+                OutlinedTextField(
+                    value = durataInput,
+                    onValueChange = { input -> if (input.all { it.isDigit() }) durataInput = input },
+                    label = { Text("DURATA (GIORNI)") },
+                    placeholder = { Text("7") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                    isError = durataInput.isNotEmpty() && !isDurataValida
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
                     value = prezzoInput,
                     onValueChange = { input ->
                         if (input.all { it.isDigit() || it == '.' || it == ',' }) prezzoInput = input
@@ -194,13 +266,13 @@ fun CreaItinerarioScreen(
                 )
 
                 OutlinedTextField(
-                    value = durataInput,
-                    onValueChange = { input -> if (input.all { it.isDigit() }) durataInput = input },
-                    label = { Text("DURATA (GIORNI)") },
-                    placeholder = { Text("1") },
+                    value = maxPartecipantiInput,
+                    onValueChange = { input -> if (input.all { it.isDigit() }) maxPartecipantiInput = input },
+                    label = { Text("MAX PARTECIPANTI") },
+                    placeholder = { Text("20") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
-                    isError = durataInput.isNotEmpty() && !isDurataValida
+                    isError = maxPartecipantiInput.isNotEmpty() && !isPartecipantiValidi
                 )
             }
 
@@ -235,7 +307,7 @@ fun CreaItinerarioScreen(
                                 titolo = titolo,
                                 descrizione = descrizione,
                                 destinazionePrincipale = destinazione,
-                                prezzoBase = BigDecimal.valueOf(prezzoNumerico!!),
+                                prezzoBase = BigDecimal(prezzoNumerico!!),
                                 durataGiorni = durataNumerica!!,
                                 maxPartecipanti = partecipantiNumerici!!
                             ),
