@@ -4,6 +4,7 @@ import com.example.travelapp.data.remote.api.RecensioneApi
 import com.example.travelapp.data.remote.dto.AggiornaRecensioneDto
 import com.example.travelapp.data.remote.dto.CreaRecensioneDto
 import com.example.travelapp.domain.model.Recensione
+import org.json.JSONObject
 
 class RecensioneRepository(
     private val api: RecensioneApi
@@ -50,15 +51,25 @@ class RecensioneRepository(
                 CreaRecensioneDto(
                     prenotazioneId = prenotazioneId,
                     votazione = votazione,
-                    // il commento vuoto non si manda: e' facoltativo, non una stringa vuota
-                    comm = commento?.trim()?.takeIf { it.isNotEmpty() }
+                    comm = commento
+                        ?.trim()
+                        ?.takeIf { it.isNotEmpty() }
                 )
             )
+
             val corpo = response.body()
+
             if (response.isSuccessful && corpo != null) {
                 Result.success(corpo.toDomain())
             } else {
-                Result.failure(Exception(messaggioErrore(response.code())))
+                Result.failure(
+                    Exception(
+                        messaggioErrore(
+                            response.code(),
+                            response.errorBody()?.string()
+                        )
+                    )
+                )
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -74,14 +85,25 @@ class RecensioneRepository(
                 recensioneId,
                 AggiornaRecensioneDto(
                     votazione = votazione,
-                    comm = commento?.trim()?.takeIf { it.isNotEmpty() }
+                    comm = commento
+                        ?.trim()
+                        ?.takeIf { it.isNotEmpty() }
                 )
             )
+
             val corpo = response.body()
+
             if (response.isSuccessful && corpo != null) {
                 Result.success(corpo.toDomain())
             } else {
-                Result.failure(Exception(messaggioErrore(response.code())))
+                Result.failure(
+                    Exception(
+                        messaggioErrore(
+                            response.code(),
+                            response.errorBody()?.string()
+                        )
+                    )
+                )
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -89,10 +111,38 @@ class RecensioneRepository(
 
     // I codici che il backend usa per le regole della recensione, tradotti in messaggi
     // comprensibili: il corpo ProblemDetail non e' pensato per essere mostrato cosi' com'e'.
-    private fun messaggioErrore(codice: Int): String = when (codice) {
-        403 -> "Puoi recensire solo i viaggi che hai prenotato tu"
-        404 -> "Prenotazione non trovata"
-        409 -> "Puoi recensire il viaggio solo dopo che si è concluso, e una sola volta"
-        else -> "Errore durante il salvataggio della recensione: HTTP $codice"
+    private fun messaggioErrore(
+        codice: Int,
+        corpoErrore: String?
+    ): String {
+
+        val dettaglioBackend =
+            runCatching {
+                corpoErrore
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { json ->
+                        JSONObject(json)
+                            .optString("detail")
+                            .takeIf { it.isNotBlank() }
+                    }
+            }.getOrNull()
+
+        if (dettaglioBackend != null) {
+            return dettaglioBackend
+        }
+
+        return when (codice) {
+            403 ->
+                "Puoi recensire solo i viaggi che hai prenotato tu"
+
+            404 ->
+                "Prenotazione non trovata"
+
+            409 ->
+                "La recensione non può essere salvata per lo stato attuale del viaggio"
+
+            else ->
+                "Errore durante il salvataggio della recensione: HTTP $codice"
+        }
     }
 }

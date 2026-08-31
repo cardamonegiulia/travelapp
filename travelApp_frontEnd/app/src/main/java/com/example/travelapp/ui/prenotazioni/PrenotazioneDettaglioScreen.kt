@@ -45,7 +45,8 @@ fun PrenotazioneDettaglioScreen(
 ) {
 
     val annullabile =
-        prenotazione.statoPrenotazione != StatoPrenotazione.CANCELLATA
+        !prenotazione.conclusa &&
+                prenotazione.statoPrenotazione != StatoPrenotazione.CANCELLATA
 
     val pagamentoInAttesa =
         prenotazione.statoPrenotazione == StatoPrenotazione.IN_ATTESA && prenotazione.statoPagamento == StatoPagamento.IN_ATTESA

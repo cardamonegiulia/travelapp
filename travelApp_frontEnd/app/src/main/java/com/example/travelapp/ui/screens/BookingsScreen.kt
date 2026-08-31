@@ -7,12 +7,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
@@ -23,7 +20,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -182,28 +180,39 @@ private fun CampanelloNotifiche(
     nonLette: Long,
     onClick: () -> Unit
 ) {
-    Box {
-        IconButton(onClick = onClick) {
+    BadgedBox(
+        badge = {
+            if (nonLette > 0) {
+                Badge(
+                    containerColor = ErrorRed,
+                    contentColor = Color.White
+                ) {
+                    Text(
+                        text = if (nonLette > 99) {
+                            "99+"
+                        } else {
+                            nonLette.toString()
+                        },
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 9.sp
+                    )
+                }
+            }
+        }
+    ) {
+        IconButton(
+            onClick = onClick
+        ) {
             Icon(
                 imageVector = Icons.Filled.Notifications,
-                contentDescription = if (nonLette > 0) {
-                    "Notifiche, $nonLette da leggere"
-                } else {
-                    "Notifiche"
-                },
+                contentDescription =
+                    if (nonLette > 0) {
+                        "Notifiche, $nonLette da leggere"
+                    } else {
+                        "Notifiche"
+                    },
                 tint = TextPrimary
             )
-        }
-
-        if (nonLette > 0) {
-            Surface(
-                shape = CircleShape,
-                color = ErrorRed,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-8).dp, y = 8.dp)
-                    .size(10.dp)
-            ) {}
         }
     }
 }
