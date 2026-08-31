@@ -19,6 +19,10 @@ spring:
           jwk-set-uri: https://idp.test.local/realms/travelapp/protocol/openid-connect/certs
 
 app:
+  # i job schedulati restano spenti: i test invocano InvitoRecensioneJob direttamente,
+  # passando la giornata che vogliono verificare
+  scheduling:
+    enabled: false
   keycloak:
     admin:
       # stub non raggiungibile di proposito: nei test il KeycloakAdminClient e' sostituito da

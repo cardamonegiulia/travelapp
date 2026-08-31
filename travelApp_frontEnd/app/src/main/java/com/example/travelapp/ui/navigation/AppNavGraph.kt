@@ -1,6 +1,5 @@
 package com.example.travelapp.ui.navigation
 
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,6 +28,8 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.example.travelapp.data.remote.GestoreSessione
 import com.example.travelapp.domain.model.Itinerario
+import com.example.travelapp.domain.model.Notifica
+import com.example.travelapp.domain.model.Prenotazione
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.catalog.AdminDashboardScreen
 import com.example.travelapp.ui.catalog.AttivitaDetailScreen
@@ -41,6 +42,8 @@ import com.example.travelapp.ui.catalog.OrganizzatoreHomeScreen
 import com.example.travelapp.ui.components.AppBottomBar
 import com.example.travelapp.ui.pagamenti.PaymentsScreen
 import com.example.travelapp.ui.pagamenti.PaymentsViewModel
+import com.example.travelapp.ui.notifiche.NotificheScreen
+import com.example.travelapp.ui.notifiche.NotificheViewModel
 import com.example.travelapp.ui.prenotazioni.BookingsViewModel
 import com.example.travelapp.ui.prenotazioni.PrenotazioneDettaglioScreen
 import com.example.travelapp.ui.prenotazioni.PrenotazionePasso1Screen
@@ -49,6 +52,8 @@ import com.example.travelapp.ui.prenotazioni.PrenotazioneSuccessoScreen
 import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModel
 import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModelFactory
 import com.example.travelapp.ui.preferiti.PreferitiViewModel
+import com.example.travelapp.ui.recensioni.RecensioneScreen
+import com.example.travelapp.ui.recensioni.RecensioneViewModel
 import com.example.travelapp.ui.profilo.ProfiloViewModel
 import com.example.travelapp.ui.screens.BookingsScreen
 import com.example.travelapp.ui.screens.CambiaPasswordScreen
@@ -93,6 +98,34 @@ object CatalogRoutes {
 
     const val DETTAGLIO_ATTIVITA =
         "catalog/dettaglio_attivita"
+}
+
+
+/**
+ * Cio' che serve al wizard di prenotazione, catturato nel momento in cui si tocca
+ * "Prenota".
+ *
+ * Lo slot scelto (partenza dell'itinerario oppure sessione dell'attivita') viaggia insieme
+ * a titolo, luogo e prezzo unitario: sono gli stessi dati che il wizard mostra in testa e
+ * che servono a calcolare il totale, e prenderli qui evita che i tre passi debbano
+ * ricaricare l'offerta dalla rete.
+ */
+private data class DatiBooking(
+    val titolo: String,
+    val luogo: String,
+    val prezzoUnitario: Double,
+    val disponibilitaItinerarioId: Long? = null,
+    val sessioneSingolaAttivitaId: Long? = null
+)
+
+
+object EsperienzaRoutes {
+
+    const val NOTIFICHE =
+        "esperienza/notifiche"
+
+    const val RECENSIONE =
+        "esperienza/recensione"
 }
 
 
@@ -183,6 +216,33 @@ fun AppNavGraph(
     var attivitaInModifica by remember {
         mutableStateOf<SingolaAttivita?>(null)
     }
+
+    /*
+     * Viaggio concluso che si sta recensendo. Ci si arriva da due strade - la scheda
+     * "Viaggi conclusi" e la notifica di invito - quindi il riferimento sta qui e non
+     * dentro una delle due schermate.
+     */
+    var viaggioDaRecensire by remember {
+        mutableStateOf<Prenotazione?>(null)
+    }
+
+    var recensioneDaNotifica by remember {
+        mutableStateOf<Notifica?>(null)
+    }
+
+    /*
+     * Offerta e slot che si stanno prenotando: valorizzati dal pulsante "Prenota" del
+     * dettaglio, letti dai tre passi del wizard.
+     */
+    var bookingInCorso by remember {
+        mutableStateOf<DatiBooking?>(null)
+    }
+
+    /*
+     * Una sola istanza per la sezione prenotazioni: dopo aver salvato una recensione la
+     * lista dei viaggi conclusi va aggiornata, e serve poterla raggiungere da fuori.
+     */
+    val bookingsViewModel: BookingsViewModel = viewModel()
 
 
     /*
@@ -421,7 +481,87 @@ fun AppNavGraph(
                 AppDestination.Bookings.route
             ) {
 
-                BookingsRoute()
+                BookingsRoute(
+                    viewModel = bookingsViewModel,
+
+                    onRecensisci = { prenotazione ->
+
+                        viaggioDaRecensire = prenotazione
+                        recensioneDaNotifica = null
+
+                        navController.navigate(
+                            EsperienzaRoutes.RECENSIONE
+                        )
+                    },
+
+                    onNotifiche = {
+
+                        navController.navigate(
+                            EsperienzaRoutes.NOTIFICHE
+                        )
+                    }
+                )
+            }
+
+
+            /*
+             * NOTIFICHE
+             */
+
+            composable(
+                EsperienzaRoutes.NOTIFICHE
+            ) {
+
+                NotificheRoute(
+                    onBack = onBack,
+
+                    onApriRecensione = { notifica ->
+
+                        recensioneDaNotifica = notifica
+                        viaggioDaRecensire = null
+
+                        navController.navigate(
+                            EsperienzaRoutes.RECENSIONE
+                        )
+                    }
+                )
+            }
+
+
+            /*
+             * RECENSIONE DI UN VIAGGIO CONCLUSO
+             */
+
+            composable(
+                EsperienzaRoutes.RECENSIONE
+            ) {
+
+                val prenotazioneId =
+                    viaggioDaRecensire?.id
+                        ?: recensioneDaNotifica?.prenotazioneId
+
+                val titoloViaggio =
+                    viaggioDaRecensire?.titolo
+                        ?: recensioneDaNotifica?.titoloViaggio
+                        ?: ""
+
+                if (prenotazioneId != null) {
+
+                    RecensioneRoute(
+                        prenotazioneId = prenotazioneId,
+                        titoloViaggio = titoloViaggio,
+
+                        onBack = onBack,
+
+                        onSalvata = {
+
+                            // la scheda "Viaggi conclusi" deve mostrare subito
+                            // che il viaggio risulta recensito
+                            bookingsViewModel.caricaPrenotazioni()
+                            onBack()
+                        }
+                    )
+                }
             }
 
 
@@ -528,20 +668,15 @@ fun AppNavGraph(
 
                         onPrenota = { disponibilitaId ->
 
-                            Toast.makeText(
-                                context,
-                                "Slot disponibilità #$disponibilitaId selezionato",
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            /*
-                             * TODO Booking:
-                             * collegare disponibilitaId
-                             * al booking_graph.
-                             */
-                            navController.navigate(
-                                AppDestination.Bookings.route
+                            bookingInCorso = DatiBooking(
+                                titolo = item.titolo,
+                                luogo = item.destinazionePrincipale.orEmpty(),
+                                prezzoUnitario =
+                                item.prezzoBase?.toDouble() ?: 0.0,
+                                disponibilitaItinerarioId = disponibilitaId
                             )
+
+                            navController.navigate("booking_graph")
                         }
                     )
                 }
@@ -560,20 +695,15 @@ fun AppNavGraph(
 
                         onPrenota = { sessioneId ->
 
-                            Toast.makeText(
-                                context,
-                                "Slot sessione #$sessioneId selezionato",
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            /*
-                             * TODO Booking:
-                             * collegare sessioneId
-                             * al booking_graph.
-                             */
-                            navController.navigate(
-                                AppDestination.Bookings.route
+                            bookingInCorso = DatiBooking(
+                                titolo = item.titolo,
+                                luogo = item.luogo.orEmpty(),
+                                prezzoUnitario =
+                                item.prezzo?.toDouble() ?: 0.0,
+                                sessioneSingolaAttivitaId = sessioneId
                             )
+
+                            navController.navigate("booking_graph")
                         }
                     )
                 }
@@ -757,6 +887,26 @@ fun AppNavGraph(
                         .collectAsState()
 
 
+                    /*
+                     * Titolo, luogo e prezzo dell'offerta scelta finiscono nello stato del
+                     * wizard. Il reset prima serve a non ritrovarsi i partecipanti (e il
+                     * totale) di una prenotazione precedente.
+                     */
+                    LaunchedEffect(bookingInCorso) {
+
+                        bookingInCorso?.let { dati ->
+
+                            bookingViewModel.resetBooking()
+
+                            bookingViewModel.inizializzaBooking(
+                                titolo = dati.titolo,
+                                luogo = dati.luogo,
+                                prezzoBaseUnitario = dati.prezzoUnitario
+                            )
+                        }
+                    }
+
+
                     LaunchedEffect(
                         state.prenotazioneCreata
                     ) {
@@ -777,6 +927,8 @@ fun AppNavGraph(
                     PrenotazionePasso1Screen(
                         uiState = state,
 
+                        // Le attivita' extra non sono ancora esposte dal catalogo:
+                        // la prenotazione si completa comunque, senza extra.
                         extraDisponibili =
                         emptyList(),
 
@@ -794,14 +946,16 @@ fun AppNavGraph(
 
                         onContinua = {
 
-                            /*
-                             * TODO:
-                             * collegare l'ID reale di:
-                             *
-                             * disponibilitaItinerarioId
-                             * oppure
-                             * sessioneSingolaAttivitaId
-                             */
+                            bookingInCorso?.let { dati ->
+
+                                bookingViewModel.creaPrenotazione(
+                                    disponibilitaItinerarioId =
+                                    dati.disponibilitaItinerarioId,
+
+                                    sessioneSingolaAttivitaId =
+                                    dati.sessioneSingolaAttivitaId
+                                )
+                            }
                         }
                     )
                 }
@@ -923,6 +1077,13 @@ fun AppNavGraph(
 
                             bookingViewModel
                                 .resetBooking()
+
+                            // azzerato qui: la prossima prenotazione, anche della stessa
+                            // partenza, deve far ripartire il wizard da capo
+                            bookingInCorso = null
+
+                            // la nuova prenotazione deve comparire nella scheda "Prenotazioni"
+                            bookingsViewModel.caricaPrenotazioni()
 
                             navController.navigate(
                                 AppDestination
@@ -1163,7 +1324,9 @@ private fun ProfileRoute(
 @Composable
 private fun BookingsRoute(
     viewModel: BookingsViewModel =
-        viewModel()
+        viewModel(),
+    onRecensisci: (Prenotazione) -> Unit = {},
+    onNotifiche: () -> Unit = {}
 ) {
 
     val state by
@@ -1173,6 +1336,12 @@ private fun BookingsRoute(
 
     val prenotazioneSelezionata =
         state.prenotazioneSelezionata
+
+    // Tornando qui da una recensione o dalle notifiche il pallino del campanello
+    // dev'essere aggiornato: e' una chiamata sola, molto piu' leggera dell'elenco.
+    LaunchedEffect(Unit) {
+        viewModel.aggiornaNotifiche()
+    }
 
 
     if (
@@ -1205,11 +1374,23 @@ private fun BookingsRoute(
             prenotazioni =
             state.prenotazioni,
 
+            viaggiConclusi =
+            state.viaggiConclusi,
+
+            schedaSelezionata =
+            state.schedaSelezionata,
+
+            notificheNonLette =
+            state.notificheNonLette,
+
             isLoading =
             state.isLoading,
 
             errore =
             state.errore,
+
+            onSchedaSelezionata =
+            viewModel::selezionaScheda,
 
             onRiprova = {
 
@@ -1223,9 +1404,90 @@ private fun BookingsRoute(
                     .selezionaPrenotazione(
                         it
                     )
-            }
+            },
+
+            onRecensisci = onRecensisci,
+
+            onNotificheClick = onNotifiche
         )
     }
+}
+
+
+/*
+ * ================================================================
+ * NOTIFICHE
+ * ================================================================
+ */
+
+@Composable
+private fun NotificheRoute(
+    onBack: () -> Unit,
+    onApriRecensione: (Notifica) -> Unit,
+    viewModel: NotificheViewModel = viewModel()
+) {
+
+    val state by
+    viewModel
+        .uiState
+        .collectAsState()
+
+
+    NotificheScreen(
+        uiState = state,
+        onBack = onBack,
+
+        onApriRecensione = { notifica ->
+
+            // aprire l'invito equivale ad averlo letto
+            viewModel.segnaLetta(notifica)
+            onApriRecensione(notifica)
+        },
+
+        onRiprova = viewModel::carica
+    )
+}
+
+
+/*
+ * ================================================================
+ * RECENSIONE
+ * ================================================================
+ */
+
+@Composable
+private fun RecensioneRoute(
+    prenotazioneId: Long,
+    titoloViaggio: String,
+    onBack: () -> Unit,
+    onSalvata: () -> Unit,
+    viewModel: RecensioneViewModel = viewModel()
+) {
+
+    val state by
+    viewModel
+        .uiState
+        .collectAsState()
+
+    LaunchedEffect(prenotazioneId) {
+        viewModel.apri(prenotazioneId, titoloViaggio)
+    }
+
+    LaunchedEffect(state.salvata) {
+        if (state.salvata) {
+            viewModel.reset()
+            onSalvata()
+        }
+    }
+
+
+    RecensioneScreen(
+        uiState = state,
+        onBack = onBack,
+        onVotazioneCambiata = viewModel::impostaVotazione,
+        onCommentoCambiato = viewModel::impostaCommento,
+        onSalva = viewModel::salva
+    )
 }
 
 

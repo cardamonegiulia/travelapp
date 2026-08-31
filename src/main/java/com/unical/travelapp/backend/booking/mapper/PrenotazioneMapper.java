@@ -4,26 +4,39 @@ import com.unical.travelapp.backend.booking.dto.PrenotazioneResponseDto;
 import com.unical.travelapp.backend.booking.entity.Pagamento;
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.booking.entity.TipoPrenotazione;
+import com.unical.travelapp.backend.catalog.entity.Itinerario;
+import com.unical.travelapp.backend.experience.services.RecensioneService;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Component
 public class PrenotazioneMapper {
+
     public PrenotazioneResponseDto toResponseDto(Prenotazione prenotazione, Pagamento pagamento) {
+        return toResponseDto(prenotazione, pagamento, null);
+    }
+
+    /**
+     * @param recensioneId id della recensione gia' scritta su questa prenotazione, oppure
+     *                     {@code null} se non ce n'e' una. Arriva da fuori perche' chi
+     *                     costruisce una pagina lo recupera per tutte le righe in un colpo
+     *                     solo, invece di una query per prenotazione.
+     */
+    public PrenotazioneResponseDto toResponseDto(Prenotazione prenotazione, Pagamento pagamento, Long recensioneId) {
         TipoPrenotazione tipoPrenotazione;
         String titolo;
         String luogo;
+        Long itinerarioId = null;
 
         if (prenotazione.getDisponibilitaItinerario() != null) {
+            Itinerario itinerario = prenotazione.getDisponibilitaItinerario().getItinerario();
             tipoPrenotazione = TipoPrenotazione.ITINERARIO;
-            titolo = prenotazione.getDisponibilitaItinerario()
-                    .getItinerario()
-                    .getTitolo();
-            luogo = prenotazione.getDisponibilitaItinerario()
-                    .getItinerario()
-                    .getDestinazionePrincipale();
+            titolo = itinerario.getTitolo();
+            luogo = itinerario.getDestinazionePrincipale();
+            itinerarioId = itinerario.getId();
 
         } else if (prenotazione.getSessioneSingolaAttivita() != null) {
             tipoPrenotazione = TipoPrenotazione.SESSIONE_SINGOLA;
@@ -41,6 +54,8 @@ public class PrenotazioneMapper {
             );
         }
 
+        boolean conclusa = RecensioneService.viaggioConcluso(prenotazione, LocalDateTime.now());
+
         return PrenotazioneResponseDto.builder()
                 .id(prenotazione.getId())
                 .viaggiatoreId(prenotazione.getViaggiatore().getId())
@@ -55,15 +70,40 @@ public class PrenotazioneMapper {
                 .titolo(titolo)
                 .luogo(luogo)
                 .destinazione(luogo)
+                .itinerarioId(itinerarioId)
+                .dataInizioViaggio(dataInizio(prenotazione))
+                .dataFineViaggio(RecensioneService.dataFine(prenotazione))
+                .conclusa(conclusa)
+                // recensibile solo se c'e' un itinerario a cui agganciare la recensione:
+                // una sessione di attivita' singola non ne ha uno
+                .recensibile(conclusa && itinerarioId != null && recensioneId == null)
+                .recensioneId(recensioneId)
                 .build();
     }
 
     public Page<PrenotazioneResponseDto> toResponseDtoPage(Page<Prenotazione> prenotazioni, Map<Long, Pagamento> pagamenti) {
+        return toResponseDtoPage(prenotazioni, pagamenti, Map.of());
+    }
+
+    public Page<PrenotazioneResponseDto> toResponseDtoPage(Page<Prenotazione> prenotazioni,
+                                                           Map<Long, Pagamento> pagamenti,
+                                                           Map<Long, Long> recensioni) {
         return prenotazioni.map(prenotazione ->
                 toResponseDto(
                         prenotazione,
-                        pagamenti.get(prenotazione.getId())
+                        pagamenti.get(prenotazione.getId()),
+                        recensioni.get(prenotazione.getId())
                 )
         );
+    }
+
+    private LocalDateTime dataInizio(Prenotazione prenotazione) {
+        if (prenotazione.getDisponibilitaItinerario() != null) {
+            return prenotazione.getDisponibilitaItinerario().getDataInizio();
+        }
+        if (prenotazione.getSessioneSingolaAttivita() != null) {
+            return prenotazione.getSessioneSingolaAttivita().getDataInizio();
+        }
+        return null;
     }
 }

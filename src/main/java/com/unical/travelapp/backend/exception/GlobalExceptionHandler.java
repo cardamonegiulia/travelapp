@@ -10,6 +10,7 @@ import com.unical.travelapp.backend.experience.exeption.ImmagineNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.ImmagineNonValida;
 import com.unical.travelapp.backend.experience.exeption.ItinerarioNonTrovato;
 import com.unical.travelapp.backend.experience.exeption.ListaPreferitiNonTrovata;
+import com.unical.travelapp.backend.experience.exeption.NotificaNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.PrenotazioneNonTrovata;
 import com.unical.travelapp.backend.experience.exeption.RecensioneNonTrovata;
 import com.unical.travelapp.backend.identity.exception.IdentityProviderNonDisponibileException;
@@ -364,6 +365,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PrenotazioneNonTrovata.class)
     public ResponseEntity<ProblemDetail> handlePrenotazioneNonTrovata(PrenotazioneNonTrovata ex, HttpServletRequest request) {
+        return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
+    }
+
+    // 404 - Notifica inesistente oppure di un altro utente: stessa risposta nei due casi
+    @ExceptionHandler(NotificaNonTrovata.class)
+    public ResponseEntity<ProblemDetail> handleNotificaNonTrovata(NotificaNonTrovata ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
     }
 

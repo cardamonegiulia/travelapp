@@ -26,6 +26,22 @@ class PrenotazioneRepository(
             .map { it.toDomain() }
     }
 
+    /** Viaggi in corso, futuri e prenotazioni cancellate. */
+    suspend fun getPrenotazioniAttuali(): List<Prenotazione> {
+        return api
+            .getMiePrenotazioniAttuali()
+            .content
+            .map { it.toDomain() }
+    }
+
+    /** Viaggi gia' conclusi: la lista da cui si lascia una recensione. */
+    suspend fun getViaggiConclusi(): List<Prenotazione> {
+        return api
+            .getMieiViaggiConclusi()
+            .content
+            .map { it.toDomain() }
+    }
+
     suspend fun getPrenotazione(
         id: Long
     ): Prenotazione {

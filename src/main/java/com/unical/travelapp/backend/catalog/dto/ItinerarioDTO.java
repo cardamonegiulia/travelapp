@@ -30,6 +30,25 @@ public class ItinerarioDTO {
     private Integer maxPartecipanti;
     private String stato;
 
+    /**
+     * Voto medio delle recensioni ricevute, {@code null} se non ce n'e' nessuna: zero non e'
+     * un voto assegnabile, e restituirlo farebbe disegnare cinque stelle vuote al posto di
+     * "nessuna recensione".
+     */
+    private Double mediaVoti;
+
+    /** Su quante recensioni e' calcolata la media. */
+    private long numeroRecensioni;
+
+    /**
+     * true se l'itinerario ha almeno una partenza ancora prenotabile.
+     *
+     * <p>Un itinerario senza date NON sparisce dalla bacheca: resta visibile e il client lo
+     * segnala con un'etichetta, perche' l'organizzatore puo' aggiungerne di nuove in
+     * qualsiasi momento. Sparisce solo quando l'organizzatore lo elimina.
+     */
+    private boolean dateDisponibili;
+
     // galleria dell'itinerario: la prima immagine e' la copertina.
     // Sempre presente, eventualmente vuota.
     private List<ImmagineResponse> immagini = new ArrayList<>();

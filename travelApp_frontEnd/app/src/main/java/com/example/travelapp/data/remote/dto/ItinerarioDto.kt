@@ -18,6 +18,12 @@ data class ItinerarioResponseDto(
     val dataLimitePrenotazione: String? = null,
     val maxPartecipanti: Int?,
     val stato: String?,
+    // Valutazione media: null quando l'itinerario non ha ancora recensioni.
+    val mediaVoti: Double? = null,
+    val numeroRecensioni: Long = 0,
+    // false quando non resta nessuna partenza prenotabile: l'itinerario resta comunque
+    // in bacheca, con un'etichetta che lo dice.
+    val dateDisponibili: Boolean = false,
     val immagini: List<ImmagineDto>? = null
 ) {
     fun toDomain(): Itinerario = Itinerario(
@@ -33,6 +39,9 @@ data class ItinerarioResponseDto(
         dataLimitePrenotazione = dataLimitePrenotazione,
         maxPartecipanti = maxPartecipanti,
         stato = stato,
+        mediaVoti = mediaVoti,
+        numeroRecensioni = numeroRecensioni,
+        dateDisponibili = dateDisponibili,
         immagini = immagini?.map { img ->
             ImmagineResponse(
                 id = img.id,

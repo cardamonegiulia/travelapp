@@ -6,6 +6,8 @@ import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.catalog.mapper.ItinerarioMapper;
 import com.unical.travelapp.backend.catalog.service.ItinerarioService;
 import com.unical.travelapp.backend.common.audit.AuditLogger;
+import com.unical.travelapp.backend.experience.models.DTO.ValutazioneMediaDTO;
+import com.unical.travelapp.backend.experience.services.RecensioneService;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -56,6 +59,10 @@ class ItinerarioControllerTest {
     @Mock
     private AuditLogger auditLogger;
 
+    // Il controller chiede le valutazioni per mostrare la media delle stelle sulle anteprime
+    @Mock
+    private RecensioneService recensioneService;
+
     @InjectMocks
     private ItinerarioController itinerarioController;
 
@@ -81,7 +88,8 @@ class ItinerarioControllerTest {
         Page<Itinerario> page = new PageImpl<>(List.of(itinerario), pageRequest, 1);
 
         when(itinerarioService.getAllItinerari(any(Pageable.class))).thenReturn(page);
-        when(itinerarioMapper.toDTO(any(Itinerario.class))).thenReturn(itinerarioDTO);
+        when(recensioneService.getValutazioni(any())).thenReturn(Map.of());
+        when(itinerarioMapper.toDTO(any(Itinerario.class), any())).thenReturn(itinerarioDTO);
 
         mockMvc.perform(get("/api/itinerari")
                         .param("page", "0")
@@ -100,7 +108,8 @@ class ItinerarioControllerTest {
         dto.setId(1L);
 
         when(itinerarioService.getItinerarioById(eq(1L))).thenReturn(Optional.of(itinerario));
-        when(itinerarioMapper.toDTO(itinerario)).thenReturn(dto);
+        when(recensioneService.getValutazione(eq(1L))).thenReturn(ValutazioneMediaDTO.NESSUNA);
+        when(itinerarioMapper.toDTO(eq(itinerario), any())).thenReturn(dto);
 
         mockMvc.perform(get("/api/itinerari/1")
                         .contentType(MediaType.APPLICATION_JSON))

@@ -345,6 +345,25 @@ public class PrenotazioneService {
         );
     }
 
+    /**
+     * I viaggi dell'utente gia' conclusi: data di fine passata e prenotazione non cancellata.
+     *
+     * <p>E' la lista da cui si lascia una recensione, quindi le cancellate restano fuori:
+     * quel viaggio non e' mai stato fatto.
+     */
+    public Page<Prenotazione> getMieConcluse(Pageable pageable) {
+        Long utenteId = utenteService.getUtenteSessione().getId();
+        return prenotazioneRepo.findConcluseByViaggiatore(
+                utenteId, LocalDateTime.now(), StatoPrenotazione.CANCELLATA, pageable);
+    }
+
+    /** Tutto il resto: viaggi in corso, futuri e prenotazioni cancellate. */
+    public Page<Prenotazione> getMieAttuali(Pageable pageable) {
+        Long utenteId = utenteService.getUtenteSessione().getId();
+        return prenotazioneRepo.findAttualiByViaggiatore(
+                utenteId, LocalDateTime.now(), StatoPrenotazione.CANCELLATA, pageable);
+    }
+
     public BigDecimal getSaldoTotaleGlobale() {
         return prenotazioneRepo.sumTotaleGlobale(StatoPrenotazione.CANCELLATA);
     }

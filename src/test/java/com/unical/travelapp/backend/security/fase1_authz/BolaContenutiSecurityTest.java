@@ -162,10 +162,13 @@ class BolaContenutiSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void laRecensioneCreataEIntestataAllUtenteDelToken() throws Exception {
+        // si recensisce una prenotazione conclusa, non un itinerario qualsiasi del catalogo
+        var prenotazioneDiA = prenotazioneConclusa(viaggiatoreA, itinerarioDi1);
+
         mockMvc.perform(post("/api/recensioni")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"itinerarioId\":" + itinerarioDi1.getId()
+                        .content("{\"prenotazioneId\":" + prenotazioneDiA.getId()
                                 + ",\"votazione\":5,\"comm\":\"ottimo\"}"))
                 .andExpect(status().isCreated());
 
@@ -173,6 +176,21 @@ class BolaContenutiSecurityTest extends SecurityIntegrationTestBase {
                 .filteredOn(r -> "ottimo".equals(r.getCommento()))
                 .singleElement()
                 .satisfies(r -> assertThat(r.getUtente().getId()).isEqualTo(viaggiatoreA.getId()));
+    }
+
+    @Test
+    void nonSiPuoRecensireUnItinerarioSenzaAverloPrenotato() throws Exception {
+        // senza prenotazioneId non c'e' modo di dimostrare di aver fatto quel viaggio
+        MvcResult risultato = mockMvc.perform(post("/api/recensioni")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"itinerarioId\":" + itinerarioDi1.getId()
+                                + ",\"votazione\":5,\"comm\":\"mai stato li\"}"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+        NessunLeak.verifica(risultato);
+
+        assertThat(recensioneRepository.findAll()).noneMatch(r -> "mai stato li".equals(r.getCommento()));
     }
 
     @Test
@@ -190,8 +208,7 @@ class BolaContenutiSecurityTest extends SecurityIntegrationTestBase {
     @Test
     void nonSiPuoRecensireLaPrenotazioneDiUnAltroUtente() throws Exception {
         Utente viaggiatoreB = utenteRepository.findByKeycloakId(SUB_UTENTE_B).orElseThrow();
-        var disponibilita = disponibilita(itinerarioDi1, 10);
-        var prenotazioneDiB = prenotazione(viaggiatoreB, disponibilita);
+        var prenotazioneDiB = prenotazioneConclusa(viaggiatoreB, itinerarioDi1);
 
         MvcResult risultato = mockMvc.perform(post("/api/recensioni")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))

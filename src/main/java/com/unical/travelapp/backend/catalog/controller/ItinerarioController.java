@@ -9,6 +9,9 @@ import com.unical.travelapp.backend.catalog.mapper.ItinerarioMapper;
 import com.unical.travelapp.backend.catalog.service.ItinerarioService;
 import com.unical.travelapp.backend.common.audit.AuditLogger;
 import com.unical.travelapp.backend.experience.models.DTO.ImmagineResponse;
+import com.unical.travelapp.backend.experience.models.DTO.RecensioneResponse;
+import com.unical.travelapp.backend.experience.models.DTO.ValutazioneMediaDTO;
+import com.unical.travelapp.backend.experience.services.RecensioneService;
 import com.unical.travelapp.backend.identity.service.UtenteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/itinerari")
@@ -46,6 +50,9 @@ public class ItinerarioController {
     @Autowired
     private AuditLogger auditLogger;
 
+    @Autowired
+    private RecensioneService recensioneService;
+
     @GetMapping
     @Operation(
             summary = "Restituisce tutti gli itinerari paginati",
@@ -57,8 +64,15 @@ public class ItinerarioController {
     })
     public ResponseEntity<Page<ItinerarioDTO>> getAllItinerari(
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(itinerarioService.getAllItinerari(pageable)
-                .map(itinerarioMapper::toDTO));
+        Page<Itinerario> itinerari = itinerarioService.getAllItinerari(pageable);
+
+        // Media e numero di recensioni per l'intera pagina in una query sola: la bacheca
+        // mostra le stelle su ogni anteprima, e una chiamata per card sarebbe un N+1.
+        Map<Long, ValutazioneMediaDTO> valutazioni = recensioneService.getValutazioni(
+                itinerari.getContent().stream().map(Itinerario::getId).toList());
+
+        return ResponseEntity.ok(itinerari.map(itinerario ->
+                itinerarioMapper.toDTO(itinerario, valutazioni.get(itinerario.getId()))));
     }
 
     @GetMapping("/{id}")
@@ -74,7 +88,7 @@ public class ItinerarioController {
     public ResponseEntity<ItinerarioDTO> getItinerarioById(@PathVariable Long id) {
         Itinerario itinerario = itinerarioService.getItinerarioById(id)
                 .orElseThrow(() -> new ItinerarioNonTrovatoException("Itinerario non trovato: " + id));
-        return ResponseEntity.ok(itinerarioMapper.toDTO(itinerario));
+        return ResponseEntity.ok(itinerarioMapper.toDTO(itinerario, recensioneService.getValutazione(id)));
     }
 
     // --- Endpoint per recuperare le disponibilità (richiesto per il booking) ---
@@ -88,6 +102,26 @@ public class ItinerarioController {
     ) {
         return ResponseEntity.ok(itinerarioMapper.toDisponibilitaDTO(
                 itinerarioService.getDisponibilitaByItinerarioId(id)));
+    }
+
+    @GetMapping("/{id}/recensioni")
+    @Operation(
+            summary = "Restituisce le recensioni di un itinerario",
+            description = "Elenco paginato con voto, commento, autore e data. Sta sotto /api/itinerari "
+                    + "perche' e' parte della scheda pubblica dell'itinerario: la vedono tutti quelli che la "
+                    + "consultano, non solo chi ha recensito."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Elenco recensioni restituito con successo"),
+            @ApiResponse(responseCode = "404", description = "Itinerario non trovato")
+    })
+    public ResponseEntity<Page<RecensioneResponse>> getRecensioni(
+            @PathVariable Long id,
+            @PageableDefault(size = 20) Pageable pageable) {
+        if (itinerarioService.getItinerarioById(id).isEmpty()) {
+            throw new ItinerarioNonTrovatoException("Itinerario non trovato: " + id);
+        }
+        return ResponseEntity.ok(recensioneService.getRecensioniDaItinerarioId(id, pageable));
     }
 
     @PostMapping

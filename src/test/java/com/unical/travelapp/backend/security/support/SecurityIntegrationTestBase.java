@@ -21,6 +21,7 @@ import com.unical.travelapp.backend.catalog.repository.TappaRepository;
 import com.unical.travelapp.backend.experience.models.Recensione;
 import com.unical.travelapp.backend.experience.repository.ListaPreferitiRepository;
 import com.unical.travelapp.backend.experience.repository.ImmagineRepository;
+import com.unical.travelapp.backend.experience.repository.NotificaRepository;
 import com.unical.travelapp.backend.experience.repository.RecensioneRepository;
 import com.unical.travelapp.backend.identity.entity.Ruolo;
 import com.unical.travelapp.backend.identity.entity.Tema;
@@ -66,6 +67,7 @@ public abstract class SecurityIntegrationTestBase {
     @Autowired protected PrenotazioneRepository prenotazioneRepository;
     @Autowired protected PagamentoRepository pagamentoRepository;
     @Autowired protected RecensioneRepository recensioneRepository;
+    @Autowired protected NotificaRepository notificaRepository;
     @Autowired protected ImmagineRepository immagineRepository;
     @Autowired protected ListaPreferitiRepository listaPreferitiRepository;
     @Autowired protected ExtraPrenotazioneRepository extraPrenotazioneRepository;
@@ -93,6 +95,8 @@ public abstract class SecurityIntegrationTestBase {
 
         // per prime le immagini: sono figlie di recensioni e itinerari
         immagineRepository.deleteAll();
+        // le notifiche puntano a prenotazioni e itinerari: vanno via prima di loro
+        notificaRepository.deleteAll();
         extraPrenotazioneRepository.deleteAll();
         pagamentoRepository.deleteAll();
         recensioneRepository.deleteAll();
@@ -148,6 +152,24 @@ public abstract class SecurityIntegrationTestBase {
         disponibilita.setDataFine(LocalDateTime.now().plusDays(33));
         disponibilita.setPostiDisponibili(posti);
         return disponibilitaRepository.save(disponibilita);
+    }
+
+    /**
+     * Una partenza gia' terminata: le date sono nel passato, quindi il viaggio risulta
+     * concluso. Serve a tutto cio' che si puo' fare solo "dopo" (in primis le recensioni).
+     */
+    protected DisponibilitaItinerario disponibilitaConclusa(Itinerario itinerario, int posti) {
+        DisponibilitaItinerario disponibilita = new DisponibilitaItinerario();
+        disponibilita.setItinerario(itinerario);
+        disponibilita.setDataInizio(LocalDateTime.now().minusDays(10));
+        disponibilita.setDataFine(LocalDateTime.now().minusDays(7));
+        disponibilita.setPostiDisponibili(posti);
+        return disponibilitaRepository.save(disponibilita);
+    }
+
+    /** Prenotazione su una partenza gia' terminata: il caso base del "viaggio da recensire". */
+    protected Prenotazione prenotazioneConclusa(Utente viaggiatore, Itinerario itinerario) {
+        return prenotazione(viaggiatore, disponibilitaConclusa(itinerario, 10));
     }
 
     protected Prenotazione prenotazione(Utente viaggiatore, DisponibilitaItinerario disponibilita) {

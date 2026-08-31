@@ -96,11 +96,21 @@ fun AppBottomBar(
  * Passa a una sezione principale con il comportamento standard della bottom
  * navigation: un solo livello nel back stack e stato di ogni sezione
  * conservato tra un cambio di scheda e l'altro.
+ *
+ * Con un'eccezione: la scheda Explore e' anche la start destination del NavHost, cioe'
+ * proprio la destinazione a cui si torna con popUpTo. Salvare lo stato tornando li'
+ * significherebbe archiviare le schermate appena chiuse sotto la chiave di Explore, e
+ * restoreState le rimetterebbe subito in cima: dopo una prenotazione, toccare "Explore"
+ * riaprirebbe la schermata Bookings invece del catalogo. Verso la home quindi si pulisce
+ * e basta, senza salvare ne' ripristinare.
  */
 private fun NavController.navigateToTopLevel(destination: AppDestination) {
+    val startDestination = graph.findStartDestination()
+    val versoLaHome = destination.route == startDestination.route
+
     navigate(destination.route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
+        popUpTo(startDestination.id) { saveState = !versoLaHome }
         launchSingleTop = true
-        restoreState = true
+        restoreState = !versoLaHome
     }
 }

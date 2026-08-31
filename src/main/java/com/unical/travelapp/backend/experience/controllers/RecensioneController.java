@@ -1,6 +1,7 @@
 package com.unical.travelapp.backend.experience.controllers;
 
 import com.unical.travelapp.backend.common.audit.AuditLogger;
+import com.unical.travelapp.backend.experience.models.DTO.AggiornaRecensioneRequest;
 import com.unical.travelapp.backend.experience.models.DTO.ImmagineResponse;
 import com.unical.travelapp.backend.experience.models.DTO.RecensioneRequest;
 import com.unical.travelapp.backend.experience.models.DTO.RecensioneResponse;
@@ -81,23 +82,68 @@ public class RecensioneController {
         return ResponseEntity.ok(service.getMediaVoti(itinerarioId));
     }
 
+    @GetMapping("/prenotazione/{prenotazioneId}")
+    @Operation(
+            summary = "Restituisce la recensione lasciata su una prenotazione",
+            description = "Serve al client per sapere se il viaggio concluso e' gia' stato recensito e, in tal "
+                    + "caso, per precompilare il form di modifica. Accessibile solo a chi ha effettuato la "
+                    + "prenotazione (o a un ADMIN). Risponde 204 se la recensione non c'e' ancora."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Recensione trovata"),
+            @ApiResponse(responseCode = "204", description = "Nessuna recensione per questa prenotazione"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
+            @ApiResponse(responseCode = "403", description = "La prenotazione non e' dell'utente"),
+            @ApiResponse(responseCode = "404", description = "Prenotazione non trovata")
+    })
+    public ResponseEntity<RecensioneResponse> leggiRecensionePrenotazione(@PathVariable Long prenotazioneId) {
+        return service.getRecensionePerPrenotazione(prenotazioneId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
     @PostMapping
     @Operation(
             summary = "Aggiunge una nuova recensione",
-            description = "Accessibile da qualsiasi utente autenticato. Riceve il DTO con itinerarioId (o prenotazioneId), " +
-                    "voto e commento. Se viene passata la prenotazione, verifica che appartenga all'utente " +
-                    "e che non sia già stata recensita."
+            description = "Si recensisce una PRENOTAZIONE, non un itinerario qualsiasi del catalogo: "
+                    + "prenotazioneId e' obbligatorio. Il server verifica che la prenotazione sia dell'utente "
+                    + "del token, che il viaggio sia gia' concluso (data di fine passata, prenotazione non "
+                    + "cancellata) e che non sia gia' stata recensita. Il voto e' obbligatorio (1-5), il "
+                    + "commento facoltativo."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Recensione aggiunta con successo"),
             @ApiResponse(responseCode = "400", description = "Dati non validi"),
             @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "409", description = "Prenotazione già recensita")
+            @ApiResponse(responseCode = "403", description = "La prenotazione non e' dell'utente"),
+            @ApiResponse(responseCode = "404", description = "Prenotazione non trovata"),
+            @ApiResponse(responseCode = "409", description = "Viaggio non ancora concluso oppure gia' recensito")
     })
-    public ResponseEntity<?> addNewRecensione(@Valid @RequestBody RecensioneRequest dto) {
+    public ResponseEntity<RecensioneResponse> addNewRecensione(@Valid @RequestBody RecensioneRequest dto) {
         Long id = service.addNewRecensione(dto);
         auditLogger.success("RECENSIONE_CREATA", "Recensione", String.valueOf(id));
-        return ResponseEntity.status(HttpStatus.CREATED).body("Recensione aggiunta con successo!");
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.getById(id));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(
+            summary = "Modifica una recensione gia' scritta",
+            description = "Aggiorna voto e commento. Consentito solo all'autore: un ADMIN puo' cancellare la "
+                    + "recensione (moderazione), non riscriverla al posto di chi l'ha lasciata."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Recensione aggiornata con successo"),
+            @ApiResponse(responseCode = "400", description = "Dati non validi"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
+            @ApiResponse(responseCode = "403", description = "Permessi insufficienti - solo l'autore"),
+            @ApiResponse(responseCode = "404", description = "Recensione non trovata")
+    })
+    public ResponseEntity<RecensioneResponse> aggiornaRecensione(
+            @PathVariable Long id,
+            @Valid @RequestBody AggiornaRecensioneRequest dto) {
+        RecensioneResponse aggiornata = service.aggiornaRecensione(id, dto);
+        auditLogger.success("RECENSIONE_MODIFICATA", "Recensione", String.valueOf(id));
+        return ResponseEntity.ok(aggiornata);
     }
 
     @DeleteMapping("/{id}")

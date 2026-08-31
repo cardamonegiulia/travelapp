@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.travelapp.data.remote.dto.CreaPrenotazioneDto
 import com.example.travelapp.data.repository.PagamentoRepository
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 class PrenotazioniViewModel(
     private val prenotazioneRepository: PrenotazioneRepository,
@@ -135,7 +136,7 @@ class PrenotazioniViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errore = e.message ?: "Errore durante la prenotazione"
+                    errore = messaggioErrore(e, "Errore durante la prenotazione")
                 )
             }
         }
@@ -172,7 +173,7 @@ class PrenotazioniViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errore = e.message ?: "Errore durante il pagamento"
+                    errore = messaggioErrore(e, "Errore durante il pagamento")
                 )
             }
         }
@@ -183,5 +184,32 @@ class PrenotazioniViewModel(
         _uiState.value = _uiState.value.copy(
             metodoPagamento = metodo
         )
+    }
+
+    /**
+     * Traduce l'errore HTTP in una frase leggibile.
+     *
+     * Senza questa mappatura l'utente si vede scritto "HTTP 409 Conflict", che non dice
+     * ne' cos'e' andato storto ne' cosa puo' fare: proprio i due casi piu' frequenti
+     * (posti finiti, prenotazioni chiuse) arrivano con quel codice.
+     */
+    private fun messaggioErrore(
+        e: Exception,
+        ripiego: String
+    ): String {
+
+        if (e !is HttpException) {
+            return e.message ?: ripiego
+        }
+
+        return when (e.code()) {
+            400 -> "Dati della prenotazione non validi"
+            401 -> "Sessione scaduta: effettua di nuovo l'accesso"
+            403 -> "Non hai i permessi per completare questa operazione"
+            404 -> "Offerta non più disponibile"
+            409 -> "Posti esauriti oppure prenotazioni chiuse per questa data"
+            429 -> "Troppe richieste ravvicinate: riprova fra qualche istante"
+            else -> ripiego
+        }
     }
 }

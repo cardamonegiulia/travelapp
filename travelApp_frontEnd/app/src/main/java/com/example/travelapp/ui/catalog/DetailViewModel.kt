@@ -7,7 +7,9 @@ import com.example.travelapp.data.remote.dto.DisponibilitaItinerarioResponseDto
 import com.example.travelapp.data.remote.dto.isPrenotabile
 import com.example.travelapp.data.remote.dto.SessioneAttivitaResponseDto
 import com.example.travelapp.data.repository.ItinerarioRepository
+import com.example.travelapp.data.repository.RecensioneRepository
 import com.example.travelapp.data.repository.SingolaAttivitaRepository
+import com.example.travelapp.domain.model.Recensione
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +21,9 @@ data class DetailUiState(
     val disponibilitaItinerario: List<DisponibilitaItinerarioResponseDto> = emptyList(),
     val sessioniAttivita: List<SessioneAttivitaResponseDto> = emptyList(),
     val idSelezionato: Long? = null,
+    // Recensioni dell'itinerario: le vede chiunque apra la scheda, non solo chi ha recensito
+    val recensioni: List<Recensione> = emptyList(),
+    val recensioniInCaricamento: Boolean = false,
     val errorMessage: String? = null
 )
 
@@ -34,6 +39,11 @@ class DetailViewModel(
     private val attivitaRepository =
         SingolaAttivitaRepository(
             ApiClient.getSingolaAttivitaApi(application)
+        )
+
+    private val recensioneRepository =
+        RecensioneRepository(
+            ApiClient.getRecensioneApi(application)
         )
 
     private val _uiState = MutableStateFlow(DetailUiState())
@@ -57,6 +67,25 @@ class DetailViewModel(
                 _uiState.update {
                     it.copy(isLoading = false, errorMessage = result.exceptionOrNull()?.message)
                 }
+            }
+        }
+    }
+
+    /**
+     * Recensioni della scheda itinerario.
+     *
+     * Caricate a parte dalle disponibilita': se l'elenco non arriva, la scheda resta
+     * utilizzabile e prenotabile.
+     */
+    fun caricaRecensioni(itinerarioId: Long) {
+        _uiState.update { it.copy(recensioniInCaricamento = true) }
+        viewModelScope.launch {
+            val risultato = recensioneRepository.getRecensioniItinerario(itinerarioId)
+            _uiState.update {
+                it.copy(
+                    recensioniInCaricamento = false,
+                    recensioni = risultato.getOrDefault(emptyList())
+                )
             }
         }
     }

@@ -2,11 +2,9 @@ package com.unical.travelapp.backend.booking.controllers;
 
 import com.unical.travelapp.backend.booking.dto.CreaPrenotazioneRequest;
 import com.unical.travelapp.backend.booking.dto.PrenotazioneResponseDto;
-import com.unical.travelapp.backend.booking.entity.Pagamento;
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
-import com.unical.travelapp.backend.booking.mapper.PrenotazioneMapper;
+import com.unical.travelapp.backend.booking.mapper.PrenotazioneAssembler;
 import com.unical.travelapp.backend.booking.service.PrenotazioneService;
-import com.unical.travelapp.backend.booking.service.PagamentoService;
 import com.unical.travelapp.backend.common.audit.AuditLogger;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,8 +23,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/prenotazioni")
@@ -36,9 +32,8 @@ import java.util.Map;
 public class PrenotazioneController {
 
     private final PrenotazioneService prenotazioneService;
-    private final PrenotazioneMapper prenotazioneMapper;
+    private final PrenotazioneAssembler prenotazioneAssembler;
     private final AuditLogger auditLogger;
-    private final PagamentoService pagamentoService;
 
     @GetMapping("/{id}")
     @Operation(
@@ -52,9 +47,8 @@ public class PrenotazioneController {
             @ApiResponse(responseCode = "404", description = "Prenotazione non trovata")
     })
     public ResponseEntity<PrenotazioneResponseDto> getPrenotazione(@PathVariable Long id) {
-        Prenotazione prenotazione = prenotazioneService.getPrenotazioneById(id);
-        Pagamento pagamento = pagamentoService.getPagamentoPrenotazione(prenotazione.getId());
-        return ResponseEntity.ok(prenotazioneMapper.toResponseDto(prenotazione, pagamento));
+        return ResponseEntity.ok(
+                prenotazioneAssembler.assembla(prenotazioneService.getPrenotazioneById(id)));
     }
 
     @GetMapping("/utente/{utenteId}")
@@ -70,10 +64,7 @@ public class PrenotazioneController {
     public ResponseEntity<Page<PrenotazioneResponseDto>> getPrenotazioniByUtente(
             @PathVariable Long utenteId,
             @PageableDefault(size = 20, sort = "dataPrenotazione", direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<Prenotazione> prenotazioni = prenotazioneService.getPrenotazioniByUtente(utenteId, pageable);
-        List<Long> ids = prenotazioni.getContent().stream().map(Prenotazione::getId).toList();
-        Map<Long, Pagamento> pagamenti = pagamentoService.getPagamentiPerPrenotazioni(ids);
-        return ResponseEntity.ok(prenotazioneMapper.toResponseDtoPage(prenotazioni, pagamenti));
+        return ResponseEntity.ok(prenotazioneAssembler.assembla(prenotazioneService.getPrenotazioniByUtente(utenteId, pageable)));
     }
 
     @GetMapping("/mie")
@@ -87,10 +78,39 @@ public class PrenotazioneController {
     })
     public ResponseEntity<Page<PrenotazioneResponseDto>> getMiePrenotazioni(
             @PageableDefault(size = 20, sort = "dataPrenotazione", direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<Prenotazione> prenotazioni = prenotazioneService.getMiePrenotazioni(pageable);
-        List<Long> ids = prenotazioni.getContent().stream().map(Prenotazione::getId).toList();
-        Map<Long, Pagamento> pagamenti = pagamentoService.getPagamentiPerPrenotazioni(ids);
-        return ResponseEntity.ok(prenotazioneMapper.toResponseDtoPage(prenotazioni, pagamenti));
+        return ResponseEntity.ok(prenotazioneAssembler.assembla(prenotazioneService.getMiePrenotazioni(pageable)));
+    }
+
+    @GetMapping("/mie/attuali")
+    @Operation(
+            summary = "Prenotazioni dell'utente loggato ancora da concludere (paginato)",
+            description = "Viaggi in corso o futuri, piu' le prenotazioni cancellate. E' la lista "
+                    + "storica della sezione Prenotazioni: cambia solo perche' i viaggi gia' conclusi "
+                    + "vengono ora mostrati nella scheda dedicata."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista prenotazioni restituita con successo"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido")
+    })
+    public ResponseEntity<Page<PrenotazioneResponseDto>> getMiePrenotazioniAttuali(
+            @PageableDefault(size = 20, sort = "dataPrenotazione", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(prenotazioneAssembler.assembla(prenotazioneService.getMieAttuali(pageable)));
+    }
+
+    @GetMapping("/mie/concluse")
+    @Operation(
+            summary = "Viaggi conclusi dell'utente loggato (paginato)",
+            description = "Prenotazioni non cancellate la cui data di fine e' gia' passata, dalla piu' "
+                    + "recente. Ogni elemento porta con se' se il viaggio e' ancora recensibile e "
+                    + "l'eventuale recensione gia' scritta."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista viaggi conclusi restituita con successo"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido")
+    })
+    public ResponseEntity<Page<PrenotazioneResponseDto>> getMieiViaggiConclusi(
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(prenotazioneAssembler.assembla(prenotazioneService.getMieConcluse(pageable)));
     }
 
     @PostMapping
@@ -108,8 +128,7 @@ public class PrenotazioneController {
             @Valid @RequestBody CreaPrenotazioneRequest request) {
         Prenotazione prenotazione = prenotazioneService.createPrenotazione(request);
         auditLogger.success("PRENOTAZIONE_CREATA", "Prenotazione", String.valueOf(prenotazione.getId()));
-        Pagamento pagamento = pagamentoService.getPagamentoPrenotazione(prenotazione.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(prenotazioneMapper.toResponseDto(prenotazione, pagamento));
+        return ResponseEntity.status(HttpStatus.CREATED).body(prenotazioneAssembler.assembla(prenotazione));
     }
 
     @PostMapping("/{id}/annulla")
@@ -127,8 +146,7 @@ public class PrenotazioneController {
     public ResponseEntity<PrenotazioneResponseDto> annullaPrenotazione(@PathVariable Long id) {
         Prenotazione prenotazione = prenotazioneService.annullaPrenotazione(id);
         auditLogger.success("PRENOTAZIONE_ANNULLATA", "Prenotazione", String.valueOf(id));
-        Pagamento pagamento = pagamentoService.getPagamentoPrenotazione(prenotazione.getId());
-        return ResponseEntity.ok(prenotazioneMapper.toResponseDto(prenotazione, pagamento));
+        return ResponseEntity.ok(prenotazioneAssembler.assembla(prenotazione));
     }
 
     @GetMapping("/saldo/totale")

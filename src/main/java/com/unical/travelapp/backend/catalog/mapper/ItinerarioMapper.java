@@ -6,8 +6,10 @@ import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
 import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.experience.mapper.ImmagineMapper;
+import com.unical.travelapp.backend.experience.models.DTO.ValutazioneMediaDTO;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -62,7 +64,12 @@ public class ItinerarioMapper {
         return itinerario;
     }
 
+    /** Vista senza valutazione: usata dove le recensioni non servono (creazione, modifica). */
     public ItinerarioDTO toDTO(Itinerario itinerario) {
+        return toDTO(itinerario, ValutazioneMediaDTO.NESSUNA);
+    }
+
+    public ItinerarioDTO toDTO(Itinerario itinerario, ValutazioneMediaDTO valutazione) {
         if (itinerario == null) return null;
 
         ItinerarioDTO dto = new ItinerarioDTO();
@@ -75,6 +82,12 @@ public class ItinerarioMapper {
         dto.setMaxPartecipanti(itinerario.getMaxPartecipanti());
         dto.setStato(itinerario.getStato());
         dto.setImmagini(immagineMapper.toResponse(itinerario.getImmagini()));
+
+        ValutazioneMediaDTO media = valutazione == null ? ValutazioneMediaDTO.NESSUNA : valutazione;
+        dto.setMediaVoti(media.media());
+        dto.setNumeroRecensioni(media.numero());
+
+        dto.setDateDisponibili(haPartenzePrenotabili(itinerario));
 
         // Il periodo esposto e' quello della partenza piu' vicina fra le disponibilita'.
         primaDisponibilita(itinerario).ifPresent(periodo -> {
@@ -117,5 +130,23 @@ public class ItinerarioMapper {
         return itinerario.getDisponibilita().stream()
                 .filter(d -> d.getDataInizio() != null)
                 .min(Comparator.comparing(DisponibilitaItinerario::getDataInizio));
+    }
+
+    /**
+     * Vero se resta almeno una partenza il cui termine di prenotazione non e' ancora
+     * passato. I posti non entrano nel conto: "esaurito" e "nessuna data" sono due
+     * situazioni diverse, e il client le mostra in modo diverso.
+     */
+    private boolean haPartenzePrenotabili(Itinerario itinerario) {
+        if (itinerario.getDisponibilita() == null) {
+            return false;
+        }
+        LocalDateTime adesso = LocalDateTime.now();
+        return itinerario.getDisponibilita().stream().anyMatch(periodo -> {
+            LocalDateTime termine = periodo.getDataLimitePrenotazione() != null
+                    ? periodo.getDataLimitePrenotazione()
+                    : periodo.getDataInizio();
+            return termine != null && !termine.isBefore(adesso);
+        });
     }
 }

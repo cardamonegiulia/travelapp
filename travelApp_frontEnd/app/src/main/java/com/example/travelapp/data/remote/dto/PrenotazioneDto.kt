@@ -20,7 +20,16 @@ data class PrenotazioneDto(
     val dataPrenotazione: String,
     val tipoPrenotazione: TipoPrenotazione,
     val titolo: String,
-    val luogo: String
+    val luogo: String,
+    // Date del viaggio (non della prenotazione): stanno sulla partenza scelta.
+    val dataInizioViaggio: String? = null,
+    val dataFineViaggio: String? = null,
+    val itinerarioId: Long? = null,
+    // Calcolati dal server: l'app non rifa' i conti su date e stato per decidere
+    // se il viaggio e' finito o se si puo' ancora recensire.
+    val conclusa: Boolean = false,
+    val recensibile: Boolean = false,
+    val recensioneId: Long? = null
 )
 
 fun PrenotazioneDto.toDomain(): Prenotazione {
@@ -33,7 +42,13 @@ fun PrenotazioneDto.toDomain(): Prenotazione {
         statoPrenotazione = statoPrenotazione,
         statoPagamento = statoPagamento,
         tipoPrenotazione = tipoPrenotazione,
-        dataPrenotazione = dataPrenotazione
+        dataPrenotazione = dataPrenotazione,
+        dataInizioViaggio = dataInizioViaggio,
+        dataFineViaggio = dataFineViaggio,
+        itinerarioId = itinerarioId,
+        conclusa = conclusa,
+        recensibile = recensibile,
+        recensioneId = recensioneId
     )
 }
 

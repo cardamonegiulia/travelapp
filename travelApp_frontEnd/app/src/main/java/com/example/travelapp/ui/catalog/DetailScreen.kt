@@ -34,7 +34,9 @@ import com.example.travelapp.data.remote.dto.dataLeggibile
 import com.example.travelapp.data.remote.dto.isPrenotabile
 import com.example.travelapp.data.remote.dto.prenotazioniAperte
 import com.example.travelapp.domain.model.Itinerario
+import com.example.travelapp.domain.model.Recensione
 import com.example.travelapp.domain.model.SingolaAttivita
+import com.example.travelapp.ui.components.StelleValutazione
 import com.example.travelapp.ui.theme.*
 
 @Composable
@@ -49,6 +51,7 @@ fun ItinerarioDetailScreen(
 
     LaunchedEffect(itinerario.id) {
         viewModel.caricaDisponibilitaItinerario(itinerario.id)
+        viewModel.caricaRecensioni(itinerario.id)
     }
 
     Scaffold(
@@ -216,13 +219,32 @@ fun ItinerarioDetailScreen(
 
                 HorizontalDivider(color = TravelBorder)
 
-                // Date e Disponibilità Reali
-                Text(
-                    text = "Date e posti disponibili",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = TravelTextDark
+                // Media delle stelle in testa alla scheda: e' la prima cosa che si guarda
+                StelleValutazione(
+                    media = itinerario.mediaVoti,
+                    numeroRecensioni = itinerario.numeroRecensioni,
+                    dimensione = 18.dp
                 )
+
+                HorizontalDivider(color = TravelBorder)
+
+                // Date e Disponibilità Reali
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Date e posti disponibili",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = TravelTextDark
+                    )
+
+                    if (!itinerario.dateDisponibili) {
+                        EtichettaNessunaData()
+                    }
+                }
 
                 if (uiState.isLoading) {
                     Box(modifier = Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
@@ -294,6 +316,13 @@ fun ItinerarioDetailScreen(
                     TappaItem(giorno = "Giorno 2", titolo = "Escursione principale", desc = "Visita guidata ai punti di maggiore interesse.")
                     TappaItem(giorno = "Giorno 3", titolo = "Rientro e saluti", desc = "Tempo libero per shopping e ripartenza.")
                 }
+
+                HorizontalDivider(color = TravelBorder)
+
+                SezioneRecensioni(
+                    recensioni = uiState.recensioni,
+                    inCaricamento = uiState.recensioniInCaricamento
+                )
             }
         }
     }
@@ -578,6 +607,102 @@ private fun TappaItem(giorno: String, titolo: String, desc: String) {
             Text(
                 text = desc,
                 style = MaterialTheme.typography.bodySmall,
+                color = TravelTextMuted
+            )
+        }
+    }
+}
+
+/**
+ * Elenco delle recensioni ricevute dall'itinerario.
+ *
+ * Visibile a chiunque apra la scheda: sono il giudizio pubblico sul viaggio, non un dato
+ * privato di chi lo ha fatto.
+ */
+@Composable
+private fun SezioneRecensioni(
+    recensioni: List<Recensione>,
+    inCaricamento: Boolean
+) {
+    Text(
+        text = "Recensioni dei viaggiatori",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = TravelTextDark
+    )
+
+    when {
+        inCaricamento -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = TravelBlue, modifier = Modifier.size(24.dp))
+            }
+        }
+
+        recensioni.isEmpty() -> {
+            Text(
+                text = "Ancora nessuna recensione per questo itinerario.",
+                style = MaterialTheme.typography.bodySmall,
+                color = TravelTextMuted
+            )
+        }
+
+        else -> {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                recensioni.forEach { recensione ->
+                    RecensioneItem(recensione)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecensioneItem(recensione: Recensione) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, TravelBorder, RoundedCornerShape(12.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = recensione.autore,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = TravelTextDark
+            )
+
+            dataLeggibile(recensione.data)?.let { quando ->
+                Text(
+                    text = quando,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TravelTextMuted
+                )
+            }
+        }
+
+        // Il voto della singola recensione e' un numero intero: qui il conteggio non serve
+        StelleValutazione(
+            media = recensione.votazione.toDouble(),
+            numeroRecensioni = 1,
+            mostraConteggio = false
+        )
+
+        // Il commento e' facoltativo: chi ha lasciato solo le stelle non ha una riga vuota
+        recensione.commento?.let { commento ->
+            Text(
+                text = commento,
+                style = MaterialTheme.typography.bodyMedium,
                 color = TravelTextMuted
             )
         }

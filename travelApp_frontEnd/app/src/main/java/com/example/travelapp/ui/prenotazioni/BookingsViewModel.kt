@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.travelapp.data.remote.ApiClient
+import com.example.travelapp.data.repository.NotificaRepository
 import com.example.travelapp.data.repository.PrenotazioneRepository
 import com.example.travelapp.domain.model.Prenotazione
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,9 +13,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/** Le due schede della sezione prenotazioni. */
+enum class SchedaPrenotazioni {
+    ATTUALI,
+    CONCLUSI
+}
+
 data class BookingsListUiState(
     val prenotazioni: List<Prenotazione> = emptyList(),
+    val viaggiConclusi: List<Prenotazione> = emptyList(),
+    val schedaSelezionata: SchedaPrenotazioni = SchedaPrenotazioni.ATTUALI,
     val prenotazioneSelezionata: Prenotazione? = null,
+    val notificheNonLette: Long = 0,
     val isLoading: Boolean = false,
     val errore: String? = null
 )
@@ -27,6 +37,12 @@ class BookingsViewModel(
         ApiClient.getPrenotazioneApi(application)
     )
 
+    // Il campanello vive qui perche' la sezione prenotazioni e' il posto in cui l'utente
+    // arriva dopo aver ricevuto l'invito a recensire.
+    private val notificaRepository = NotificaRepository(
+        ApiClient.getNotificaApi(application)
+    )
+
     private val _uiState =
         MutableStateFlow(BookingsListUiState())
 
@@ -37,6 +53,13 @@ class BookingsViewModel(
         caricaPrenotazioni()
     }
 
+    /**
+     * Carica entrambe le schede.
+     *
+     * La separazione fra "in corso o futuri" e "conclusi" la fa il server: qui non si
+     * confrontano date, cosi' app e backend non possono dare risposte diverse sullo stesso
+     * viaggio.
+     */
     fun caricaPrenotazioni() {
         viewModelScope.launch {
 
@@ -48,12 +71,13 @@ class BookingsViewModel(
             }
 
             try {
-                val prenotazioni =
-                    repository.getMiePrenotazioni()
+                val attuali = repository.getPrenotazioniAttuali()
+                val conclusi = repository.getViaggiConclusi()
 
                 _uiState.update {
                     it.copy(
-                        prenotazioni = prenotazioni,
+                        prenotazioni = attuali,
+                        viaggiConclusi = conclusi,
                         isLoading = false
                     )
                 }
@@ -68,6 +92,20 @@ class BookingsViewModel(
                 }
             }
         }
+
+        aggiornaNotifiche()
+    }
+
+    fun aggiornaNotifiche() {
+        viewModelScope.launch {
+            notificaRepository.contaNonLette().onSuccess { quante ->
+                _uiState.update { it.copy(notificheNonLette = quante) }
+            }
+        }
+    }
+
+    fun selezionaScheda(scheda: SchedaPrenotazioni) {
+        _uiState.update { it.copy(schedaSelezionata = scheda) }
     }
 
     fun selezionaPrenotazione(

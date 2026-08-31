@@ -32,6 +32,18 @@ interface PrenotazioneApi {
     suspend fun getMiePrenotazioni(): PageDto<PrenotazioneDto>
 
     /*
+     * Prenotazioni ancora da concludere: viaggi in corso, futuri e cancellati.
+     */
+    @GET("api/prenotazioni/mie/attuali")
+    suspend fun getMiePrenotazioniAttuali(): PageDto<PrenotazioneDto>
+
+    /*
+     * Viaggi gia' conclusi: sono quelli che si possono recensire.
+     */
+    @GET("api/prenotazioni/mie/concluse")
+    suspend fun getMieiViaggiConclusi(): PageDto<PrenotazioneDto>
+
+    /*
      * Dettaglio di una singola prenotazione.
      */
     @GET("api/prenotazioni/{id}")

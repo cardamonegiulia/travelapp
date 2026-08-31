@@ -5,7 +5,9 @@ import com.example.travelapp.BuildConfig
 import com.example.travelapp.data.remote.api.ItinerarioApi
 import com.example.travelapp.data.remote.api.PagamentoApi
 import com.example.travelapp.data.remote.api.PreferitiApi
+import com.example.travelapp.data.remote.api.NotificaApi
 import com.example.travelapp.data.remote.api.PrenotazioneApi
+import com.example.travelapp.data.remote.api.RecensioneApi
 import com.example.travelapp.data.remote.api.SingolaAttivitaApi
 import com.example.travelapp.data.remote.api.UtenteApi
 import okhttp3.OkHttpClient
@@ -114,6 +116,18 @@ object ApiClient {
     ): PagamentoApi =
         getClientAutenticato(context)
             .create(PagamentoApi::class.java)
+
+    fun getRecensioneApi(
+        context: Context
+    ): RecensioneApi =
+        getClientAutenticato(context)
+            .create(RecensioneApi::class.java)
+
+    fun getNotificaApi(
+        context: Context
+    ): NotificaApi =
+        getClientAutenticato(context)
+            .create(NotificaApi::class.java)
 
     /**
      * Trasforma in URL assoluto i link relativi
