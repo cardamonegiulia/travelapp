@@ -55,6 +55,7 @@ class AdminDashboardViewModel(
 fun AdminDashboardScreen(
     onVaiOfferte: () -> Unit,
     onVaiUtenti: () -> Unit,
+    onVaiProfilo: () -> Unit,
     onLogout: () -> Unit,
     viewModel: AdminDashboardViewModel = viewModel()
 ) {
@@ -65,8 +66,20 @@ fun AdminDashboardScreen(
             TopAppBar(
                 title = { Text("Pannello Amministratore", fontWeight = FontWeight.Bold, color = TravelTextDark) },
                 actions = {
+                    IconButton(onClick = onVaiProfilo) {
+                        Icon(
+                            Icons.Default.AccountBox,
+                            contentDescription = "Profilo",
+                            tint = TravelBlue
+                        )
+                    }
+
                     IconButton(onClick = onLogout) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout", tint = Color(0xFFDC2626))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Logout",
+                            tint = Color(0xFFDC2626)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)

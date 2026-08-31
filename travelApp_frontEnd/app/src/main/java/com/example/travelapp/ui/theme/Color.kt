@@ -42,6 +42,7 @@ val WarningYellow = Color(0xFFB8860B)
 val WarningBackground = Color(0xFFFFF4D6)
 val ErrorRed = Color(0xFFEB5757)
 
+val FavoriteRed = Color(0xFFE53935)
 val LogoutRed = ErrorRed
 val LogoutBackground = Color(0xFFFFEAEA)
 
