@@ -3,6 +3,7 @@ package com.example.travelapp.ui.prenotazioni
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.travelapp.data.remote.dto.CreaPrenotazioneDto
+import com.example.travelapp.data.repository.ItinerarioRepository
 import com.example.travelapp.data.repository.PagamentoRepository
 import com.example.travelapp.data.repository.PrenotazioneRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +13,8 @@ import kotlinx.coroutines.launch
 
 class PrenotazioniViewModel(
     private val prenotazioneRepository: PrenotazioneRepository,
-    private val pagamentoRepository: PagamentoRepository
+    private val pagamentoRepository: PagamentoRepository,
+    private val itinerarioRepository: ItinerarioRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookingUiState())
@@ -46,6 +48,7 @@ class PrenotazioniViewModel(
         titolo: String,
         luogo: String,
         prezzoBaseUnitario: Double,
+        itinerarioId: Long? = null,
         disponibilitaItinerarioId: Long? = null,
         sessioneSingolaAttivitaId: Long? = null,
         dataInizio: String? = null,
@@ -58,12 +61,17 @@ class PrenotazioniViewModel(
             prezzoBaseUnitario = prezzoBaseUnitario,
             prezzoBase = prezzoBaseUnitario,
             prezzoTotaleVisualizzato = prezzoBaseUnitario,
+            itinerarioId = itinerarioId,
             disponibilitaItinerarioId = disponibilitaItinerarioId,
             sessioneSingolaAttivitaId = sessioneSingolaAttivitaId,
             dataInizio = dataInizio,
             dataFine = dataFine,
             postiDisponibili = postiDisponibili
         )
+
+        if (itinerarioId != null) {
+            caricaExtra(itinerarioId)
+        }
     }
 
     fun resetBooking() {
@@ -221,5 +229,66 @@ class PrenotazioniViewModel(
         _uiState.value = _uiState.value.copy(
             metodoPagamento = metodo
         )
+    }
+
+    private fun caricaExtra(
+        itinerarioId: Long
+    ) {
+
+        _uiState.value =
+            _uiState.value.copy(
+                extraInCaricamento = true,
+                errore = null
+            )
+
+        viewModelScope.launch {
+
+            val risultato =
+                itinerarioRepository
+                    .getAttivitaExtra(itinerarioId)
+
+            // Evita di aggiornare un eventuale
+            // booking diverso aperto nel frattempo.
+            if (
+                _uiState.value.itinerarioId != itinerarioId
+            ) {
+                return@launch
+            }
+
+            if (risultato.isSuccess) {
+
+                val extra =
+                    risultato
+                        .getOrDefault(emptyList())
+                        .map { dto ->
+
+                            ExtraUi(
+                                id = dto.id,
+                                nome = dto.titolo,
+                                prezzo =
+                                    dto.prezzoExtra.toDouble()
+                            )
+                        }
+
+                _uiState.value =
+                    _uiState.value.copy(
+                        extraDisponibili = extra,
+                        extraInCaricamento = false
+                    )
+
+            } else {
+
+                _uiState.value =
+                    _uiState.value.copy(
+                        extraDisponibili = emptyList(),
+                        extraInCaricamento = false,
+                        errore =
+                            risultato
+                                .exceptionOrNull()
+                                ?.message
+                                ?: "Errore nel caricamento degli extra"
+                    )
+            }
+        }
     }
 }

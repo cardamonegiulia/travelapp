@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.travelapp.data.remote.ApiClient
+import com.example.travelapp.data.repository.ItinerarioRepository
 import com.example.travelapp.data.repository.PagamentoRepository
 import com.example.travelapp.data.repository.PrenotazioneRepository
 
@@ -28,9 +29,15 @@ class PrenotazioniViewModelFactory(
                     ApiClient.getPagamentoApi(context)
                 )
 
+            val itinerarioRepository =
+                ItinerarioRepository(
+                    ApiClient.getItinerarioApi(context)
+                )
+
             return PrenotazioniViewModel(
                 prenotazioneRepository = prenotazioneRepository,
-                pagamentoRepository = pagamentoRepository
+                pagamentoRepository = pagamentoRepository,
+                itinerarioRepository = itinerarioRepository
             ) as T
         }
 

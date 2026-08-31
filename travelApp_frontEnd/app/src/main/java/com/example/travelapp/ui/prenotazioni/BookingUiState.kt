@@ -7,7 +7,10 @@ data class BookingUiState(
     val numeroPartecipanti: Int = 1,
 
     val extraSelezionati: Map<Long, Double> = emptyMap(),
+    val extraDisponibili: List<ExtraUi> = emptyList(),
+    val extraInCaricamento: Boolean = false,
 
+    val itinerarioId: Long? = null,
     val disponibilitaItinerarioId: Long? = null,
     val sessioneSingolaAttivitaId: Long? = null,
 

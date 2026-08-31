@@ -619,6 +619,8 @@ fun AppNavGraph(
                                     prezzoBaseUnitario =
                                         item.prezzoBase?.toDouble() ?: 0.0,
 
+                                    itinerarioId = item.id,
+
                                     disponibilitaItinerarioId =
                                         disponibilita.id,
 
@@ -893,12 +895,8 @@ fun AppNavGraph(
                         uiState =
                             bookingState,
 
-                        /*
-                         * Gli extra reali verranno collegati
-                         * successivamente.
-                         */
                         extraDisponibili =
-                            emptyList(),
+                            bookingState.extraDisponibili,
 
                         onIncrementa =
                             bookingViewModel::
@@ -913,22 +911,11 @@ fun AppNavGraph(
                             toggleExtra,
 
                         onContinua = {
-
-                            /*
-                             * Crea realmente la prenotazione
-                             * usando disponibilitaId o sessioneId
-                             * conservati nel ViewModel.
-                             */
                             bookingViewModel
                                 .creaPrenotazione()
                         }
                     )
                 }
-
-
-                /*
-                 * STEP 2
-                 */
 
                 composable(
                     AppDestination.BookingStep2.route
@@ -981,10 +968,6 @@ fun AppNavGraph(
                     )
                 }
 
-
-                /*
-                 * SUCCESSO
-                 */
 
                 composable(
                     AppDestination.BookingSuccess.route
@@ -1293,19 +1276,22 @@ private fun BookingsRoute(
                 prenotazioneSelezionata,
 
             onBack = {
-
-                viewModel
-                    .chiudiDettaglio()
+                viewModel.chiudiDettaglio()
             },
 
             onAnnulla = {
+                viewModel.annullaPrenotazione()
+            },
 
-                viewModel
-                    .annullaPrenotazione()
+            onCompletaPagamento = {
+                viewModel.completaPagamento()
             },
 
             isLoading =
-                state.isLoading
+                state.isLoading,
+
+            errore =
+                state.errore
         )
 
     } else {

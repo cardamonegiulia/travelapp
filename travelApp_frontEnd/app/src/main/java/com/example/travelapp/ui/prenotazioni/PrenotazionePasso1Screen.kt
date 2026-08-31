@@ -451,7 +451,7 @@ fun PrenotazionePasso1Screen(
 
         Button(
             onClick = onContinua,
-            enabled = !uiState.isLoading,
+            enabled = !uiState.isLoading && !uiState.extraInCaricamento,
             colors = ButtonDefaults.buttonColors(
                 containerColor = AccentOrange,
                 contentColor = Color.White
@@ -461,17 +461,19 @@ fun PrenotazionePasso1Screen(
                 .fillMaxWidth()
                 .height(52.dp)
         ) {
-
             Text(
-                text = if (uiState.isLoading) {
-                    "Elaborazione..."
-                } else {
-                    "Continua al pagamento"
+                text = when {
+                    uiState.extraInCaricamento ->
+                        "Caricamento extra..."
+
+                    uiState.isLoading ->
+                        "Elaborazione..."
+                    else ->
+                        "Continua al pagamento"
                 },
                 fontWeight = FontWeight.Bold
             )
         }
-
         uiState.errore?.let { errore ->
 
             Spacer(
