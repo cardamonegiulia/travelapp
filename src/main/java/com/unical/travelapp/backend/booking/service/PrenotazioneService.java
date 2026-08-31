@@ -138,6 +138,18 @@ public class PrenotazioneService {
             throw new AttivitaExtraNonValidaException("Attività non inerente all'itinerario scelto");
         }
 
+        if (att.isObbligatoria()) {
+            throw new AttivitaExtraNonValidaException(
+                    "Un'attività obbligatoria non può essere selezionata come extra"
+            );
+        }
+
+        if (att.getPrezzoExtra() == null) {
+            throw new AttivitaExtraNonValidaException(
+                    "L'attività selezionata non ha un prezzo extra valido"
+            );
+        }
+
         return att;
     }
 

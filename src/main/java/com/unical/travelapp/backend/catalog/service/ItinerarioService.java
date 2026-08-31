@@ -1,8 +1,10 @@
 package com.unical.travelapp.backend.catalog.service;
 
+import com.unical.travelapp.backend.catalog.dto.AttivitaExtraDTO;
 import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
+import com.unical.travelapp.backend.catalog.repository.AttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.DisponibilitaItinerarioRepository;
 import com.unical.travelapp.backend.catalog.repository.ItinerarioRepository;
 import com.unical.travelapp.backend.experience.exeption.ImmagineNonTrovata;
@@ -37,6 +39,9 @@ public class ItinerarioService {
     @Autowired
     private ImmagineMapper immagineMapper;
 
+    @Autowired
+    private AttivitaRepository attivitaRepository;
+
     public Page<Itinerario> getAllItinerari(Pageable pageable) {
         return itinerarioRepository.findAll(pageable);
     }
@@ -50,6 +55,27 @@ public class ItinerarioService {
             throw new ItinerarioNonTrovatoException("Itinerario non trovato: " + itinerarioId);
         }
         return disponibilitaRepository.findByItinerario_Id(itinerarioId);
+    }
+
+    public List<AttivitaExtraDTO> getAttivitaExtra(Long itinerarioId) {
+
+        if (!itinerarioRepository.existsById(itinerarioId)) {
+            throw new ItinerarioNonTrovatoException(
+                    "Itinerario non trovato: " + itinerarioId
+            );
+        }
+
+        return attivitaRepository
+                .findExtraByItinerarioId(itinerarioId)
+                .stream()
+                .map(attivita ->
+                        new AttivitaExtraDTO(
+                                attivita.getId(),
+                                attivita.getTitolo(),
+                                attivita.getPrezzoExtra()
+                        )
+                )
+                .toList();
     }
 
     @Transactional

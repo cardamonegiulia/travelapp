@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.catalog.controller;
 
+import com.unical.travelapp.backend.catalog.dto.AttivitaExtraDTO;
 import com.unical.travelapp.backend.catalog.dto.DisponibilitaItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
@@ -91,6 +92,19 @@ public class ItinerarioController {
                         .toList();
 
         return ResponseEntity.ok(disponibilita);
+    }
+    @GetMapping("/{id}/attivita-extra")
+    @Operation(
+            summary = "Restituisce le attività extra di un itinerario",
+            description = "Restituisce le attività opzionali associate alle tappe dell'itinerario."
+    )
+    public ResponseEntity<List<AttivitaExtraDTO>> getAttivitaExtra(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                itinerarioService.getAttivitaExtra(id)
+        );
     }
 
     @PostMapping
