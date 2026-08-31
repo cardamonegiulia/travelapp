@@ -57,6 +57,8 @@ private val DarkColorScheme = darkColorScheme(
 
     secondary = AccentOrangeDark,
     onSecondary = BackgroundDarkRaw,
+    secondaryContainer = Color(0xFF4A2F18),
+    onSecondaryContainer = Color(0xFFFFDCC2),
 
     background = BackgroundDarkRaw,
     onBackground = TextPrimaryDarkRaw,

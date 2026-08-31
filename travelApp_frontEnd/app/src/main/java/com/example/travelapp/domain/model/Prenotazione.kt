@@ -1,7 +1,5 @@
 package com.example.travelapp.domain.model
 
-
-
 data class Prenotazione(
     val id: Long,
     val titolo: String,
@@ -13,22 +11,26 @@ data class Prenotazione(
     val tipoPrenotazione: TipoPrenotazione,
     val dataPrenotazione: String,
 
-    // Periodo del viaggio prenotato, quando c'e' (formato ISO del backend).
+    // Periodo del viaggio prenotato, quando presente.
     val dataInizioViaggio: String? = null,
     val dataFineViaggio: String? = null,
 
-    /** Itinerario prenotato: assente per le prenotazioni di una singola attivita'. */
+    // Presente solo per prenotazioni relative a un itinerario.
     val itinerarioId: Long? = null,
 
-    /** true quando il viaggio e' finito e la prenotazione non e' stata cancellata. */
+    // Informazioni relative alla conclusione del viaggio e alle recensioni.
     val conclusa: Boolean = false,
-
-    /** true quando si puo' lasciare una recensione adesso: deciso dal server. */
     val recensibile: Boolean = false,
-
-    /** Recensione gia' scritta su questo viaggio, se c'e': serve ad aprirla in modifica. */
     val recensioneId: Long? = null
-)
+) {
 
+    /*
+     * Alias mantenuti per compatibilità con il booking
+     * che utilizza ancora dataInizio / dataFine.
+     */
+    val dataInizio: String?
+        get() = dataInizioViaggio
 
-
+    val dataFine: String?
+        get() = dataFineViaggio
+}

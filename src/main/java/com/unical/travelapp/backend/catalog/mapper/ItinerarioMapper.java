@@ -19,134 +19,395 @@ import java.util.Optional;
 @Component
 public class ItinerarioMapper {
 
-    // Ultimo istante prenotabile del giorno indicato: LocalTime.MAX (.999999999) verrebbe
-    // arrotondato dal database al giorno successivo, spostando il termine di 24 ore.
-    private static final LocalTime FINE_GIORNATA = LocalTime.of(23, 59, 59);
+    // Ultimo istante prenotabile del giorno indicato.
+    private static final LocalTime FINE_GIORNATA =
+            LocalTime.of(23, 59, 59);
 
     private final ImmagineMapper immagineMapper;
 
-    public ItinerarioMapper(ImmagineMapper immagineMapper) {
+    public ItinerarioMapper(
+            ImmagineMapper immagineMapper
+    ) {
         this.immagineMapper = immagineMapper;
     }
 
-    // id/organizzatore/stato non sono nel DTO di request: li imposta il chiamante (controller)
-    public Itinerario fromRequest(ItinerarioRequestDTO dto) {
-        if (dto == null) return null;
+    /*
+     * ============================================================
+     * REQUEST -> ENTITY
+     * ============================================================
+     */
 
-        Itinerario itinerario = new Itinerario();
-        itinerario.setTitolo(dto.getTitolo());
-        itinerario.setDescrizione(dto.getDescrizione());
-        itinerario.setDestinazionePrincipale(dto.getDestinazionePrincipale());
-        itinerario.setPrezzoBase(dto.getPrezzoBase());
-        itinerario.setMaxPartecipanti(dto.getMaxPartecipanti());
+    // id/organizzatore/stato non sono nel DTO di request:
+    // li imposta il controller.
+    public Itinerario fromRequest(
+            ItinerarioRequestDTO dto
+    ) {
 
-        // Quando il client manda il periodo la durata la decide il server: cosi' non puo'
-        // esistere un itinerario con date e durata che si contraddicono.
-        Integer durataDalPeriodo = dto.durataDalPeriodo();
-        itinerario.setDurataGiorni(durataDalPeriodo != null ? durataDalPeriodo : dto.getDurataGiorni());
+        if (dto == null) {
+            return null;
+        }
 
+        Itinerario itinerario =
+                new Itinerario();
+
+        itinerario.setTitolo(
+                dto.getTitolo()
+        );
+
+        itinerario.setDescrizione(
+                dto.getDescrizione()
+        );
+
+        itinerario.setDestinazionePrincipale(
+                dto.getDestinazionePrincipale()
+        );
+
+        itinerario.setPrezzoBase(
+                dto.getPrezzoBase()
+        );
+
+        itinerario.setMaxPartecipanti(
+                dto.getMaxPartecipanti()
+        );
+
+        /*
+         * Se il client invia dataInizio/dataFine,
+         * la durata viene calcolata dal server.
+         */
+        Integer durataDalPeriodo =
+                dto.durataDalPeriodo();
+
+        itinerario.setDurataGiorni(
+                durataDalPeriodo != null
+                        ? durataDalPeriodo
+                        : dto.getDurataGiorni()
+        );
+
+        /*
+         * Se è stato indicato un periodo,
+         * creiamo anche la disponibilità iniziale.
+         */
         if (durataDalPeriodo != null) {
-            DisponibilitaItinerario periodo = new DisponibilitaItinerario();
-            periodo.setDataInizio(dto.getDataInizio().atStartOfDay());
-            periodo.setDataFine(dto.getDataFine().atStartOfDay());
-            periodo.setPostiDisponibili(dto.getMaxPartecipanti());
 
-            if (dto.getDataLimitePrenotazione() != null) {
-                // Termine inclusivo: si prenota per tutto il giorno indicato.
-                periodo.setDataLimitePrenotazione(dto.getDataLimitePrenotazione().atTime(FINE_GIORNATA));
+            DisponibilitaItinerario periodo =
+                    new DisponibilitaItinerario();
+
+            periodo.setDataInizio(
+                    dto.getDataInizio()
+                            .atStartOfDay()
+            );
+
+            periodo.setDataFine(
+                    dto.getDataFine()
+                            .atStartOfDay()
+            );
+
+            periodo.setPostiDisponibili(
+                    dto.getMaxPartecipanti()
+            );
+
+            if (
+                    dto.getDataLimitePrenotazione()
+                            != null
+            ) {
+
+                periodo.setDataLimitePrenotazione(
+                        dto
+                                .getDataLimitePrenotazione()
+                                .atTime(FINE_GIORNATA)
+                );
             }
 
-            List<DisponibilitaItinerario> disponibilita = new ArrayList<>();
+            List<DisponibilitaItinerario> disponibilita =
+                    new ArrayList<>();
+
             disponibilita.add(periodo);
-            itinerario.setDisponibilita(disponibilita);
+
+            itinerario.setDisponibilita(
+                    disponibilita
+            );
         }
 
         return itinerario;
     }
 
-    /** Vista senza valutazione: usata dove le recensioni non servono (creazione, modifica). */
-    public ItinerarioDTO toDTO(Itinerario itinerario) {
-        return toDTO(itinerario, ValutazioneMediaDTO.NESSUNA);
+    /*
+     * ============================================================
+     * ENTITY -> DTO
+     * ============================================================
+     */
+
+    /**
+     * Vista senza valutazione.
+     * Usata dove recensioni/media non servono.
+     */
+    public ItinerarioDTO toDTO(
+            Itinerario itinerario
+    ) {
+
+        return toDTO(
+                itinerario,
+                ValutazioneMediaDTO.NESSUNA
+        );
     }
 
-    public ItinerarioDTO toDTO(Itinerario itinerario, ValutazioneMediaDTO valutazione) {
-        if (itinerario == null) return null;
+    public ItinerarioDTO toDTO(
+            Itinerario itinerario,
+            ValutazioneMediaDTO valutazione
+    ) {
 
-        ItinerarioDTO dto = new ItinerarioDTO();
-        dto.setId(itinerario.getId());
-        dto.setTitolo(itinerario.getTitolo());
-        dto.setDescrizione(itinerario.getDescrizione());
-        dto.setDestinazionePrincipale(itinerario.getDestinazionePrincipale());
-        dto.setPrezzoBase(itinerario.getPrezzoBase());
-        dto.setDurataGiorni(itinerario.getDurataGiorni());
-        dto.setMaxPartecipanti(itinerario.getMaxPartecipanti());
-        dto.setStato(itinerario.getStato());
-        dto.setImmagini(immagineMapper.toResponse(itinerario.getImmagini()));
+        if (itinerario == null) {
+            return null;
+        }
 
-        ValutazioneMediaDTO media = valutazione == null ? ValutazioneMediaDTO.NESSUNA : valutazione;
-        dto.setMediaVoti(media.media());
-        dto.setNumeroRecensioni(media.numero());
+        ItinerarioDTO dto =
+                new ItinerarioDTO();
 
-        dto.setDateDisponibili(haPartenzePrenotabili(itinerario));
+        dto.setId(
+                itinerario.getId()
+        );
 
-        // Il periodo esposto e' quello della partenza piu' vicina fra le disponibilita'.
-        primaDisponibilita(itinerario).ifPresent(periodo -> {
-            dto.setDataInizio(periodo.getDataInizio().toLocalDate());
-            if (periodo.getDataFine() != null) {
-                dto.setDataFine(periodo.getDataFine().toLocalDate());
+        dto.setTitolo(
+                itinerario.getTitolo()
+        );
+
+        dto.setDescrizione(
+                itinerario.getDescrizione()
+        );
+
+        dto.setDestinazionePrincipale(
+                itinerario.getDestinazionePrincipale()
+        );
+
+        dto.setPrezzoBase(
+                itinerario.getPrezzoBase()
+        );
+
+        dto.setDurataGiorni(
+                itinerario.getDurataGiorni()
+        );
+
+        dto.setMaxPartecipanti(
+                itinerario.getMaxPartecipanti()
+        );
+
+        dto.setStato(
+                itinerario.getStato()
+        );
+
+        dto.setImmagini(
+                immagineMapper.toResponse(
+                        itinerario.getImmagini()
+                )
+        );
+
+        /*
+         * Valutazione media.
+         */
+        ValutazioneMediaDTO media =
+                valutazione == null
+                        ? ValutazioneMediaDTO.NESSUNA
+                        : valutazione;
+
+        dto.setMediaVoti(
+                media.media()
+        );
+
+        dto.setNumeroRecensioni(
+                media.numero()
+        );
+
+        /*
+         * Indica se esiste almeno una partenza
+         * ancora prenotabile temporalmente.
+         */
+        dto.setDateDisponibili(
+                haPartenzePrenotabili(
+                        itinerario
+                )
+        );
+
+        /*
+         * Espone sul DTO principale il periodo
+         * della prima disponibilità.
+         */
+        primaDisponibilita(
+                itinerario
+        ).ifPresent(periodo -> {
+
+            dto.setDataInizio(
+                    periodo
+                            .getDataInizio()
+                            .toLocalDate()
+            );
+
+            if (
+                    periodo.getDataFine()
+                            != null
+            ) {
+
+                dto.setDataFine(
+                        periodo
+                                .getDataFine()
+                                .toLocalDate()
+                );
             }
-            if (periodo.getDataLimitePrenotazione() != null) {
-                dto.setDataLimitePrenotazione(periodo.getDataLimitePrenotazione().toLocalDate());
+
+            if (
+                    periodo
+                            .getDataLimitePrenotazione()
+                            != null
+            ) {
+
+                dto.setDataLimitePrenotazione(
+                        periodo
+                                .getDataLimitePrenotazione()
+                                .toLocalDate()
+                );
             }
         });
 
-        if (itinerario.getOrganizzatore() != null) {
-            dto.setOrganizzatoreId(itinerario.getOrganizzatore().getId());
+        if (
+                itinerario.getOrganizzatore()
+                        != null
+        ) {
+
+            dto.setOrganizzatoreId(
+                    itinerario
+                            .getOrganizzatore()
+                            .getId()
+            );
         }
+
         return dto;
     }
 
-    public DisponibilitaItinerarioDTO toDisponibilitaDTO(DisponibilitaItinerario periodo) {
-        if (periodo == null) return null;
+    /*
+     * ============================================================
+     * DISPONIBILITÀ -> DTO
+     * ============================================================
+     */
 
-        DisponibilitaItinerarioDTO dto = new DisponibilitaItinerarioDTO();
-        dto.setId(periodo.getId());
-        dto.setDataInizio(periodo.getDataInizio());
-        dto.setDataFine(periodo.getDataFine());
-        dto.setDataLimitePrenotazione(periodo.getDataLimitePrenotazione());
-        dto.setPostiDisponibili(periodo.getPostiDisponibili());
+    public DisponibilitaItinerarioDTO toDisponibilitaDTO(
+            DisponibilitaItinerario periodo
+    ) {
+
+        if (periodo == null) {
+            return null;
+        }
+
+        DisponibilitaItinerarioDTO dto =
+                new DisponibilitaItinerarioDTO();
+
+        dto.setId(
+                periodo.getId()
+        );
+
+        dto.setDataInizio(
+                periodo.getDataInizio()
+        );
+
+        dto.setDataFine(
+                periodo.getDataFine()
+        );
+
+        dto.setDataLimitePrenotazione(
+                periodo.getDataLimitePrenotazione()
+        );
+
+        dto.setPostiDisponibili(
+                periodo.getPostiDisponibili()
+        );
+
         return dto;
     }
 
-    public List<DisponibilitaItinerarioDTO> toDisponibilitaDTO(List<DisponibilitaItinerario> periodi) {
-        if (periodi == null) return List.of();
-        return periodi.stream().map(this::toDisponibilitaDTO).toList();
+    public List<DisponibilitaItinerarioDTO> toDisponibilitaDTO(
+            List<DisponibilitaItinerario> periodi
+    ) {
+
+        if (periodi == null) {
+            return List.of();
+        }
+
+        return periodi
+                .stream()
+                .map(this::toDisponibilitaDTO)
+                .toList();
     }
 
-    private Optional<DisponibilitaItinerario> primaDisponibilita(Itinerario itinerario) {
-        if (itinerario.getDisponibilita() == null) {
+    /*
+     * ============================================================
+     * SUPPORTO
+     * ============================================================
+     */
+
+    private Optional<DisponibilitaItinerario> primaDisponibilita(
+            Itinerario itinerario
+    ) {
+
+        if (
+                itinerario.getDisponibilita()
+                        == null
+        ) {
             return Optional.empty();
         }
-        return itinerario.getDisponibilita().stream()
-                .filter(d -> d.getDataInizio() != null)
-                .min(Comparator.comparing(DisponibilitaItinerario::getDataInizio));
+
+        return itinerario
+                .getDisponibilita()
+                .stream()
+                .filter(
+                        disponibilita ->
+                                disponibilita.getDataInizio()
+                                        != null
+                )
+                .min(
+                        Comparator.comparing(
+                                DisponibilitaItinerario::getDataInizio
+                        )
+                );
     }
 
     /**
-     * Vero se resta almeno una partenza il cui termine di prenotazione non e' ancora
-     * passato. I posti non entrano nel conto: "esaurito" e "nessuna data" sono due
-     * situazioni diverse, e il client le mostra in modo diverso.
+     * Vero se rimane almeno una partenza il cui
+     * termine di prenotazione non è ancora passato.
+     *
+     * I posti non vengono considerati qui:
+     * "esaurito" e "nessuna data disponibile"
+     * sono due condizioni differenti.
      */
-    private boolean haPartenzePrenotabili(Itinerario itinerario) {
-        if (itinerario.getDisponibilita() == null) {
+    private boolean haPartenzePrenotabili(
+            Itinerario itinerario
+    ) {
+
+        if (
+                itinerario.getDisponibilita()
+                        == null
+        ) {
             return false;
         }
-        LocalDateTime adesso = LocalDateTime.now();
-        return itinerario.getDisponibilita().stream().anyMatch(periodo -> {
-            LocalDateTime termine = periodo.getDataLimitePrenotazione() != null
-                    ? periodo.getDataLimitePrenotazione()
-                    : periodo.getDataInizio();
-            return termine != null && !termine.isBefore(adesso);
-        });
+
+        LocalDateTime adesso =
+                LocalDateTime.now();
+
+        return itinerario
+                .getDisponibilita()
+                .stream()
+                .anyMatch(periodo -> {
+
+                    LocalDateTime termine =
+                            periodo
+                                    .getDataLimitePrenotazione()
+                                    != null
+                                    ? periodo
+                                    .getDataLimitePrenotazione()
+                                    : periodo
+                                    .getDataInizio();
+
+                    return termine != null
+                            && !termine.isBefore(
+                            adesso
+                    );
+                });
     }
 }

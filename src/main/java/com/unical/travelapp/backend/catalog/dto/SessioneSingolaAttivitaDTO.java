@@ -1,12 +1,7 @@
 package com.unical.travelapp.backend.catalog.dto;
 
-import lombok.Data;
-
 import java.time.LocalDateTime;
 
-// Vista di una sessione prenotabile: come per le disponibilita' degli itinerari, l'entita'
-// non va esposta perche' rimanda all'attivita', che contiene a sua volta le sessioni.
-@Data
 public class SessioneSingolaAttivitaDTO {
 
     private Long id;
@@ -14,4 +9,61 @@ public class SessioneSingolaAttivitaDTO {
     private LocalDateTime dataFine;
     private Integer postiDisponibili;
     private String stato;
+
+    public SessioneSingolaAttivitaDTO() {
+    }
+
+    public SessioneSingolaAttivitaDTO(
+            Long id,
+            LocalDateTime dataInizio,
+            LocalDateTime dataFine,
+            Integer postiDisponibili,
+            String stato
+    ) {
+        this.id = id;
+        this.dataInizio = dataInizio;
+        this.dataFine = dataFine;
+        this.postiDisponibili = postiDisponibili;
+        this.stato = stato;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public LocalDateTime getDataInizio() {
+        return dataInizio;
+    }
+
+    public void setDataInizio(LocalDateTime dataInizio) {
+        this.dataInizio = dataInizio;
+    }
+
+    public LocalDateTime getDataFine() {
+        return dataFine;
+    }
+
+    public void setDataFine(LocalDateTime dataFine) {
+        this.dataFine = dataFine;
+    }
+
+    public Integer getPostiDisponibili() {
+        return postiDisponibili;
+    }
+
+    public void setPostiDisponibili(Integer postiDisponibili) {
+        this.postiDisponibili = postiDisponibili;
+    }
+
+    public String getStato() {
+        return stato;
+    }
+
+    public void setStato(String stato) {
+        this.stato = stato;
+    }
 }

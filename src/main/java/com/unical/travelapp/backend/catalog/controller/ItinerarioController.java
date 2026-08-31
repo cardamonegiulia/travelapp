@@ -1,5 +1,6 @@
 package com.unical.travelapp.backend.catalog.controller;
 
+import com.unical.travelapp.backend.catalog.dto.AttivitaExtraDTO;
 import com.unical.travelapp.backend.catalog.dto.DisponibilitaItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
@@ -35,12 +36,16 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/itinerari")
-@Tag(name = "Itinerari", description = "Gestione degli itinerari di viaggio")
+@Tag(
+        name = "Itinerari",
+        description = "Gestione degli itinerari di viaggio"
+)
 @SecurityRequirement(name = "bearerAuth")
 public class ItinerarioController {
 
     @Autowired
     private ItinerarioService itinerarioService;
+
     @Autowired
     private ItinerarioMapper itinerarioMapper;
 
@@ -53,26 +58,61 @@ public class ItinerarioController {
     @Autowired
     private RecensioneService recensioneService;
 
+    /*
+     * ============================================================
+     * LETTURA ITINERARI
+     * ============================================================
+     */
+
     @GetMapping
     @Operation(
             summary = "Restituisce tutti gli itinerari paginati",
             description = "Accessibile da qualsiasi utente autenticato. Default 20 itinerari per pagina."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista itinerari restituita con successo"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Lista itinerari restituita con successo"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Token JWT mancante o non valido"
+            )
     })
     public ResponseEntity<Page<ItinerarioDTO>> getAllItinerari(
-            @PageableDefault(size = 20) Pageable pageable) {
-        Page<Itinerario> itinerari = itinerarioService.getAllItinerari(pageable);
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
 
-        // Media e numero di recensioni per l'intera pagina in una query sola: la bacheca
-        // mostra le stelle su ogni anteprima, e una chiamata per card sarebbe un N+1.
-        Map<Long, ValutazioneMediaDTO> valutazioni = recensioneService.getValutazioni(
-                itinerari.getContent().stream().map(Itinerario::getId).toList());
+        Page<Itinerario> itinerari =
+                itinerarioService.getAllItinerari(pageable);
 
-        return ResponseEntity.ok(itinerari.map(itinerario ->
-                itinerarioMapper.toDTO(itinerario, valutazioni.get(itinerario.getId()))));
+        /*
+         * Recuperiamo media e numero recensioni
+         * per l'intera pagina in una sola query.
+         *
+         * In questo modo evitiamo una chiamata
+         * separata per ogni card del catalogo.
+         */
+        Map<Long, ValutazioneMediaDTO> valutazioni =
+                recensioneService.getValutazioni(
+                        itinerari
+                                .getContent()
+                                .stream()
+                                .map(Itinerario::getId)
+                                .toList()
+                );
+
+        return ResponseEntity.ok(
+                itinerari.map(
+                        itinerario ->
+                                itinerarioMapper.toDTO(
+                                        itinerario,
+                                        valutazioni.get(
+                                                itinerario.getId()
+                                        )
+                                )
+                )
+        );
     }
 
     @GetMapping("/{id}")
@@ -81,28 +121,90 @@ public class ItinerarioController {
             description = "Accessibile da qualsiasi utente autenticato. Restituisce 404 se non trovato."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Itinerario trovato"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "404", description = "Itinerario non trovato")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Itinerario trovato"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Token JWT mancante o non valido"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Itinerario non trovato"
+            )
     })
-    public ResponseEntity<ItinerarioDTO> getItinerarioById(@PathVariable Long id) {
-        Itinerario itinerario = itinerarioService.getItinerarioById(id)
-                .orElseThrow(() -> new ItinerarioNonTrovatoException("Itinerario non trovato: " + id));
-        return ResponseEntity.ok(itinerarioMapper.toDTO(itinerario, recensioneService.getValutazione(id)));
+    public ResponseEntity<ItinerarioDTO> getItinerarioById(
+            @PathVariable Long id
+    ) {
+
+        Itinerario itinerario =
+                itinerarioService
+                        .getItinerarioById(id)
+                        .orElseThrow(
+                                () ->
+                                        new ItinerarioNonTrovatoException(
+                                                "Itinerario non trovato: " + id
+                                        )
+                        );
+
+        return ResponseEntity.ok(
+                itinerarioMapper.toDTO(
+                        itinerario,
+                        recensioneService.getValutazione(id)
+                )
+        );
     }
 
-    // --- Endpoint per recuperare le disponibilità (richiesto per il booking) ---
+    /*
+     * ============================================================
+     * DISPONIBILITÀ
+     * ============================================================
+     */
+
     @GetMapping("/{id}/disponibilita")
     @Operation(
             summary = "Restituisce le disponibilità di un itinerario",
             description = "Per ogni partenza: date, posti ancora liberi ed eventuale termine per prenotare."
     )
-    public ResponseEntity<List<DisponibilitaItinerarioDTO>> getDisponibilitaByItinerario(
+    public ResponseEntity<List<DisponibilitaItinerarioDTO>>
+    getDisponibilitaByItinerario(
             @PathVariable Long id
     ) {
-        return ResponseEntity.ok(itinerarioMapper.toDisponibilitaDTO(
-                itinerarioService.getDisponibilitaByItinerarioId(id)));
+
+        return ResponseEntity.ok(
+                itinerarioMapper.toDisponibilitaDTO(
+                        itinerarioService
+                                .getDisponibilitaByItinerarioId(id)
+                )
+        );
     }
+
+    /*
+     * ============================================================
+     * ATTIVITÀ EXTRA
+     * ============================================================
+     */
+
+    @GetMapping("/{id}/attivita-extra")
+    @Operation(
+            summary = "Restituisce le attività extra di un itinerario",
+            description = "Restituisce le attività opzionali associate alle tappe dell'itinerario."
+    )
+    public ResponseEntity<List<AttivitaExtraDTO>> getAttivitaExtra(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                itinerarioService.getAttivitaExtra(id)
+        );
+    }
+
+    /*
+     * ============================================================
+     * RECENSIONI
+     * ============================================================
+     */
 
     @GetMapping("/{id}/recensioni")
     @Operation(
@@ -112,115 +214,318 @@ public class ItinerarioController {
                     + "consultano, non solo chi ha recensito."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Elenco recensioni restituito con successo"),
-            @ApiResponse(responseCode = "404", description = "Itinerario non trovato")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Elenco recensioni restituito con successo"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Itinerario non trovato"
+            )
     })
     public ResponseEntity<Page<RecensioneResponse>> getRecensioni(
             @PathVariable Long id,
-            @PageableDefault(size = 20) Pageable pageable) {
-        if (itinerarioService.getItinerarioById(id).isEmpty()) {
-            throw new ItinerarioNonTrovatoException("Itinerario non trovato: " + id);
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+
+        if (
+                itinerarioService
+                        .getItinerarioById(id)
+                        .isEmpty()
+        ) {
+
+            throw new ItinerarioNonTrovatoException(
+                    "Itinerario non trovato: " + id
+            );
         }
-        return ResponseEntity.ok(recensioneService.getRecensioniDaItinerarioId(id, pageable));
+
+        return ResponseEntity.ok(
+                recensioneService
+                        .getRecensioniDaItinerarioId(
+                                id,
+                                pageable
+                        )
+        );
     }
+
+    /*
+     * ============================================================
+     * CREAZIONE
+     * ============================================================
+     */
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(
             summary = "Crea un nuovo itinerario",
-            description = "Accessibile solo da ORGANIZZATORE o ADMIN. L'organizzatore viene impostato automaticamente dal server tramite il token JWT. Lo stato iniziale è sempre BOZZA. Indicando dataInizio e dataFine (non nel passato, estremi inclusi) il server calcola la durata in giorni e registra la disponibilità corrispondente."
+            description = "Accessibile solo da ORGANIZZATORE o ADMIN. "
+                    + "L'organizzatore viene impostato automaticamente dal server tramite il token JWT. "
+                    + "Lo stato iniziale è sempre BOZZA. Indicando dataInizio e dataFine "
+                    + "(non nel passato, estremi inclusi) il server calcola la durata in giorni "
+                    + "e registra la disponibilità corrispondente."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Itinerario creato con successo"),
-            @ApiResponse(responseCode = "400", description = "Dati non validi"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "403", description = "Permessi insufficienti — solo ORGANIZZATORE o ADMIN")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Itinerario creato con successo"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Dati non validi"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Token JWT mancante o non valido"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Permessi insufficienti — solo ORGANIZZATORE o ADMIN"
+            )
     })
     public ResponseEntity<ItinerarioDTO> createItinerario(
-            @Valid @RequestBody ItinerarioRequestDTO itinerarioRequest) {
-        Itinerario entity = itinerarioMapper.fromRequest(itinerarioRequest);
-        entity.setOrganizzatore(utenteService.getUtenteSessione());
+            @Valid @RequestBody ItinerarioRequestDTO itinerarioRequest
+    ) {
+
+        Itinerario entity =
+                itinerarioMapper.fromRequest(
+                        itinerarioRequest
+                );
+
+        entity.setOrganizzatore(
+                utenteService.getUtenteSessione()
+        );
+
         entity.setStato("BOZZA");
-        Itinerario salvato = itinerarioService.saveItinerario(entity);
-        auditLogger.success("ITINERARIO_CREATO", "Itinerario", String.valueOf(salvato.getId()));
-        return ResponseEntity.ok(itinerarioMapper.toDTO(salvato));
+
+        Itinerario salvato =
+                itinerarioService.saveItinerario(
+                        entity
+                );
+
+        auditLogger.success(
+                "ITINERARIO_CREATO",
+                "Itinerario",
+                String.valueOf(
+                        salvato.getId()
+                )
+        );
+
+        return ResponseEntity.ok(
+                itinerarioMapper.toDTO(
+                        salvato
+                )
+        );
     }
+
+    /*
+     * ============================================================
+     * MODIFICA
+     * ============================================================
+     */
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(
             summary = "Aggiorna un itinerario esistente",
-            description = "Accessibile da ORGANIZZATORE (solo i propri itinerari) o ADMIN. Le date del viaggio spostano la disponibilità esistente, lasciandone invariati i posti."
+            description = "Accessibile da ORGANIZZATORE (solo i propri itinerari) o ADMIN. "
+                    + "Le date del viaggio spostano la disponibilità esistente, lasciandone invariati i posti."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Itinerario aggiornato con successo"),
-            @ApiResponse(responseCode = "400", description = "Dati non validi"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "403", description = "Permessi insufficienti — solo ORGANIZZATORE (propri) o ADMIN"),
-            @ApiResponse(responseCode = "404", description = "Itinerario non trovato")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Itinerario aggiornato con successo"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Dati non validi"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Token JWT mancante o non valido"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Permessi insufficienti — solo ORGANIZZATORE (propri) o ADMIN"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Itinerario non trovato"
+            )
     })
     public ResponseEntity<ItinerarioDTO> updateItinerario(
             @PathVariable Long id,
-            @Valid @RequestBody ItinerarioRequestDTO itinerarioRequest) {
-        Itinerario entity = itinerarioMapper.fromRequest(itinerarioRequest);
-        Itinerario aggiornato = itinerarioService.updateItinerario(
-                id, entity, utenteService.getUtenteSessione(), utenteService.isAdmin());
-        auditLogger.success("ITINERARIO_MODIFICATO", "Itinerario", String.valueOf(id));
-        return ResponseEntity.ok(itinerarioMapper.toDTO(aggiornato));
+            @Valid @RequestBody ItinerarioRequestDTO itinerarioRequest
+    ) {
+
+        Itinerario entity =
+                itinerarioMapper.fromRequest(
+                        itinerarioRequest
+                );
+
+        Itinerario aggiornato =
+                itinerarioService.updateItinerario(
+                        id,
+                        entity,
+                        utenteService.getUtenteSessione(),
+                        utenteService.isAdmin()
+                );
+
+        auditLogger.success(
+                "ITINERARIO_MODIFICATO",
+                "Itinerario",
+                String.valueOf(id)
+        );
+
+        return ResponseEntity.ok(
+                itinerarioMapper.toDTO(
+                        aggiornato
+                )
+        );
     }
+
+    /*
+     * ============================================================
+     * ELIMINAZIONE
+     * ============================================================
+     */
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(
             summary = "Elimina un itinerario per id",
-            description = "Accessibile da ORGANIZZATORE (solo i propri itinerari) o ADMIN. L'eliminazione è permanente."
+            description = "Accessibile da ORGANIZZATORE (solo i propri itinerari) o ADMIN. "
+                    + "L'eliminazione è permanente."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Itinerario eliminato con successo"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "403", description = "Permessi insufficienti — solo ORGANIZZATORE (propri) o ADMIN"),
-            @ApiResponse(responseCode = "404", description = "Itinerario non trovato")
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Itinerario eliminato con successo"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Token JWT mancante o non valido"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Permessi insufficienti — solo ORGANIZZATORE (propri) o ADMIN"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Itinerario non trovato"
+            )
     })
-    public ResponseEntity<Void> deleteItinerario(@PathVariable Long id) {
-        itinerarioService.deleteItinerario(id, utenteService.getUtenteSessione(), utenteService.isAdmin());
-        auditLogger.success("ITINERARIO_ELIMINATO", "Itinerario", String.valueOf(id));
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> deleteItinerario(
+            @PathVariable Long id
+    ) {
+
+        itinerarioService.deleteItinerario(
+                id,
+                utenteService.getUtenteSessione(),
+                utenteService.isAdmin()
+        );
+
+        auditLogger.success(
+                "ITINERARIO_ELIMINATO",
+                "Itinerario",
+                String.valueOf(id)
+        );
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
-    @PostMapping(value = "/{id}/immagini", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    /*
+     * ============================================================
+     * IMMAGINI
+     * ============================================================
+     */
+
+    @PostMapping(
+            value = "/{id}/immagini",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(
             summary = "Aggiunge un'immagine a un itinerario",
-            description = "Accessibile da ORGANIZZATORE (solo i propri itinerari) o ADMIN. La prima immagine caricata diventa automaticamente la copertina."
+            description = "Accessibile da ORGANIZZATORE (solo i propri itinerari) o ADMIN. "
+                    + "La prima immagine caricata diventa automaticamente la copertina."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Immagine aggiunta con successo"),
-            @ApiResponse(responseCode = "400", description = "File non valido"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "403", description = "Permessi insufficienti"),
-            @ApiResponse(responseCode = "404", description = "Itinerario non trovato")
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Immagine aggiunta con successo"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "File non valido"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Token JWT mancante o non valido"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Permessi insufficienti"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Itinerario non trovato"
+            )
     })
     public ResponseEntity<ImmagineResponse> aggiungiImmagine(
             @PathVariable Long id,
-            @RequestParam("file") MultipartFile file) {
-        ImmagineResponse immagine = itinerarioService.aggiungiImmagine(
-                id, file, utenteService.getUtenteSessione(), utenteService.isAdmin());
-        auditLogger.success("IMMAGINE_AGGIUNTA", "Itinerario", String.valueOf(id));
-        return ResponseEntity.status(HttpStatus.CREATED).body(immagine);
+            @RequestParam("file") MultipartFile file
+    ) {
+
+        ImmagineResponse immagine =
+                itinerarioService.aggiungiImmagine(
+                        id,
+                        file,
+                        utenteService.getUtenteSessione(),
+                        utenteService.isAdmin()
+                );
+
+        auditLogger.success(
+                "IMMAGINE_AGGIUNTA",
+                "Itinerario",
+                String.valueOf(id)
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(immagine);
     }
 
     @GetMapping("/{id}/immagini")
     @Operation(
             summary = "Restituisce le immagini di un itinerario",
-            description = "Accessibile da qualsiasi utente autenticato. La prima immagine della lista è la copertina."
+            description = "Accessibile da qualsiasi utente autenticato. "
+                    + "La prima immagine della lista è la copertina."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista immagini restituita con successo"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "404", description = "Itinerario non trovato")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Lista immagini restituita con successo"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Token JWT mancante o non valido"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Itinerario non trovato"
+            )
     })
-    public ResponseEntity<List<ImmagineResponse>> getImmagini(@PathVariable Long id) {
-        return ResponseEntity.ok(itinerarioService.getImmagini(id));
+    public ResponseEntity<List<ImmagineResponse>> getImmagini(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                itinerarioService.getImmagini(
+                        id
+                )
+        );
     }
 
     @DeleteMapping("/{id}/immagini/{immagineId}")
@@ -230,17 +535,43 @@ public class ItinerarioController {
             description = "Accessibile da ORGANIZZATORE (solo i propri itinerari) o ADMIN."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Immagine rimossa con successo"),
-            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
-            @ApiResponse(responseCode = "403", description = "Permessi insufficienti"),
-            @ApiResponse(responseCode = "404", description = "Itinerario o immagine non trovati")
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Immagine rimossa con successo"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Token JWT mancante o non valido"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Permessi insufficienti"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Itinerario o immagine non trovati"
+            )
     })
     public ResponseEntity<Void> rimuoviImmagine(
             @PathVariable Long id,
-            @PathVariable Long immagineId) {
+            @PathVariable Long immagineId
+    ) {
+
         itinerarioService.rimuoviImmagine(
-                id, immagineId, utenteService.getUtenteSessione(), utenteService.isAdmin());
-        auditLogger.success("IMMAGINE_RIMOSSA", "Itinerario", String.valueOf(id));
-        return ResponseEntity.noContent().build();
+                id,
+                immagineId,
+                utenteService.getUtenteSessione(),
+                utenteService.isAdmin()
+        );
+
+        auditLogger.success(
+                "IMMAGINE_RIMOSSA",
+                "Itinerario",
+                String.valueOf(id)
+        );
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

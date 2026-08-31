@@ -29,21 +29,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.travelapp.ui.theme.AccentOrange
-import com.example.travelapp.ui.theme.BackgroundLavender
 import com.example.travelapp.ui.theme.DividerColor
 import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
+import com.example.travelapp.ui.util.formattaData
 
 data class ExtraUi(
     val id: Long,
@@ -141,6 +137,24 @@ fun PrenotazionePasso1Screen(
                             color = TextSecondary
                         )
                     }
+                    uiState.dataInizio?.let { data ->
+
+                        Spacer(
+                            modifier = Modifier.height(6.dp)
+                        )
+
+                        Text(
+                            text =
+                                if (uiState.dataFine != null) {
+                                    "${formattaData(data)} - ${formattaData(uiState.dataFine)}"
+                                } else {
+                                    formattaData(data)
+                                },
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
+                        )
+                    }
                 }
             }
 
@@ -194,6 +208,14 @@ fun PrenotazionePasso1Screen(
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
                     )
+                    uiState.postiDisponibili?.let { posti ->
+
+                        Text(
+                            text = "$posti posti disponibili",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    }
                 }
 
                 Row(
@@ -231,6 +253,7 @@ fun PrenotazionePasso1Screen(
                     ) {
                         IconButton(
                             onClick = onIncrementa,
+                            enabled = uiState.puoIncrementarePartecipanti,
                             modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
@@ -428,7 +451,7 @@ fun PrenotazionePasso1Screen(
 
         Button(
             onClick = onContinua,
-            enabled = !uiState.isLoading,
+            enabled = !uiState.isLoading && !uiState.extraInCaricamento,
             colors = ButtonDefaults.buttonColors(
                 containerColor = AccentOrange,
                 contentColor = Color.White
@@ -438,17 +461,19 @@ fun PrenotazionePasso1Screen(
                 .fillMaxWidth()
                 .height(52.dp)
         ) {
-
             Text(
-                text = if (uiState.isLoading) {
-                    "Elaborazione..."
-                } else {
-                    "Continua al pagamento"
+                text = when {
+                    uiState.extraInCaricamento ->
+                        "Caricamento extra..."
+
+                    uiState.isLoading ->
+                        "Elaborazione..."
+                    else ->
+                        "Continua al pagamento"
                 },
                 fontWeight = FontWeight.Bold
             )
         }
-
         uiState.errore?.let { errore ->
 
             Spacer(
@@ -592,96 +617,4 @@ private fun StepCircle(
             }
         )
     }
-}
-
-
-/*
- * Demo / Preview manuale.
- * Da rimuovere eventualmente quando il wizard sarà collegato
- * interamente ai dati reali del Catalog.
- */
-@Composable
-fun PrenotazionePasso1Demo() {
-
-    var partecipanti by remember {
-        mutableStateOf(1)
-    }
-
-    var extraSelezionati by remember {
-        mutableStateOf(emptyList<Long>())
-    }
-
-    val extraDisponibili = listOf(
-        ExtraUi(
-            id = 1L,
-            nome = "Cena tipica",
-            prezzo = 25.0
-        ),
-        ExtraUi(
-            id = 2L,
-            nome = "Degustazione",
-            prezzo = 15.0
-        )
-    )
-
-    val prezzoBaseUnitario = 100.0
-
-    val prezzoBase =
-        prezzoBaseUnitario * partecipanti
-
-    val prezzoExtra =
-        extraDisponibili
-            .filter { it.id in extraSelezionati }
-            .sumOf {
-                it.prezzo * partecipanti
-            }
-
-    val totale =
-        prezzoBase + prezzoExtra
-
-    PrenotazionePasso1Screen(
-        uiState = BookingUiState(
-            numeroPartecipanti = partecipanti,
-
-            extraSelezionati = extraDisponibili
-                .filter {
-                    it.id in extraSelezionati
-                }
-                .associate {
-                    it.id to it.prezzo
-                },
-
-            titolo = "Tour delle Cantine del Chianti",
-            luogo = "Toscana",
-
-            prezzoBaseUnitario = prezzoBaseUnitario,
-            prezzoBase = prezzoBase,
-            prezzoExtra = prezzoExtra,
-            prezzoTotaleVisualizzato = totale
-        ),
-
-        extraDisponibili = extraDisponibili,
-
-        onIncrementa = {
-            partecipanti++
-        },
-
-        onDecrementa = {
-            if (partecipanti > 1) {
-                partecipanti--
-            }
-        },
-
-        onToggleExtra = { id, _ ->
-
-            extraSelezionati =
-                if (id in extraSelezionati) {
-                    extraSelezionati - id
-                } else {
-                    extraSelezionati + id
-                }
-        },
-
-        onContinua = {}
-    )
 }

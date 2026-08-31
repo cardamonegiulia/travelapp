@@ -57,22 +57,73 @@ public class SingolaAttivitaController {
     @Operation(summary = "Restituisce tutte le attività paginato")
     public ResponseEntity<Page<SingolaAttivitaDTO>> getAllAttivita(
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(attivitaService.getAllAttivita(pageable).map(attivitaMapper::toDTO));
+
+        return ResponseEntity.ok(
+                attivitaService
+                        .getAllAttivita(pageable)
+                        .map(attivitaMapper::toDTO)
+        );
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Restituisce un'attività per id")
-    public ResponseEntity<SingolaAttivitaDTO> getAttivitaById(@PathVariable Long id) {
-        SingolaAttivita attivita = attivitaService.getAttivitaById(id)
-                .orElseThrow(() -> new SingolaAttivitaNonTrovataException("Attività non trovata: " + id));
-        return ResponseEntity.ok(attivitaMapper.toDTO(attivita));
+    public ResponseEntity<SingolaAttivitaDTO> getAttivitaById(
+            @PathVariable Long id) {
+
+        SingolaAttivita attivita =
+                attivitaService
+                        .getAttivitaById(id)
+                        .orElseThrow(
+                                () -> new SingolaAttivitaNonTrovataException(
+                                        "Attività non trovata: " + id
+                                )
+                        );
+
+        return ResponseEntity.ok(
+                attivitaMapper.toDTO(attivita)
+        );
     }
 
+    /*
+     * ============================================================
+     * SESSIONI PRENOTABILI
+     * ============================================================
+     *
+     * Non restituiamo direttamente SessioneSingolaAttivita:
+     * l'entity contiene il riferimento all'attività e rischierebbe
+     * di generare una serializzazione ricorsiva.
+     */
+
     @GetMapping("/{id}/sessioni")
-    @Operation(summary = "Restituisce le sessioni di un'attività")
-    public ResponseEntity<List<SessioneSingolaAttivitaDTO>> getSessioniByAttivita(@PathVariable Long id) {
-        return ResponseEntity.ok(attivitaMapper.toSessioneDTO(
-                attivitaService.getSessioniByAttivitaId(id)));
+    @Operation(
+            summary = "Restituisce le sessioni di un'attività",
+            description = "Restituisce le sessioni associate all'attività con date, posti disponibili e stato."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Sessioni restituite con successo"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Token JWT mancante o non valido"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Attività non trovata"
+            )
+    })
+    public ResponseEntity<List<SessioneSingolaAttivitaDTO>>
+    getSessioniByAttivita(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                attivitaMapper.toSessioneDTO(
+                        attivitaService
+                                .getSessioniByAttivitaId(id)
+                )
+        );
     }
 
     @PostMapping("/con-sessioni")
@@ -80,17 +131,58 @@ public class SingolaAttivitaController {
     @Operation(summary = "Crea una nuova attività con sessioni ricorrenti")
     public ResponseEntity<SingolaAttivitaDTO> createAttivitaConSessioni(
             @Valid @RequestBody SingolaAttivitaRequestDTO attivitaRequest,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inizio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fine,
-            @RequestParam @NotEmpty(message = "Indicare almeno un giorno della settimana")
-            @Size(max = 7, message = "I giorni della settimana sono al massimo 7")
-            List<@Min(value = 1, message = "Giorno non valido") @Max(value = 7, message = "Giorno non valido") Integer> giorni) {
 
-        SingolaAttivita entity = attivitaMapper.fromRequest(attivitaRequest);
-        entity.setOrganizzatore(utenteService.getUtenteSessione());
-        SingolaAttivita salvata = attivitaService.saveAttivitaConSessioni(entity, inizio, fine, giorni);
-        auditLogger.success("ATTIVITA_CREATA", "SingolaAttivita", String.valueOf(salvata.getId()));
-        return ResponseEntity.ok(attivitaMapper.toDTO(salvata));
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate inizio,
+
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fine,
+
+            @RequestParam
+            @NotEmpty(message = "Indicare almeno un giorno della settimana")
+            @Size(
+                    max = 7,
+                    message = "I giorni della settimana sono al massimo 7"
+            )
+            List<
+                    @Min(
+                            value = 1,
+                            message = "Giorno non valido"
+                    )
+                    @Max(
+                            value = 7,
+                            message = "Giorno non valido"
+                    )
+                            Integer
+                    > giorni
+    ) {
+
+        SingolaAttivita entity =
+                attivitaMapper.fromRequest(attivitaRequest);
+
+        entity.setOrganizzatore(
+                utenteService.getUtenteSessione()
+        );
+
+        SingolaAttivita salvata =
+                attivitaService.saveAttivitaConSessioni(
+                        entity,
+                        inizio,
+                        fine,
+                        giorni
+                );
+
+        auditLogger.success(
+                "ATTIVITA_CREATA",
+                "SingolaAttivita",
+                String.valueOf(salvata.getId())
+        );
+
+        return ResponseEntity.ok(
+                attivitaMapper.toDTO(salvata)
+        );
     }
 
     @PutMapping("/{id}")
@@ -98,39 +190,92 @@ public class SingolaAttivitaController {
     @Operation(summary = "Aggiorna un'attività esistente")
     public ResponseEntity<SingolaAttivitaDTO> updateAttivita(
             @PathVariable Long id,
-            @Valid @RequestBody SingolaAttivitaRequestDTO attivitaRequest) {
-        SingolaAttivita entity = attivitaMapper.fromRequest(attivitaRequest);
-        SingolaAttivita aggiornata = attivitaService.updateAttivita(
-                id, entity, utenteService.getUtenteSessione(), utenteService.isAdmin());
-        auditLogger.success("ATTIVITA_MODIFICATA", "SingolaAttivita", String.valueOf(id));
-        return ResponseEntity.ok(attivitaMapper.toDTO(aggiornata));
+            @Valid @RequestBody SingolaAttivitaRequestDTO attivitaRequest
+    ) {
+
+        SingolaAttivita entity =
+                attivitaMapper.fromRequest(attivitaRequest);
+
+        SingolaAttivita aggiornata =
+                attivitaService.updateAttivita(
+                        id,
+                        entity,
+                        utenteService.getUtenteSessione(),
+                        utenteService.isAdmin()
+                );
+
+        auditLogger.success(
+                "ATTIVITA_MODIFICATA",
+                "SingolaAttivita",
+                String.valueOf(id)
+        );
+
+        return ResponseEntity.ok(
+                attivitaMapper.toDTO(aggiornata)
+        );
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(summary = "Elimina un'attività per id")
-    public ResponseEntity<Void> deleteAttivita(@PathVariable Long id) {
-        attivitaService.deleteAttivita(id, utenteService.getUtenteSessione(), utenteService.isAdmin());
-        auditLogger.success("ATTIVITA_ELIMINATA", "SingolaAttivita", String.valueOf(id));
+    public ResponseEntity<Void> deleteAttivita(
+            @PathVariable Long id
+    ) {
+
+        attivitaService.deleteAttivita(
+                id,
+                utenteService.getUtenteSessione(),
+                utenteService.isAdmin()
+        );
+
+        auditLogger.success(
+                "ATTIVITA_ELIMINATA",
+                "SingolaAttivita",
+                String.valueOf(id)
+        );
+
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping(value = "/{id}/immagini", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(
+            value = "/{id}/immagini",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(summary = "Aggiunge un'immagine a un'attività")
     public ResponseEntity<ImmagineResponse> aggiungiImmagine(
             @PathVariable Long id,
-            @RequestParam("file") MultipartFile file) {
-        ImmagineResponse immagine = attivitaService.aggiungiImmagine(
-                id, file, utenteService.getUtenteSessione(), utenteService.isAdmin());
-        auditLogger.success("IMMAGINE_AGGIUNTA", "SingolaAttivita", String.valueOf(id));
-        return ResponseEntity.status(HttpStatus.CREATED).body(immagine);
+            @RequestParam("file") MultipartFile file
+    ) {
+
+        ImmagineResponse immagine =
+                attivitaService.aggiungiImmagine(
+                        id,
+                        file,
+                        utenteService.getUtenteSessione(),
+                        utenteService.isAdmin()
+                );
+
+        auditLogger.success(
+                "IMMAGINE_AGGIUNTA",
+                "SingolaAttivita",
+                String.valueOf(id)
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(immagine);
     }
 
     @GetMapping("/{id}/immagini")
     @Operation(summary = "Restituisce le immagini di un'attività")
-    public ResponseEntity<List<ImmagineResponse>> getImmagini(@PathVariable Long id) {
-        return ResponseEntity.ok(attivitaService.getImmagini(id));
+    public ResponseEntity<List<ImmagineResponse>> getImmagini(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                attivitaService.getImmagini(id)
+        );
     }
 
     @DeleteMapping("/{id}/immagini/{immagineId}")
@@ -138,10 +283,22 @@ public class SingolaAttivitaController {
     @Operation(summary = "Rimuove un'immagine da un'attività")
     public ResponseEntity<Void> rimuoviImmagine(
             @PathVariable Long id,
-            @PathVariable Long immagineId) {
+            @PathVariable Long immagineId
+    ) {
+
         attivitaService.rimuoviImmagine(
-                id, immagineId, utenteService.getUtenteSessione(), utenteService.isAdmin());
-        auditLogger.success("IMMAGINE_RIMOSSA", "SingolaAttivita", String.valueOf(id));
+                id,
+                immagineId,
+                utenteService.getUtenteSessione(),
+                utenteService.isAdmin()
+        );
+
+        auditLogger.success(
+                "IMMAGINE_RIMOSSA",
+                "SingolaAttivita",
+                String.valueOf(id)
+        );
+
         return ResponseEntity.noContent().build();
     }
 }

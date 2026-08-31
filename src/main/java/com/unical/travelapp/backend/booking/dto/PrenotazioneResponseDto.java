@@ -28,6 +28,8 @@ public class PrenotazioneResponseDto {
     private StatoPrenotazione statoPrenotazione;
     private StatoPagamento statoPagamento;
     private LocalDateTime dataPrenotazione;
+    private LocalDateTime dataInizio;
+    private LocalDateTime dataFine;
     private TipoPrenotazione tipoPrenotazione;
     private String titolo;
     private String luogo;

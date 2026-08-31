@@ -27,27 +27,37 @@ import com.example.travelapp.ui.components.CaricamentoLottie
 import com.example.travelapp.ui.navigation.AppNavGraph
 import com.example.travelapp.ui.theme.TravelAppTheme
 
-
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val temaSistema = isSystemInDarkTheme()
-            var temaScuro by remember { mutableStateOf(temaSistema) }
 
-            TravelAppTheme(darkTheme = temaScuro) {
+            val temaSistema =
+                isSystemInDarkTheme()
+
+            var temaScuro by remember {
+                mutableStateOf(temaSistema)
+            }
+
+            TravelAppTheme(
+                darkTheme = temaScuro
+            ) {
+
                 AppNavigation(
-                    onExit = { finish() },
+                    onExit = {
+                        finish()
+                    },
                     temaSistema = temaSistema,
-                    onDarkModeChanged = { temaScuro = it }
+                    onDarkModeChanged = {
+                        temaScuro = it
+                    }
                 )
             }
         }
     }
 }
-
 
 @Composable
 fun AppNavigation(
@@ -56,52 +66,78 @@ fun AppNavigation(
     onDarkModeChanged: (Boolean) -> Unit
 ) {
 
-    val context = LocalContext.current
+    val context =
+        LocalContext.current
 
     /*
-     * Si parte da "avvio": prima di mostrare qualcosa controlliamo se c'è
-     * una sessione salvata da ripristinare, così chi ha già fatto il login
-     * non se lo ritrova richiesto a ogni riapertura dell'app.
+     * Prima di mostrare login/home controlliamo
+     * se esiste una sessione salvata valida.
      */
     var schermataCorrente by remember {
         mutableStateOf("avvio")
     }
 
     /*
-     * Dopo una registrazione riuscita conserviamo l'email
-     * per riproporla nella schermata di login.
+     * Dopo una registrazione riuscita conserviamo
+     * l'email per precompilare il login.
      */
     var emailAppenaRegistrata by remember {
         mutableStateOf<String?>(null)
     }
 
-    // Key del ProfiloViewModel: cambia a ogni login, così non resta quello (con
-    // ruolo e dati) dell'utente precedente dopo un logout.
+    /*
+     * Cambia ad ogni nuova sessione.
+     *
+     * Così viene creato un nuovo ProfiloViewModel
+     * e non restano dati dell'utente precedente.
+     */
     var sessioneId by remember {
         mutableStateOf(0)
     }
 
+    /*
+     * Controllo iniziale della sessione.
+     */
     LaunchedEffect(Unit) {
 
         schermataCorrente =
-            if (GestoreSessione.sessioneRipristinabile(context)) {
+            if (
+                GestoreSessione
+                    .sessioneRipristinabile(context)
+            ) {
+
                 sessioneId++
+
                 "home"
+
             } else {
+
                 "login"
             }
     }
 
     when (schermataCorrente) {
 
+        /*
+         * ============================================================
+         * AVVIO
+         * ============================================================
+         */
+
         "avvio" -> {
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                contentAlignment = Alignment.Center
+                    .background(
+                        MaterialTheme
+                            .colorScheme
+                            .background
+                    ),
+                contentAlignment =
+                    Alignment.Center
             ) {
+
                 CaricamentoLottie(
                     dimensione = 120.dp,
                     animazione = R.raw.flight
@@ -109,57 +145,111 @@ fun AppNavigation(
             }
         }
 
+        /*
+         * ============================================================
+         * LOGIN
+         * ============================================================
+         */
 
         "login" -> {
 
             LoginScreen(
+
                 onLoginSuccessViaggiatore = {
+
                     sessioneId++
-                    schermataCorrente = "home"
+
+                    schermataCorrente =
+                        "home"
                 },
 
                 onLoginSuccessOrganizzatore = {
+
                     sessioneId++
-                    schermataCorrente = "home"
+
+                    schermataCorrente =
+                        "home"
                 },
 
                 onVaiRegistrazione = {
-                    emailAppenaRegistrata = null
-                    schermataCorrente = "registrazione"
+
+                    emailAppenaRegistrata =
+                        null
+
+                    schermataCorrente =
+                        "registrazione"
                 },
 
-                emailPreCompilata = emailAppenaRegistrata
+                emailPreCompilata =
+                    emailAppenaRegistrata
             )
         }
 
+        /*
+         * ============================================================
+         * REGISTRAZIONE
+         * ============================================================
+         */
 
         "registrazione" -> {
 
             RegistrazioneScreen(
+
                 onRegistrazioneSuccess = { email ->
 
-                    emailAppenaRegistrata = email
-                    schermataCorrente = "login"
+                    emailAppenaRegistrata =
+                        email
+
+                    schermataCorrente =
+                        "login"
                 },
 
                 onVaiLogin = {
-                    schermataCorrente = "login"
+
+                    schermataCorrente =
+                        "login"
                 }
             )
         }
 
+        /*
+         * ============================================================
+         * APP
+         * ============================================================
+         */
 
         "home" -> {
 
             AppNavGraph(
-                profiloViewModel = viewModel(key = "profilo-$sessioneId"),
-                onExitApp = onExit,
+
+                profiloViewModel =
+                    viewModel(
+                        key =
+                            "profilo-$sessioneId"
+                    ),
+
+                onExitApp =
+                    onExit,
+
                 onLogout = {
-                    emailAppenaRegistrata = null
-                    schermataCorrente = "login"
-                    onDarkModeChanged(temaSistema)
+
+                    emailAppenaRegistrata =
+                        null
+
+                    schermataCorrente =
+                        "login"
+
+                    /*
+                     * Dopo il logout non manteniamo
+                     * il tema dell'utente precedente.
+                     */
+                    onDarkModeChanged(
+                        temaSistema
+                    )
                 },
-                onDarkModeChanged = onDarkModeChanged
+
+                onDarkModeChanged =
+                    onDarkModeChanged
             )
         }
     }

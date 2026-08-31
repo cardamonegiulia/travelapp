@@ -5,6 +5,7 @@ import android.net.Uri
 import com.example.travelapp.data.remote.CorpoImmagine
 import com.example.travelapp.data.remote.ImmagineNonCaricabile
 import com.example.travelapp.data.remote.api.ItinerarioApi
+import com.example.travelapp.data.remote.dto.AttivitaExtraResponseDto
 import com.example.travelapp.data.remote.dto.DisponibilitaItinerarioResponseDto
 import com.example.travelapp.data.remote.dto.ItinerarioRequestDto
 import com.example.travelapp.domain.model.ImmagineResponse
@@ -55,6 +56,29 @@ class ItinerarioRepository(
         }
     }
 
+    suspend fun getAttivitaExtra(
+        id: Long
+    ): Result<List<AttivitaExtraResponseDto>> {
+        return try {
+            val response = api.getAttivitaExtra(id)
+
+            if (
+                response.isSuccessful &&
+                response.body() != null
+            ) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(
+                    Exception(
+                        "Errore recupero extra: HTTP ${response.code()}"
+                    )
+                )
+            }
+
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     suspend fun createItinerario(request: ItinerarioRequestDto): Result<Itinerario> {
         return try {
             val response = api.createItinerario(request)

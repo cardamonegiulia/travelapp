@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.travelapp.domain.model.Prenotazione
+import com.example.travelapp.domain.model.StatoPagamento
 import com.example.travelapp.domain.model.StatoPrenotazione
 import com.example.travelapp.ui.components.AppTopBar
 import com.example.travelapp.ui.theme.BackgroundLavender
@@ -31,17 +32,23 @@ import com.example.travelapp.ui.theme.ErrorRed
 import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
+import com.example.travelapp.ui.util.formattaData
 
 @Composable
 fun PrenotazioneDettaglioScreen(
     prenotazione: Prenotazione,
     onBack: () -> Unit,
     onAnnulla: () -> Unit,
-    isLoading: Boolean = false
+    onCompletaPagamento: () -> Unit,
+    isLoading: Boolean = false,
+    errore: String? = null
 ) {
 
     val annullabile =
         prenotazione.statoPrenotazione != StatoPrenotazione.CANCELLATA
+
+    val pagamentoInAttesa =
+        prenotazione.statoPrenotazione == StatoPrenotazione.IN_ATTESA && prenotazione.statoPagamento == StatoPagamento.IN_ATTESA
 
     Scaffold(
         containerColor = BackgroundLavender,
@@ -111,8 +118,13 @@ fun PrenotazioneDettaglioScreen(
                     )
 
                     DettaglioRiga(
-                        etichetta = "Data prenotazione",
-                        valore = prenotazione.dataPrenotazione
+                        etichetta = "Data inizio",
+                        valore = formattaData(prenotazione.dataInizio)
+                    )
+
+                    DettaglioRiga(
+                        etichetta = "Data fine",
+                        valore = formattaData(prenotazione.dataFine)
                     )
 
                     DettaglioRiga(
@@ -154,6 +166,45 @@ fun PrenotazioneDettaglioScreen(
                 modifier = Modifier.weight(1f)
             )
 
+            errore?.let {
+
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
+            }
+
+            if (pagamentoInAttesa) {
+
+                Button(
+                    onClick = onCompletaPagamento,
+                    enabled = !isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                ) {
+
+                    Text(
+                        text =
+                            if (isLoading) {
+                                "Operazione in corso..."
+                            } else {
+                                "Completa pagamento"
+                            },
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
+            }
+
             if (annullabile) {
 
                 Button(
@@ -170,7 +221,7 @@ fun PrenotazioneDettaglioScreen(
 
                     Text(
                         text = if (isLoading) {
-                            "Annullamento in corso..."
+                            "Operazione in corso..."
                         } else {
                             "Annulla prenotazione"
                         },
