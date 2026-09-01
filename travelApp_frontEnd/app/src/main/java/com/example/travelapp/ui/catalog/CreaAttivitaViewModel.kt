@@ -38,7 +38,7 @@ class CreaAttivitaViewModel(
         dataInizio: String,
         dataFine: String,
         giorniSettimana: Set<Int>,
-        immagineUri: Uri?
+        immaginiUri: List<Uri>
     ) {
         _uiState.update { it.copy(isSalvataggioInCorso = true, errorMessage = null) }
 
@@ -56,8 +56,10 @@ class CreaAttivitaViewModel(
 
             if (result.isSuccess) {
                 val attivitaSalvata = result.getOrNull()
-                if (immagineUri != null && attivitaSalvata != null) {
-                    repository.caricaImmagine(context, attivitaSalvata.id, immagineUri)
+                if (attivitaSalvata != null && immaginiUri.isNotEmpty()) {
+                    immaginiUri.forEach { uri ->
+                        repository.caricaImmagine(context, attivitaSalvata.id, uri)
+                    }
                 }
                 _uiState.update { it.copy(isSalvataggioInCorso = false, salvataggioCompletato = true) }
             } else {

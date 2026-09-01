@@ -6,8 +6,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -44,8 +46,6 @@ import java.util.TimeZone
 
 private const val GIORNO_MILLIS = 24L * 60 * 60 * 1000
 
-// Le date viaggiano verso il backend in ISO e sono giorni pieni: le trattiamo sempre a
-// mezzanotte UTC, come fa il DatePicker, per non perdere o guadagnare un giorno.
 private fun formatterIso() =
     SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }
 
@@ -77,8 +77,6 @@ fun CreaItinerarioScreen(
         }.timeInMillis
     }
 
-    // In modifica riprendiamo il periodo salvato; se l'itinerario non ne ha uno ripieghiamo
-    // sulla durata gia' registrata, partendo fra una settimana.
     val durataIniziale = (itinerarioDaModificare?.durataGiorni ?: 7).coerceAtLeast(1)
     val inizioIniziale = remember {
         dataIsoInMillis(itinerarioDaModificare?.dataInizio) ?: (oggiMillis + 7L * GIORNO_MILLIS)
@@ -88,7 +86,6 @@ fun CreaItinerarioScreen(
             ?: (inizioIniziale + (durataIniziale - 1) * GIORNO_MILLIS)
     }
 
-    // Il termine per prenotare e' facoltativo: se non impostato si prenota fino alla partenza.
     val limiteIniziale = remember { dataIsoInMillis(itinerarioDaModificare?.dataLimitePrenotazione) }
 
     var dataInizioMillis by remember { mutableStateOf(inizioIniziale) }
@@ -104,20 +101,22 @@ fun CreaItinerarioScreen(
     var destinazione by remember { mutableStateOf(itinerarioDaModificare?.destinazionePrincipale ?: "") }
     var prezzoInput by remember { mutableStateOf(itinerarioDaModificare?.prezzoBase?.toString() ?: "") }
     var maxPartecipantiInput by remember { mutableStateOf(itinerarioDaModificare?.maxPartecipanti?.toString() ?: "20") }
-    var immagineUri by remember { mutableStateOf<Uri?>(null) }
+    var immaginiUri by remember { mutableStateOf<List<Uri>>(emptyList()) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? -> immagineUri = uri }
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            immaginiUri = (immaginiUri + uris).distinct()
+        }
+    }
 
     val prezzoNumerico = prezzoInput.replace(",", ".").toDoubleOrNull()
     val isPrezzoValido = prezzoNumerico != null && prezzoNumerico > 0.0
 
-    // La durata mostrata e' quella che ricavera' anche il server dalle due date, estremi inclusi.
     val durataCalcolata = (((dataFineMillis - dataInizioMillis) / GIORNO_MILLIS) + 1).toInt()
     val isInizioValido = dataInizioMillis >= oggiMillis
     val isPeriodoValido = isInizioValido && dataFineMillis >= dataInizioMillis
-    // Chiudere le prenotazioni dopo la partenza non avrebbe senso: il server lo rifiuta comunque.
     val isLimiteValido = dataLimiteMillis?.let { it in oggiMillis..dataInizioMillis } ?: true
 
     val partecipantiNumerici = maxPartecipantiInput.toIntOrNull()
@@ -141,7 +140,6 @@ fun CreaItinerarioScreen(
                     datePickerState.selectedDateMillis?.let { selected ->
                         val durataPrecedente = (dataFineMillis - dataInizioMillis) / GIORNO_MILLIS
                         dataInizioMillis = selected
-                        // Spostando l'inizio trasciniamo la fine, per non lasciare un intervallo negativo.
                         if (dataFineMillis < selected) {
                             dataFineMillis = selected + durataPrecedente.coerceAtLeast(0) * GIORNO_MILLIS
                         }
@@ -273,28 +271,81 @@ fun CreaItinerarioScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Box(
+            Text(
+                text = "FOTO DELL'ITINERARIO",
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                color = TravelTextMuted
+            )
+
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(160.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFE2E8F0))
-                    .clickable { imagePickerLauncher.launch("image/*") },
-                contentAlignment = Alignment.Center
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val imageUrl = itinerarioDaModificare?.immagini?.firstOrNull()?.url
-                if (immagineUri != null || imageUrl != null) {
-                    AsyncImage(
-                        model = immagineUri ?: imageUrl,
-                        contentDescription = "Copertina",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
+                Box(
+                    modifier = Modifier
+                        .size(110.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFE2E8F0))
+                        .clickable { imagePickerLauncher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = TravelTextMuted, modifier = Modifier.size(32.dp))
-                        Spacer(Modifier.height(8.dp))
-                        Text("Aggiungi foto di copertina", color = TravelTextMuted, fontSize = 14.sp)
+                        Icon(Icons.Default.Add, contentDescription = null, tint = TravelTextMuted, modifier = Modifier.size(28.dp))
+                        Spacer(Modifier.height(4.dp))
+                        Text("Aggiungi foto", color = TravelTextMuted, fontSize = 12.sp)
+                    }
+                }
+
+                // Foto già esistenti in modifica (se presenti e nessuna nuova selezionata o da affiancare)
+                if (immaginiUri.isEmpty() && isModifica) {
+                    itinerarioDaModificare.immagini.forEach { img ->
+                        Box(
+                            modifier = Modifier
+                                .size(110.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        ) {
+                            AsyncImage(
+                                model = img.url,
+                                contentDescription = "Foto salvata",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
+                }
+
+                // Nuove foto selezionate localmente
+                immaginiUri.forEachIndexed { index, uri ->
+                    Box(
+                        modifier = Modifier
+                            .size(110.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    ) {
+                        AsyncImage(
+                            model = uri,
+                            contentDescription = "Foto ${index + 1}",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        IconButton(
+                            onClick = { immaginiUri = immaginiUri.filterIndexed { i, _ -> i != index } },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(4.dp)
+                                .size(24.dp)
+                                .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Rimuovi foto",
+                                tint = Color.White,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -467,7 +518,7 @@ fun CreaItinerarioScreen(
                                 dataLimitePrenotazione = dataLimiteMillis?.let { isoDateFormat.format(Date(it)) },
                                 maxPartecipanti = partecipantiNumerici!!
                             ),
-                            immagineUri = immagineUri
+                            immaginiUri = immaginiUri
                         )
                     }
                 },
