@@ -3,7 +3,10 @@ package com.example.travelapp.data.repository
 import com.example.travelapp.data.remote.api.PrenotazioneApi
 import com.example.travelapp.data.remote.dto.CreaPrenotazioneDto
 import com.example.travelapp.data.remote.dto.toDomain
+import com.example.travelapp.data.remote.dto.toPrenotatoPartenza
+import com.example.travelapp.domain.model.PartenzaOrganizzatore
 import com.example.travelapp.domain.model.Prenotazione
+import com.example.travelapp.domain.model.PrenotatoPartenza
 import java.math.BigDecimal
 
 /**
@@ -64,6 +67,29 @@ class PrenotazioneRepository(
         return api
             .annullaPrenotazione(id)
             .toDomain()
+    }
+
+    /**
+     * Partenze ancora da fare di un proprio itinerario.
+     *
+     * Il filtro sulle date lo applica il backend: qui non si scarta nulla.
+     */
+    suspend fun getPartenzeItinerario(
+        itinerarioId: Long
+    ): List<PartenzaOrganizzatore> {
+        return api
+            .getPartenzeItinerario(itinerarioId)
+            .map { it.toDomain() }
+    }
+
+    /** Viaggiatori prenotati su una partenza. */
+    suspend fun getPrenotatiPartenza(
+        disponibilitaId: Long
+    ): List<PrenotatoPartenza> {
+        return api
+            .getPrenotatiPartenza(disponibilitaId)
+            .content
+            .map { it.toPrenotatoPartenza() }
     }
 
     /**

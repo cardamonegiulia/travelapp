@@ -2,6 +2,7 @@ package com.example.travelapp.data.remote.api
 
 import com.example.travelapp.data.remote.dto.CreaPrenotazioneDto
 import com.example.travelapp.data.remote.dto.PageDto
+import com.example.travelapp.data.remote.dto.PartenzaOrganizzatoreDto
 import com.example.travelapp.data.remote.dto.PrenotazioneDto
 import retrofit2.Response
 import retrofit2.http.Body
@@ -42,6 +43,23 @@ interface PrenotazioneApi {
      */
     @GET("api/prenotazioni/mie/concluse")
     suspend fun getMieiViaggiConclusi(): PageDto<PrenotazioneDto>
+
+    /*
+     * Partenze ancora da fare di un proprio itinerario, con quanto hanno venduto.
+     * Riservato all'organizzatore che l'ha creato.
+     */
+    @GET("api/prenotazioni/organizzatore/itinerari/{itinerarioId}/partenze")
+    suspend fun getPartenzeItinerario(
+        @Path("itinerarioId") itinerarioId: Long
+    ): List<PartenzaOrganizzatoreDto>
+
+    /*
+     * Viaggiatori prenotati su una singola partenza.
+     */
+    @GET("api/prenotazioni/organizzatore/partenze/{disponibilitaId}")
+    suspend fun getPrenotatiPartenza(
+        @Path("disponibilitaId") disponibilitaId: Long
+    ): PageDto<PrenotazioneDto>
 
     /*
      * Dettaglio di una singola prenotazione.

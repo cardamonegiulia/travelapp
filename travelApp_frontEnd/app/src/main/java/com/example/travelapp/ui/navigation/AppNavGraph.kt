@@ -40,6 +40,9 @@ import com.example.travelapp.ui.catalog.GestioneUtentiAdminScreen
 import com.example.travelapp.ui.catalog.ItinerarioDetailScreen
 import com.example.travelapp.ui.catalog.OfferteManagementScreen
 import com.example.travelapp.ui.catalog.OrganizzatoreHomeScreen
+import com.example.travelapp.ui.catalog.PartenzeItinerarioScreen
+import com.example.travelapp.ui.catalog.PartenzeOrganizzatoreViewModel
+import com.example.travelapp.ui.catalog.PrenotatiPartenzaScreen
 import com.example.travelapp.ui.components.AppBottomBar
 import com.example.travelapp.ui.notifiche.NotificheScreen
 import com.example.travelapp.ui.notifiche.NotificheViewModel
@@ -101,6 +104,12 @@ object CatalogRoutes {
 
     const val DETTAGLIO_ATTIVITA =
         "catalog/dettaglio_attivita"
+
+    const val PARTENZE_ITINERARIO =
+        "catalog/partenze_itinerario"
+
+    const val PRENOTATI_PARTENZA =
+        "catalog/prenotati_partenza"
 }
 
 
@@ -186,6 +195,19 @@ fun AppNavGraph(
      * per aggiornare immediatamente gli elenchi.
      */
     val bookingsViewModel: BookingsViewModel =
+        viewModel()
+
+
+    /*
+     * ============================================================
+     * PARTENZE ORGANIZZATORE
+     * ============================================================
+     *
+     * Condiviso fra l'elenco delle partenze e quello dei prenotati:
+     * la seconda schermata mostra in testata la partenza scelta
+     * nella prima, che quindi non va riletta dalla rete.
+     */
+    val partenzeViewModel: PartenzeOrganizzatoreViewModel =
         viewModel()
 
 
@@ -597,6 +619,19 @@ fun AppNavGraph(
                         )
                     },
 
+                    onVediPrenotazioni = { item ->
+
+                        partenzeViewModel.caricaPartenze(
+                            itinerarioId = item.id,
+                            titoloItinerario = item.titolo
+                        )
+
+                        navController.navigate(
+                            CatalogRoutes
+                                .PARTENZE_ITINERARIO
+                        )
+                    },
+
                     onVaiProfilo = {
 
                         navController.navigate(
@@ -612,6 +647,85 @@ fun AppNavGraph(
 
                     onLogout =
                         eseguiLogout
+                )
+            }
+
+
+            /*
+             * ============================================================
+             * PARTENZE DI UN ITINERARIO (ORGANIZZATORE)
+             * ============================================================
+             */
+
+            composable(
+                CatalogRoutes
+                    .PARTENZE_ITINERARIO
+            ) {
+
+                val partenzeState by
+                partenzeViewModel
+                    .partenze
+                    .collectAsState()
+
+                PartenzeItinerarioScreen(
+
+                    state =
+                        partenzeState,
+
+                    onBack =
+                        onBack,
+
+                    onPartenzaClick = { partenza ->
+
+                        partenzeViewModel
+                            .caricaPrenotati(
+                                partenza
+                            )
+
+                        navController.navigate(
+                            CatalogRoutes
+                                .PRENOTATI_PARTENZA
+                        )
+                    },
+
+                    onRiprova = {
+
+                        partenzeViewModel
+                            .ricaricaPartenze()
+                    }
+                )
+            }
+
+
+            /*
+             * ============================================================
+             * PRENOTATI DI UNA PARTENZA (ORGANIZZATORE)
+             * ============================================================
+             */
+
+            composable(
+                CatalogRoutes
+                    .PRENOTATI_PARTENZA
+            ) {
+
+                val prenotatiState by
+                partenzeViewModel
+                    .prenotati
+                    .collectAsState()
+
+                PrenotatiPartenzaScreen(
+
+                    state =
+                        prenotatiState,
+
+                    onBack =
+                        onBack,
+
+                    onRiprova = {
+
+                        partenzeViewModel
+                            .ricaricaPrenotati()
+                    }
                 )
             }
 

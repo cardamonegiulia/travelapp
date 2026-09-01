@@ -71,6 +71,47 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
                                                 @Param("statoEscluso") StatoPrenotazione statoEscluso,
                                                 Pageable pageable);
 
+    // --- Vista organizzatore -------------------------------------------------------------
+    //
+    // Chi ha organizzato un itinerario deve poter vedere chi ha comprato ogni sua partenza.
+    // Le prenotazioni cancellate restano fuori: il posto e' tornato libero e quel viaggiatore
+    // non parte.
+
+    // Il viaggiatore e' caricato con la prenotazione perche' nome e cognome finiscono
+    // nella risposta: senza la fetch sarebbe una query per riga.
+    // La count query e' esplicita: quella derivata conterrebbe la join fetch, che in una
+    // "select count" non e' valida.
+    @Query(value = """
+            select p from Prenotazione p
+            join fetch p.viaggiatore
+            where p.disponibilitaItinerario.id = :disponibilitaId
+              and p.stato <> :statoEscluso
+            """,
+            countQuery = """
+            select count(p) from Prenotazione p
+            where p.disponibilitaItinerario.id = :disponibilitaId
+              and p.stato <> :statoEscluso
+            """)
+    Page<Prenotazione> findByDisponibilitaItinerario(@Param("disponibilitaId") Long disponibilitaId,
+                                                    @Param("statoEscluso") StatoPrenotazione statoEscluso,
+                                                    Pageable pageable);
+
+    /**
+     * Per ogni partenza indicata: id, numero di prenotazioni attive e totale dei
+     * partecipanti. Una sola query per l'intera lista, invece di due per riga.
+     *
+     * @return righe {@code [disponibilitaId, conteggio, partecipanti]}
+     */
+    @Query("""
+            select p.disponibilitaItinerario.id, count(p), coalesce(sum(p.numeroPartecipanti), 0)
+            from Prenotazione p
+            where p.disponibilitaItinerario.id in :disponibilitaIds
+              and p.stato <> :statoEscluso
+            group by p.disponibilitaItinerario.id
+            """)
+    List<Object[]> contaPerDisponibilita(@Param("disponibilitaIds") List<Long> disponibilitaIds,
+                                         @Param("statoEscluso") StatoPrenotazione statoEscluso);
+
     /**
      * Prenotazioni di itinerario la cui data di fine cade in [da, a): usata dal job che
      * invita a recensire. Solo itinerari, perche' la recensione e' agganciata a un

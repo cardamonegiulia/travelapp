@@ -3,6 +3,7 @@ package com.example.travelapp.ui.catalog
 import android.app.Application
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -67,6 +69,7 @@ fun OrganizzatoreHomeScreen(
     onCreaAttivita: () -> Unit,
     onModificaItinerario: (Itinerario) -> Unit,
     onModificaAttivita: (SingolaAttivita) -> Unit,
+    onVediPrenotazioni: (Itinerario) -> Unit,
     onVaiProfilo: () -> Unit,
     onLogout: () -> Unit = {},
     homeViewModel: OrganizzatoreHomeViewModel = viewModel(),
@@ -255,11 +258,15 @@ fun OrganizzatoreHomeScreen(
                             uiState.itinerari,
                             key = { it.id }
                         ) { item ->
+                            // Tutta la card apre l'elenco delle partenze: le icone di
+                            // modifica ed elimina restano cliccabili per conto loro.
                             Card(
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = TravelSurface),
                                 elevation = CardDefaults.cardElevation(2.dp),
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onVediPrenotazioni(item) }
                             ) {
                                 Column {
                                     Box(
@@ -342,6 +349,31 @@ fun OrganizzatoreHomeScreen(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 16.sp,
                                             color = TravelBlue
+                                        )
+                                    }
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(
+                                                start = 14.dp,
+                                                end = 14.dp,
+                                                bottom = 14.dp
+                                            ),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Vedi chi ha prenotato",
+                                            color = TravelBlue,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                            contentDescription = null,
+                                            tint = TravelBlue,
+                                            modifier = Modifier.size(18.dp)
                                         )
                                     }
                                 }

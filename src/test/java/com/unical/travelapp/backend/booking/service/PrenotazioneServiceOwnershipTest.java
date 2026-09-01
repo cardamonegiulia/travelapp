@@ -6,6 +6,7 @@ import com.unical.travelapp.backend.booking.repositories.ExtraPrenotazioneReposi
 import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
 import com.unical.travelapp.backend.catalog.repository.AttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.DisponibilitaItinerarioRepository;
+import com.unical.travelapp.backend.catalog.repository.ItinerarioRepository;
 import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRepository;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.repository.UtenteRepository;
@@ -35,13 +36,15 @@ class PrenotazioneServiceOwnershipTest {
     @Mock private AttivitaRepository attivitaRepo;
     @Mock private UtenteRepository utenteRepository;
     @Mock private DisponibilitaItinerarioRepository disponibilitaItinerarioRepository;
+    @Mock private ItinerarioRepository itinerarioRepository;
     @Mock private SessioneSingolaAttivitaRepository sessioneSingolaAttivitaRepository;
     @Mock private UtenteService utenteService;
     @Mock private PagamentoService pagamentoService;
 
     private PrenotazioneService service() {
         return new PrenotazioneService(prenotazioneRepo, extraPrenotazioneRepo, attivitaRepo,
-                utenteRepository, disponibilitaItinerarioRepository, sessioneSingolaAttivitaRepository, utenteService, pagamentoService);
+                utenteRepository, disponibilitaItinerarioRepository, itinerarioRepository,
+                sessioneSingolaAttivitaRepository, utenteService, pagamentoService);
     }
 
     private Utente utente(Long id) {

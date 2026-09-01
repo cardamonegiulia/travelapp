@@ -1,6 +1,7 @@
 package com.unical.travelapp.backend.booking.controllers;
 
 import com.unical.travelapp.backend.booking.dto.CreaPrenotazioneRequest;
+import com.unical.travelapp.backend.booking.dto.PartenzaOrganizzatoreDto;
 import com.unical.travelapp.backend.booking.dto.PrenotazioneResponseDto;
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
 import com.unical.travelapp.backend.booking.mapper.PrenotazioneAssembler;
@@ -23,6 +24,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/prenotazioni")
@@ -147,6 +149,45 @@ public class PrenotazioneController {
         Prenotazione prenotazione = prenotazioneService.annullaPrenotazione(id);
         auditLogger.success("PRENOTAZIONE_ANNULLATA", "Prenotazione", String.valueOf(id));
         return ResponseEntity.ok(prenotazioneAssembler.assembla(prenotazione));
+    }
+
+    @GetMapping("/organizzatore/itinerari/{itinerarioId}/partenze")
+    @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
+    @Operation(
+            summary = "Partenze ancora da fare di un proprio itinerario, con le vendite",
+            description = "Riservato all'organizzatore che ha creato l'itinerario (un ADMIN vede "
+                    + "qualsiasi itinerario). Le partenze gia' concluse non vengono restituite; "
+                    + "quelle in corso si'. Ordinate dalla piu' vicina."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Elenco partenze restituito con successo"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
+            @ApiResponse(responseCode = "403", description = "Permessi insufficienti"),
+            @ApiResponse(responseCode = "404", description = "Itinerario inesistente o di un altro organizzatore")
+    })
+    public ResponseEntity<List<PartenzaOrganizzatoreDto>> getPartenzeItinerario(
+            @PathVariable Long itinerarioId) {
+        return ResponseEntity.ok(prenotazioneService.getPartenzeFuture(itinerarioId));
+    }
+
+    @GetMapping("/organizzatore/partenze/{disponibilitaId}")
+    @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
+    @Operation(
+            summary = "Viaggiatori prenotati su una partenza (paginato)",
+            description = "Riservato all'organizzatore dell'itinerario a cui la partenza appartiene "
+                    + "(un ADMIN vede qualsiasi partenza). Le prenotazioni cancellate non compaiono."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista prenotati restituita con successo"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
+            @ApiResponse(responseCode = "403", description = "Permessi insufficienti"),
+            @ApiResponse(responseCode = "404", description = "Partenza inesistente o di un altro organizzatore")
+    })
+    public ResponseEntity<Page<PrenotazioneResponseDto>> getPrenotatiPartenza(
+            @PathVariable Long disponibilitaId,
+            @PageableDefault(size = 50, sort = "dataPrenotazione", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(prenotazioneAssembler.assembla(
+                prenotazioneService.getPrenotazioniPerPartenza(disponibilitaId, pageable)));
     }
 
     @GetMapping("/saldo/totale")

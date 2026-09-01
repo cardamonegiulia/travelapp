@@ -6,11 +6,14 @@ import com.unical.travelapp.backend.booking.dto.CreaPrenotazioneRequest;
 import com.unical.travelapp.backend.booking.entity.*;
 import com.unical.travelapp.backend.booking.repositories.ExtraPrenotazioneRepository;
 import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
+import com.unical.travelapp.backend.booking.dto.PartenzaOrganizzatoreDto;
 import com.unical.travelapp.backend.catalog.entity.Attivita;
 import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
+import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
 import com.unical.travelapp.backend.catalog.repository.AttivitaRepository;
 import com.unical.travelapp.backend.catalog.repository.DisponibilitaItinerarioRepository;
+import com.unical.travelapp.backend.catalog.repository.ItinerarioRepository;
 import com.unical.travelapp.backend.catalog.repository.SessioneSingolaAttivitaRepository;
 import com.unical.travelapp.backend.identity.entity.Utente;
 import com.unical.travelapp.backend.identity.repository.UtenteRepository;
@@ -24,7 +27,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -36,6 +42,7 @@ public class PrenotazioneService {
     private final AttivitaRepository attivitaRepo;
     private final UtenteRepository utenteRepository;
     private final DisponibilitaItinerarioRepository disponibilitaItinerarioRepository;
+    private final ItinerarioRepository itinerarioRepository;
     private final SessioneSingolaAttivitaRepository sessioneSingolaAttivitaRepository;
     private final UtenteService utenteService;
     private final PagamentoService pagamentoService;
@@ -409,6 +416,112 @@ public class PrenotazioneService {
         Long utenteId = utenteService.getUtenteSessione().getId();
         return prenotazioneRepo.findAttualiByViaggiatore(
                 utenteId, LocalDateTime.now(), StatoPrenotazione.CANCELLATA, pageable);
+    }
+
+    /*
+     * ============================================================
+     * VISTA ORGANIZZATORE
+     * ============================================================
+     *
+     * L'organizzatore vede le partenze del proprio itinerario e, per ognuna, chi si e'
+     * prenotato. Un ADMIN puo' guardare qualsiasi itinerario; chiunque altro solo i propri.
+     */
+
+    /**
+     * Le partenze ancora da fare di un itinerario, dalla piu' vicina, con quante
+     * prenotazioni ha raccolto ognuna.
+     *
+     * <p>Le partenze gia' concluse restano fuori: qui si guarda chi sta per partire, non
+     * lo storico. Una partenza in corso e' ancora "da fare", quindi il confronto e' sulla
+     * data di fine (o su quella di inizio, se la fine non e' valorizzata).
+     */
+    public List<PartenzaOrganizzatoreDto> getPartenzeFuture(Long itinerarioId) {
+        verificaAccessoItinerario(itinerarioId);
+
+        LocalDateTime adesso = LocalDateTime.now();
+
+        List<DisponibilitaItinerario> future = disponibilitaItinerarioRepository
+                .findByItinerario_Id(itinerarioId)
+                .stream()
+                .filter(disp -> !partenzaConclusa(disp, adesso))
+                .sorted(Comparator.comparing(
+                        DisponibilitaItinerario::getDataInizio,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+
+        if (future.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, long[]> conteggi = conteggiPerDisponibilita(
+                future.stream().map(DisponibilitaItinerario::getId).toList());
+
+        return future.stream()
+                .map(disp -> {
+                    long[] conteggio = conteggi.getOrDefault(disp.getId(), new long[]{0L, 0L});
+                    return PartenzaOrganizzatoreDto.builder()
+                            .disponibilitaId(disp.getId())
+                            .dataInizio(disp.getDataInizio())
+                            .dataFine(disp.getDataFine())
+                            .postiDisponibili(disp.getPostiDisponibili())
+                            .numeroPrenotazioni(conteggio[0])
+                            .partecipantiTotali(conteggio[1])
+                            .build();
+                })
+                .toList();
+    }
+
+    /** Chi si e' prenotato su una partenza. Le cancellate non compaiono: nessuno parte. */
+    public Page<Prenotazione> getPrenotazioniPerPartenza(Long disponibilitaId, Pageable pageable) {
+        DisponibilitaItinerario disponibilita = recuperaDisponibilita(disponibilitaId);
+        verificaAccessoItinerario(
+                disponibilita.getItinerario() != null ? disponibilita.getItinerario().getId() : null);
+
+        return prenotazioneRepo.findByDisponibilitaItinerario(
+                disponibilitaId, StatoPrenotazione.CANCELLATA, pageable);
+    }
+
+    private boolean partenzaConclusa(DisponibilitaItinerario disp, LocalDateTime adesso) {
+        LocalDateTime riferimento = disp.getDataFine() != null
+                ? disp.getDataFine()
+                : disp.getDataInizio();
+
+        return riferimento != null && riferimento.isBefore(adesso);
+    }
+
+    private Map<Long, long[]> conteggiPerDisponibilita(List<Long> disponibilitaIds) {
+        Map<Long, long[]> conteggi = new HashMap<>();
+
+        for (Object[] riga : prenotazioneRepo.contaPerDisponibilita(
+                disponibilitaIds, StatoPrenotazione.CANCELLATA)) {
+
+            conteggi.put(
+                    (Long) riga[0],
+                    new long[]{((Number) riga[1]).longValue(), ((Number) riga[2]).longValue()});
+        }
+
+        return conteggi;
+    }
+
+    private void verificaAccessoItinerario(Long itinerarioId) {
+        if (itinerarioId == null) {
+            throw new ItinerarioNonTrovatoException("Itinerario non trovato");
+        }
+
+        if (utenteService.isAdmin()) {
+            if (!itinerarioRepository.existsById(itinerarioId)) {
+                throw new ItinerarioNonTrovatoException("Itinerario non trovato: " + itinerarioId);
+            }
+            return;
+        }
+
+        Long richiedenteId = utenteService.getUtenteSessione().getId();
+
+        // Un itinerario di un altro organizzatore e' un 404 e non un 403: chi non lo ha
+        // creato non deve nemmeno sapere che esiste.
+        itinerarioRepository.findByIdAndOrganizzatore_Id(itinerarioId, richiedenteId)
+                .orElseThrow(() -> new ItinerarioNonTrovatoException(
+                        "Itinerario non trovato: " + itinerarioId));
     }
 
     public BigDecimal getSaldoTotaleGlobale() {
