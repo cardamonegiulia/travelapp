@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -46,11 +45,8 @@ class OrganizzatoreHomeViewModel(
         ApiClient.getPrenotazioneApi(application)
     )
 
-    private val _saldo =
-        MutableStateFlow<BigDecimal?>(null)
-
-    val saldo: StateFlow<BigDecimal?> =
-        _saldo.asStateFlow()
+    private val _saldo = MutableStateFlow<BigDecimal?>(null)
+    val saldo: StateFlow<BigDecimal?> = _saldo.asStateFlow()
 
     init {
         caricaSaldo()
@@ -58,13 +54,8 @@ class OrganizzatoreHomeViewModel(
 
     fun caricaSaldo() {
         viewModelScope.launch {
-            val result =
-                repo.getSaldoOrganizzatore()
-
-            _saldo.value =
-                result.getOrDefault(
-                    BigDecimal.ZERO
-                )
+            val result = repo.getSaldoOrganizzatore()
+            _saldo.value = result.getOrDefault(BigDecimal.ZERO)
         }
     }
 }
@@ -77,53 +68,30 @@ fun OrganizzatoreHomeScreen(
     onModificaItinerario: (Itinerario) -> Unit,
     onModificaAttivita: (SingolaAttivita) -> Unit,
     onVaiProfilo: () -> Unit,
-    onLogout: () -> Unit,
+    onLogout: () -> Unit = {},
     homeViewModel: OrganizzatoreHomeViewModel = viewModel(),
     offerteViewModel: OfferteManagementViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val saldo by homeViewModel.saldo.collectAsState()
+    val uiState by offerteViewModel.uiState.collectAsState()
 
-    val context =
-        LocalContext.current
-
-    val saldo by
-    homeViewModel.saldo.collectAsState()
-
-    val uiState by
-    offerteViewModel.uiState.collectAsState()
-
-    var selectedTab by
-    remember {
-        mutableIntStateOf(0)
-    }
+    var selectedTab by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
-        offerteViewModel.caricaOfferte(
-            soloMie = true
-        )
-
+        offerteViewModel.caricaOfferte(soloMie = true)
         homeViewModel.caricaSaldo()
     }
 
-    LaunchedEffect(
-        uiState.feedbackMessage
-    ) {
-        uiState.feedbackMessage
-            ?.let {
-
-                Toast.makeText(
-                    context,
-                    it,
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                offerteViewModel
-                    .clearFeedback()
-            }
+    LaunchedEffect(uiState.feedbackMessage) {
+        uiState.feedbackMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            offerteViewModel.clearFeedback()
+        }
     }
 
     Scaffold(
         topBar = {
-
             TopAppBar(
                 title = {
                     Text(
@@ -132,485 +100,248 @@ fun OrganizzatoreHomeScreen(
                         color = TravelTextDark
                     )
                 },
-
                 actions = {
-
-                    IconButton(
-                        onClick = onVaiProfilo
-                    ) {
+                    IconButton(onClick = onVaiProfilo) {
                         Icon(
-                            imageVector =
-                                Icons.Default.Person,
-                            contentDescription =
-                                "Profilo",
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profilo",
                             tint = TravelBlue
                         )
                     }
-
-                    IconButton(
-                        onClick = onLogout
-                    ) {
-                        Icon(
-                            imageVector =
-                                Icons.AutoMirrored
-                                    .Filled
-                                    .ExitToApp,
-                            contentDescription =
-                                "Logout",
-                            tint =
-                                Color(0xFFDC2626)
-                        )
-                    }
                 },
-
-                colors =
-                    TopAppBarDefaults
-                        .topAppBarColors(
-                            containerColor =
-                                Color.White
-                        )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-
         bottomBar = {
-
             Surface(
                 color = Color.White,
                 shadowElevation = 8.dp
             ) {
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    horizontalArrangement =
-                        Arrangement.spacedBy(
-                            12.dp
-                        )
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-
                     Button(
-                        onClick =
-                            onCreaItinerario,
-                        modifier =
-                            Modifier.weight(1f),
-                        shape =
-                            RoundedCornerShape(
-                                12.dp
-                            ),
-                        colors =
-                            ButtonDefaults
-                                .buttonColors(
-                                    containerColor =
-                                        TravelBlue
-                                )
+                        onClick = onCreaItinerario,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = TravelBlue)
                     ) {
-
                         Icon(
-                            imageVector =
-                                Icons.Default.Add,
+                            imageVector = Icons.Default.Add,
                             contentDescription = null,
-                            modifier =
-                                Modifier.size(18.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-
-                        Spacer(
-                            Modifier.width(6.dp)
-                        )
-
+                        Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "+ Itinerario",
-                            fontSize = 13.sp,
-                            fontWeight =
-                                FontWeight.Bold
+                            text = "Itinerario",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
 
                     Button(
-                        onClick =
-                            onCreaAttivita,
-                        modifier =
-                            Modifier.weight(1f),
-                        shape =
-                            RoundedCornerShape(
-                                12.dp
-                            ),
-                        colors =
-                            ButtonDefaults
-                                .buttonColors(
-                                    containerColor =
-                                        TravelOrange
-                                )
+                        onClick = onCreaAttivita,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = TravelOrange)
                     ) {
-
                         Icon(
-                            imageVector =
-                                Icons.Default.Add,
+                            imageVector = Icons.Default.Add,
                             contentDescription = null,
-                            modifier =
-                                Modifier.size(18.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-
-                        Spacer(
-                            Modifier.width(6.dp)
-                        )
-
+                        Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "+ Attività",
-                            fontSize = 13.sp,
-                            fontWeight =
-                                FontWeight.Bold
+                            text = "Attività",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
         }
     ) { padding ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(TravelBg)
         ) {
-
             Card(
-                shape =
-                    RoundedCornerShape(16.dp),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor =
-                            TravelBlue
-                    ),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = TravelBlue),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-
-                Column(
-                    modifier =
-                        Modifier.padding(18.dp)
-                ) {
-
+                Column(modifier = Modifier.padding(18.dp)) {
                     Text(
-                        text =
-                            "Il tuo Saldo Guadagnato",
-                        color =
-                            Color.White.copy(
-                                alpha = 0.8f
-                            ),
+                        text = "Il tuo Saldo Guadagnato",
+                        color = Color.White.copy(alpha = 0.8f),
                         fontSize = 13.sp
                     )
-
-                    Spacer(
-                        Modifier.height(6.dp)
-                    )
-
+                    Spacer(Modifier.height(6.dp))
                     Text(
-                        text =
-                            "€ ${saldo?.toPlainString() ?: "0.00"}",
+                        text = "€ ${saldo?.toPlainString() ?: "0.00"}",
                         color = Color.White,
                         fontSize = 28.sp,
-                        fontWeight =
-                            FontWeight.Bold
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
 
             TabRow(
-                selectedTabIndex =
-                    selectedTab,
-                containerColor =
-                    Color.White,
-                contentColor =
-                    TravelBlue
+                selectedTabIndex = selectedTab,
+                containerColor = Color.White,
+                contentColor = TravelBlue
             ) {
-
                 Tab(
-                    selected =
-                        selectedTab == 0,
-                    onClick = {
-                        selectedTab = 0
-                    },
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
                     text = {
                         Text(
-                            text =
-                                "I tuoi Itinerari (${uiState.itinerari.size})",
-                            fontWeight =
-                                FontWeight.Bold
+                            text = "I tuoi Itinerari (${uiState.itinerari.size})",
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 )
-
                 Tab(
-                    selected =
-                        selectedTab == 1,
-                    onClick = {
-                        selectedTab = 1
-                    },
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
                     text = {
                         Text(
-                            text =
-                                "Le tue Attività (${uiState.attivita.size})",
-                            fontWeight =
-                                FontWeight.Bold
+                            text = "Le tue Attività (${uiState.attivita.size})",
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 )
             }
 
             if (uiState.isLoading) {
-
                 Box(
-                    modifier =
-                        Modifier.fillMaxSize(),
-                    contentAlignment =
-                        Alignment.Center
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(
-                        color = TravelBlue
-                    )
+                    CircularProgressIndicator(color = TravelBlue)
                 }
-
-            } else if (
-                selectedTab == 0
-            ) {
-
-                if (
-                    uiState.itinerari.isEmpty()
-                ) {
-
+            } else if (selectedTab == 0) {
+                if (uiState.itinerari.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp),
-                        contentAlignment =
-                            Alignment.Center
+                        contentAlignment = Alignment.Center
                     ) {
-
                         Text(
-                            text =
-                                "Nessun itinerario creato. Creane uno!",
-                            color =
-                                TravelTextMuted
+                            text = "Nessun itinerario creato. Creane uno!",
+                            color = TravelTextMuted
                         )
                     }
-
                 } else {
-
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp),
-                        verticalArrangement =
-                            Arrangement.spacedBy(
-                                14.dp
-                            )
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-
                         items(
                             uiState.itinerari,
                             key = { it.id }
                         ) { item ->
-
                             Card(
-                                shape =
-                                    RoundedCornerShape(
-                                        12.dp
-                                    ),
-                                colors =
-                                    CardDefaults
-                                        .cardColors(
-                                            containerColor =
-                                                TravelSurface
-                                        ),
-                                elevation =
-                                    CardDefaults
-                                        .cardElevation(
-                                            2.dp
-                                        ),
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = TravelSurface),
+                                elevation = CardDefaults.cardElevation(2.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-
                                 Column {
-
                                     Box(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .height(
-                                                    130.dp
-                                                )
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(130.dp)
                                     ) {
-
                                         AsyncImage(
-                                            model =
-                                                item
-                                                    .immagini
-                                                    .firstOrNull()
-                                                    ?.url,
-                                            contentDescription =
-                                                item.titolo,
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxSize()
-                                                    .background(
-                                                        Color(
-                                                            0xFFCBD5E1
-                                                        )
-                                                    ),
-                                            contentScale =
-                                                ContentScale.Crop
+                                            model = item.immagini.firstOrNull()?.url,
+                                            contentDescription = item.titolo,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(Color(0xFFCBD5E1)),
+                                            contentScale = ContentScale.Crop
                                         )
 
                                         Row(
-                                            modifier =
-                                                Modifier
-                                                    .align(
-                                                        Alignment.TopEnd
-                                                    )
-                                                    .padding(
-                                                        8.dp
-                                                    ),
-                                            horizontalArrangement =
-                                                Arrangement
-                                                    .spacedBy(
-                                                        6.dp
-                                                    )
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-
-                                            IconButton(
-                                                onClick = {
-                                                    onModificaItinerario(
-                                                        item
-                                                    )
-                                                },
-                                                modifier =
-                                                    Modifier
-                                                        .size(
-                                                            34.dp
-                                                        )
-                                                        .background(
-                                                            Color.White.copy(
-                                                                alpha =
-                                                                    0.9f
-                                                            ),
-                                                            RoundedCornerShape(
-                                                                8.dp
-                                                            )
-                                                        )
+                                            FilledIconButton(
+                                                onClick = { onModificaItinerario(item) },
+                                                colors = IconButtonDefaults.filledIconButtonColors(
+                                                    containerColor = Color.White.copy(alpha = 0.95f)
+                                                ),
+                                                shape = RoundedCornerShape(8.dp),
+                                                modifier = Modifier.size(36.dp)
                                             ) {
-
                                                 Icon(
-                                                    imageVector =
-                                                        Icons.Default.Edit,
-                                                    contentDescription =
-                                                        "Modifica",
-                                                    tint =
-                                                        TravelBlue,
-                                                    modifier =
-                                                        Modifier.size(
-                                                            16.dp
-                                                        )
+                                                    imageVector = Icons.Default.Edit,
+                                                    contentDescription = "Modifica",
+                                                    tint = TravelBlue,
+                                                    modifier = Modifier.size(18.dp)
                                                 )
                                             }
 
-                                            IconButton(
-                                                onClick = {
-                                                    offerteViewModel
-                                                        .eliminaItinerario(
-                                                            item.id
-                                                        )
-                                                },
-                                                modifier =
-                                                    Modifier
-                                                        .size(
-                                                            34.dp
-                                                        )
-                                                        .background(
-                                                            Color.White.copy(
-                                                                alpha =
-                                                                    0.9f
-                                                            ),
-                                                            RoundedCornerShape(
-                                                                8.dp
-                                                            )
-                                                        )
+                                            FilledIconButton(
+                                                onClick = { offerteViewModel.eliminaItinerario(item.id) },
+                                                colors = IconButtonDefaults.filledIconButtonColors(
+                                                    containerColor = Color.White.copy(alpha = 0.95f)
+                                                ),
+                                                shape = RoundedCornerShape(8.dp),
+                                                modifier = Modifier.size(36.dp)
                                             ) {
-
                                                 Icon(
-                                                    imageVector =
-                                                        Icons.Default.Delete,
-                                                    contentDescription =
-                                                        "Elimina",
-                                                    tint =
-                                                        Color(
-                                                            0xFFDC2626
-                                                        ),
-                                                    modifier =
-                                                        Modifier.size(
-                                                            16.dp
-                                                        )
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Elimina",
+                                                    tint = Color(0xFFDC2626),
+                                                    modifier = Modifier.size(18.dp)
                                                 )
                                             }
                                         }
                                     }
 
                                     Row(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(
-                                                    14.dp
-                                                ),
-                                        horizontalArrangement =
-                                            Arrangement
-                                                .SpaceBetween,
-                                        verticalAlignment =
-                                            Alignment
-                                                .CenterVertically
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(14.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-
-                                        Column(
-                                            modifier =
-                                                Modifier
-                                                    .weight(
-                                                        1f
-                                                    )
-                                        ) {
-
+                                        Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text =
-                                                    item.titolo,
-                                                fontWeight =
-                                                    FontWeight.Bold,
-                                                fontSize =
-                                                    15.sp,
-                                                color =
-                                                    TravelTextDark
+                                                text = item.titolo,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 15.sp,
+                                                color = TravelTextDark
                                             )
-
                                             Text(
-                                                text =
-                                                    "${item.durataGiorni ?: 1} giorni • ${item.destinazionePrincipale ?: ""}",
-                                                color =
-                                                    TravelTextMuted,
-                                                fontSize =
-                                                    12.sp
+                                                text = "${item.durataGiorni ?: 1} giorni • ${item.destinazionePrincipale ?: ""}",
+                                                color = TravelTextMuted,
+                                                fontSize = 12.sp
                                             )
                                         }
 
                                         Text(
-                                            text =
-                                                "€${item.prezzoBase ?: "0"}",
-                                            fontWeight =
-                                                FontWeight.Bold,
-                                            fontSize =
-                                                16.sp,
-                                            color =
-                                                TravelBlue
+                                            text = "€${item.prezzoBase ?: "0"}",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp,
+                                            color = TravelBlue
                                         )
                                     }
                                 }
@@ -618,229 +349,117 @@ fun OrganizzatoreHomeScreen(
                         }
                     }
                 }
-
             } else {
-
-                if (
-                    uiState.attivita.isEmpty()
-                ) {
-
+                if (uiState.attivita.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp),
-                        contentAlignment =
-                            Alignment.Center
+                        contentAlignment = Alignment.Center
                     ) {
-
                         Text(
-                            text =
-                                "Nessuna attività creata. Creane una!",
-                            color =
-                                TravelTextMuted
+                            text = "Nessuna attività creata. Creane una!",
+                            color = TravelTextMuted
                         )
                     }
-
                 } else {
-
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp),
-                        verticalArrangement =
-                            Arrangement.spacedBy(
-                                14.dp
-                            )
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-
                         items(
                             uiState.attivita,
                             key = { it.id }
                         ) { item ->
-
                             Card(
-                                shape =
-                                    RoundedCornerShape(
-                                        12.dp
-                                    ),
-                                colors =
-                                    CardDefaults
-                                        .cardColors(
-                                            containerColor =
-                                                TravelSurface
-                                        ),
-                                elevation =
-                                    CardDefaults
-                                        .cardElevation(
-                                            2.dp
-                                        ),
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = TravelSurface),
+                                elevation = CardDefaults.cardElevation(2.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-
                                 Column {
-
                                     Box(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .height(
-                                                    130.dp
-                                                )
-                                                .background(
-                                                    Color(
-                                                        0xFFE2E8F0
-                                                    )
-                                                )
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(130.dp)
                                     ) {
+                                        AsyncImage(
+                                            model = item.immagini.firstOrNull()?.url,
+                                            contentDescription = item.titolo,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(Color(0xFFE2E8F0)),
+                                            contentScale = ContentScale.Crop
+                                        )
 
                                         Row(
-                                            modifier =
-                                                Modifier
-                                                    .align(
-                                                        Alignment.TopEnd
-                                                    )
-                                                    .padding(
-                                                        8.dp
-                                                    ),
-                                            horizontalArrangement =
-                                                Arrangement
-                                                    .spacedBy(
-                                                        6.dp
-                                                    )
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-
-                                            IconButton(
-                                                onClick = {
-                                                    onModificaAttivita(
-                                                        item
-                                                    )
-                                                },
-                                                modifier =
-                                                    Modifier
-                                                        .size(
-                                                            34.dp
-                                                        )
-                                                        .background(
-                                                            Color.White.copy(
-                                                                alpha =
-                                                                    0.9f
-                                                            ),
-                                                            RoundedCornerShape(
-                                                                8.dp
-                                                            )
-                                                        )
+                                            FilledIconButton(
+                                                onClick = { onModificaAttivita(item) },
+                                                colors = IconButtonDefaults.filledIconButtonColors(
+                                                    containerColor = Color.White.copy(alpha = 0.95f)
+                                                ),
+                                                shape = RoundedCornerShape(8.dp),
+                                                modifier = Modifier.size(36.dp)
                                             ) {
-
                                                 Icon(
-                                                    imageVector =
-                                                        Icons.Default.Edit,
-                                                    contentDescription =
-                                                        "Modifica",
-                                                    tint =
-                                                        TravelBlue,
-                                                    modifier =
-                                                        Modifier.size(
-                                                            16.dp
-                                                        )
+                                                    imageVector = Icons.Default.Edit,
+                                                    contentDescription = "Modifica",
+                                                    tint = TravelBlue,
+                                                    modifier = Modifier.size(18.dp)
                                                 )
                                             }
 
-                                            IconButton(
-                                                onClick = {
-                                                    offerteViewModel
-                                                        .eliminaAttivita(
-                                                            item.id
-                                                        )
-                                                },
-                                                modifier =
-                                                    Modifier
-                                                        .size(
-                                                            34.dp
-                                                        )
-                                                        .background(
-                                                            Color.White.copy(
-                                                                alpha =
-                                                                    0.9f
-                                                            ),
-                                                            RoundedCornerShape(
-                                                                8.dp
-                                                            )
-                                                        )
+                                            FilledIconButton(
+                                                onClick = { offerteViewModel.eliminaAttivita(item.id) },
+                                                colors = IconButtonDefaults.filledIconButtonColors(
+                                                    containerColor = Color.White.copy(alpha = 0.95f)
+                                                ),
+                                                shape = RoundedCornerShape(8.dp),
+                                                modifier = Modifier.size(36.dp)
                                             ) {
-
                                                 Icon(
-                                                    imageVector =
-                                                        Icons.Default.Delete,
-                                                    contentDescription =
-                                                        "Elimina",
-                                                    tint =
-                                                        Color(
-                                                            0xFFDC2626
-                                                        ),
-                                                    modifier =
-                                                        Modifier.size(
-                                                            16.dp
-                                                        )
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Elimina",
+                                                    tint = Color(0xFFDC2626),
+                                                    modifier = Modifier.size(18.dp)
                                                 )
                                             }
                                         }
                                     }
 
                                     Row(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(
-                                                    14.dp
-                                                ),
-                                        horizontalArrangement =
-                                            Arrangement
-                                                .SpaceBetween,
-                                        verticalAlignment =
-                                            Alignment
-                                                .CenterVertically
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(14.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-
-                                        Column(
-                                            modifier =
-                                                Modifier
-                                                    .weight(
-                                                        1f
-                                                    )
-                                        ) {
-
+                                        Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text =
-                                                    item.titolo,
-                                                fontWeight =
-                                                    FontWeight.Bold,
-                                                fontSize =
-                                                    15.sp,
-                                                color =
-                                                    TravelTextDark
+                                                text = item.titolo,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 15.sp,
+                                                color = TravelTextDark
                                             )
-
                                             Text(
-                                                text =
-                                                    "${item.durataMinuti?.let { it / 60 } ?: 1}h • ${item.luogo ?: ""}",
-                                                color =
-                                                    TravelTextMuted,
-                                                fontSize =
-                                                    12.sp
+                                                text = "${item.durataMinuti?.let { it / 60 } ?: 1}h • ${item.luogo ?: ""}",
+                                                color = TravelTextMuted,
+                                                fontSize = 12.sp
                                             )
                                         }
 
                                         Text(
-                                            text =
-                                                "€${item.prezzo ?: "0"}",
-                                            fontWeight =
-                                                FontWeight.Bold,
-                                            fontSize =
-                                                16.sp,
-                                            color =
-                                                TravelOrange
+                                            text = "€${item.prezzo ?: "0"}",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp,
+                                            color = TravelOrange
                                         )
                                     }
                                 }

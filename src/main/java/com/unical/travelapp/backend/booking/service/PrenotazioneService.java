@@ -324,23 +324,58 @@ public class PrenotazioneService {
         return prenotazioneRepo.findByViaggiatoreId(utenteId, pageable);
     }
 
+    private boolean viaggioConcluso(Prenotazione prenotazione) {
+        LocalDateTime dataFine = null;
+
+        if (prenotazione.getDisponibilitaItinerario() != null) {
+            dataFine = prenotazione
+                    .getDisponibilitaItinerario()
+                    .getDataFine();
+        } else if (prenotazione.getSessioneSingolaAttivita() != null) {
+            dataFine = prenotazione
+                    .getSessioneSingolaAttivita()
+                    .getDataFine();
+        }
+
+        return dataFine != null &&
+                dataFine.isBefore(LocalDateTime.now());
+    }
+
     @Transactional
     public Prenotazione annullaPrenotazione(Long prenotazioneId) {
         Prenotazione prenotazione = getPrenotazioneById(prenotazioneId);
 
-        if(prenotazione.getStato().equals(StatoPrenotazione.CANCELLATA)) {
-            throw new StatoPrenotazioneNonValidoException("Prenotazione già cancellata: " + prenotazioneId);
+        if (prenotazione.getStato().equals(StatoPrenotazione.CANCELLATA)) {
+            throw new StatoPrenotazioneNonValidoException(
+                    "Prenotazione già cancellata: " + prenotazioneId
+            );
         }
 
-        if(prenotazione.getDisponibilitaItinerario() != null) {
-            DisponibilitaItinerario disp = prenotazione.getDisponibilitaItinerario();
-            disp.setPostiDisponibili(disp.getPostiDisponibili() + prenotazione.getNumeroPartecipanti());
+        if (viaggioConcluso(prenotazione)) {
+            throw new StatoPrenotazioneNonValidoException(
+                    "Non puoi annullare una prenotazione relativa a un viaggio già concluso"
+            );
         }
 
-        if(prenotazione.getSessioneSingolaAttivita() != null) {
-            SessioneSingolaAttivita sessione = prenotazione.getSessioneSingolaAttivita();
-            sessione.setPostiDisponibili(sessione.getPostiDisponibili() + prenotazione.getNumeroPartecipanti());
+        if (prenotazione.getDisponibilitaItinerario() != null) {
+            DisponibilitaItinerario disp =
+                    prenotazione.getDisponibilitaItinerario();
+
+            disp.setPostiDisponibili(
+                    disp.getPostiDisponibili()
+                            + prenotazione.getNumeroPartecipanti()
+            );
         }
+        if (prenotazione.getSessioneSingolaAttivita() != null) {
+            SessioneSingolaAttivita sessione =
+                    prenotazione.getSessioneSingolaAttivita();
+
+            sessione.setPostiDisponibili(
+                    sessione.getPostiDisponibili()
+                            + prenotazione.getNumeroPartecipanti()
+            );
+        }
+
         pagamentoService.gestisciPagamentoAnnullamento(prenotazioneId);
         prenotazione.setStato(StatoPrenotazione.CANCELLATA);
         return prenotazioneRepo.save(prenotazione);

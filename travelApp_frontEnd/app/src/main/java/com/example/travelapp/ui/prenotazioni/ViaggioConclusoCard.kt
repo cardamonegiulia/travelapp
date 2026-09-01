@@ -29,6 +29,8 @@ import com.example.travelapp.domain.model.Prenotazione
 import com.example.travelapp.domain.model.StatoPagamento
 import com.example.travelapp.domain.model.StatoPrenotazione
 import com.example.travelapp.domain.model.TipoPrenotazione
+import com.example.travelapp.ui.theme.CompletedBadgeBackground
+import com.example.travelapp.ui.theme.CompletedBadgeText
 import com.example.travelapp.ui.theme.SuccessGreen
 import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
@@ -68,14 +70,17 @@ fun ViaggioConclusoCard(
             ) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
+                    color = CompletedBadgeBackground
                 ) {
                     Text(
                         text = "CONCLUSO",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        color = CompletedBadgeText,
+                        modifier = Modifier.padding(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        )
                     )
                 }
 

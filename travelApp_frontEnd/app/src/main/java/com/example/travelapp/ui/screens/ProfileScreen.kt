@@ -11,7 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MailOutline
@@ -37,14 +36,12 @@ import com.example.travelapp.ui.profilo.ProfiloUiState
 import com.example.travelapp.ui.theme.BadgeBlue
 import com.example.travelapp.ui.theme.BadgeGrey
 import com.example.travelapp.ui.theme.BadgeIndigo
-import com.example.travelapp.ui.theme.BadgePink
 import com.example.travelapp.ui.theme.BadgePurple
 import com.example.travelapp.ui.theme.BadgeTeal
 import com.example.travelapp.ui.theme.BackgroundLavender
 import com.example.travelapp.ui.theme.IconBlue
 import com.example.travelapp.ui.theme.IconGrey
 import com.example.travelapp.ui.theme.IconIndigo
-import com.example.travelapp.ui.theme.IconPink
 import com.example.travelapp.ui.theme.IconPurple
 import com.example.travelapp.ui.theme.IconTeal
 
@@ -55,24 +52,24 @@ fun ProfileScreen(
     onAddProfilePhoto: () -> Unit,
 
     // Viaggiatore
-    onBookingsClick: () -> Unit,
-    onPaymentsClick: () -> Unit,
-    onFavoritesClick: () -> Unit,
-    onReviewsClick: () -> Unit,
+    onBookingsClick: () -> Unit = {},
+    onPaymentsClick: () -> Unit = {},
+    onFavoritesClick: () -> Unit = {},
+    onReviewsClick: () -> Unit = {},
 
     // Organizzatore
-    onCreaItinerarioClick: () -> Unit,
-    onCreaAttivitaClick: () -> Unit,
-    onLeMieOfferteClick: () -> Unit,
+    onCreaItinerarioClick: () -> Unit = {},
+    onCreaAttivitaClick: () -> Unit = {},
+    onLeMieOfferteClick: () -> Unit = {},
 
     // Admin
-    onGestioneOfferteAdminClick: () -> Unit,
-    onGestioneUtentiAdminClick: () -> Unit,
+    onGestioneOfferteAdminClick: () -> Unit = {},
+    onGestioneUtentiAdminClick: () -> Unit = {},
 
     // Impostazioni
-    onToggleDarkMode: (Boolean) -> Unit,
-    onChangePassword: () -> Unit,
-    onLogout: () -> Unit,
+    onToggleDarkMode: (Boolean) -> Unit = {},
+    onChangePassword: () -> Unit = {},
+    onLogout: () -> Unit = {},
 
     modifier: Modifier = Modifier,
     onPhotoMessageShown: () -> Unit = {}
@@ -162,60 +159,6 @@ fun ProfileScreen(
 
             /*
              * ============================================================
-             * ORGANIZZATORE
-             * ============================================================
-             */
-
-            if (isOrganizzatore) {
-
-                SectionTitle(
-                    text = "Area Organizzatore",
-                    modifier =
-                        Modifier.padding(top = 14.dp)
-                )
-
-                ProfileMenuRow(
-                    icon =
-                        Icons.Default.AddCircle,
-                    title =
-                        "Crea nuovo itinerario",
-                    iconTint =
-                        IconBlue,
-                    badgeColor =
-                        BadgeBlue,
-                    onClick =
-                        onCreaItinerarioClick
-                )
-
-                ProfileMenuRow(
-                    icon =
-                        Icons.Default.AddCircle,
-                    title =
-                        "Crea singola attività",
-                    iconTint =
-                        IconTeal,
-                    badgeColor =
-                        BadgeTeal,
-                    onClick =
-                        onCreaAttivitaClick
-                )
-
-                ProfileMenuRow(
-                    icon =
-                        Icons.AutoMirrored.Filled.List,
-                    title =
-                        "Le mie offerte pubblicate",
-                    iconTint =
-                        IconPink,
-                    badgeColor =
-                        BadgePink,
-                    onClick =
-                        onLeMieOfferteClick
-                )
-            }
-
-            /*
-             * ============================================================
              * ADMIN
              * ============================================================
              */
@@ -259,12 +202,6 @@ fun ProfileScreen(
              * ============================================================
              * ATTIVITÀ VIAGGIATORE
              * ============================================================
-             *
-             * Come nella versione nuova di develop:
-             * l'organizzatore non vede questa sezione.
-             *
-             * Un admin invece può continuare ad avere accesso
-             * alle normali funzionalità da viaggiatore.
              */
 
             if (!isOrganizzatore) {

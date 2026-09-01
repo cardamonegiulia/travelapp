@@ -38,6 +38,22 @@ val TravelChipBg: Color
 
 // ── Semantici ────────────────────────────────────────────────────────────────
 val SuccessGreen = Color(0xFF2E9E5B)
+
+val CompletedBadgeBackground: Color
+    @Composable get() =
+        if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
+            Color(0xFF173A2A)
+        } else {
+            Color(0xFFE3F4E9)
+        }
+
+val CompletedBadgeText: Color
+    @Composable get() =
+        if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
+            Color(0xFF7DDAA1)
+        } else {
+            Color(0xFF237A47)
+        }
 val WarningYellow = Color(0xFFB8860B)
 val WarningBackground = Color(0xFFFFF4D6)
 val ErrorRed = Color(0xFFEB5757)
