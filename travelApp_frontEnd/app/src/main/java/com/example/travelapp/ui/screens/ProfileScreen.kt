@@ -318,7 +318,7 @@ fun ProfileScreen(
                     icon =
                         ProfileIcons.Review,
                     title =
-                        "Recensioni scritte",
+                        "Le mie recensioni",
                     iconTint =
                         IconPurple,
                     badgeColor =

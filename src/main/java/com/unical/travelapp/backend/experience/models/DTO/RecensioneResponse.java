@@ -12,6 +12,11 @@ public class RecensioneResponse {
     private Long id;
     private Long prenotazioneId;
     private Long itinerarioId;
+
+    // Titolo dell'itinerario recensito: serve agli elenchi (per esempio "Le mie recensioni")
+    // per dire su cosa e' stata lasciata la recensione senza una chiamata al catalogo.
+    private String itinerarioTitolo;
+
     private Long utenteId;
     private int votazione;
     private String comm;

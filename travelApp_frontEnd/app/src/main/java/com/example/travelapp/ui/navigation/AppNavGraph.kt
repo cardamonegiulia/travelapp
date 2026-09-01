@@ -30,6 +30,7 @@ import com.example.travelapp.data.remote.GestoreSessione
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.Notifica
 import com.example.travelapp.domain.model.Prenotazione
+import com.example.travelapp.domain.model.Recensione
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.catalog.AdminDashboardScreen
 import com.example.travelapp.ui.catalog.AttivitaDetailScreen
@@ -53,6 +54,8 @@ import com.example.travelapp.ui.prenotazioni.PrenotazioneSuccessoScreen
 import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModel
 import com.example.travelapp.ui.prenotazioni.PrenotazioniViewModelFactory
 import com.example.travelapp.ui.profilo.ProfiloViewModel
+import com.example.travelapp.ui.recensioni.MieRecensioniScreen
+import com.example.travelapp.ui.recensioni.MieRecensioniViewModel
 import com.example.travelapp.ui.recensioni.RecensioneScreen
 import com.example.travelapp.ui.recensioni.RecensioneViewModel
 import com.example.travelapp.ui.screens.BookingsScreen
@@ -108,6 +111,9 @@ object EsperienzaRoutes {
 
     const val RECENSIONE =
         "esperienza/recensione"
+
+    const val MIE_RECENSIONI =
+        "esperienza/mie_recensioni"
 }
 
 
@@ -324,6 +330,7 @@ fun AppNavGraph(
      *
      * 1. dalla lista "Viaggi conclusi"
      * 2. da una notifica
+     * 3. da "Le mie recensioni", per modificarne una gia' scritta
      */
 
     var viaggioDaRecensire by remember {
@@ -334,6 +341,12 @@ fun AppNavGraph(
 
     var recensioneDaNotifica by remember {
         mutableStateOf<Notifica?>(
+            null
+        )
+    }
+
+    var recensioneDaModificare by remember {
+        mutableStateOf<Recensione?>(
             null
         )
     }
@@ -726,11 +739,15 @@ fun AppNavGraph(
                     viaggioDaRecensire?.id
                         ?: recensioneDaNotifica
                             ?.prenotazioneId
+                        ?: recensioneDaModificare
+                            ?.prenotazioneId
 
                 val titoloViaggio =
                     viaggioDaRecensire?.titolo
                         ?: recensioneDaNotifica
                             ?.titoloViaggio
+                        ?: recensioneDaModificare
+                            ?.titoloItinerario
                         ?: ""
 
 
@@ -762,6 +779,46 @@ fun AppNavGraph(
                         }
                     )
                 }
+            }
+
+
+            /*
+             * ============================================================
+             * LE MIE RECENSIONI
+             * ============================================================
+             */
+
+            composable(
+                EsperienzaRoutes
+                    .MIE_RECENSIONI
+            ) {
+
+                MieRecensioniRoute(
+
+                    onBack =
+                        onBack,
+
+                    onModifica = { recensione ->
+
+                        /*
+                         * Il form riparte dalla prenotazione:
+                         * azzeriamo le altre due provenienze.
+                         */
+                        recensioneDaModificare =
+                            recensione
+
+                        viaggioDaRecensire =
+                            null
+
+                        recensioneDaNotifica =
+                            null
+
+                        navController.navigate(
+                            EsperienzaRoutes
+                                .RECENSIONE
+                        )
+                    }
+                )
             }
 
 
@@ -1595,11 +1652,13 @@ private fun ProfileRoute(
             )
         },
 
-        /*
-         * Non esiste ancora una schermata separata
-         * "tutte le mie recensioni".
-         */
-        onReviewsClick = {},
+        onReviewsClick = {
+
+            onNavigateToRoute(
+                EsperienzaRoutes
+                    .MIE_RECENSIONI
+            )
+        },
 
 
         /*
@@ -1959,6 +2018,63 @@ private fun RecensioneRoute(
  * PAYMENTS
  * ================================================================
  */
+
+/*
+ * ================================================================
+ * LE MIE RECENSIONI
+ * ================================================================
+ */
+
+@Composable
+private fun MieRecensioniRoute(
+    onBack: () -> Unit,
+    onModifica: (Recensione) -> Unit,
+    viewModel: MieRecensioniViewModel = viewModel()
+) {
+
+    val state by
+    viewModel
+        .uiState
+        .collectAsState()
+
+
+    /*
+     * Ricarichiamo anche al rientro dal form:
+     * una recensione appena modificata
+     * deve mostrarsi aggiornata.
+     */
+    LaunchedEffect(Unit) {
+
+        viewModel
+            .caricaRecensioni()
+    }
+
+
+    MieRecensioniScreen(
+
+        recensioni =
+            state.recensioni,
+
+        isLoading =
+            state.isLoading,
+
+        errore =
+            state.errore,
+
+        onRiprova = {
+
+            viewModel
+                .caricaRecensioni()
+        },
+
+        onBack =
+            onBack,
+
+        onRecensioneClick =
+            onModifica
+    )
+}
+
 
 @Composable
 private fun PaymentsRoute(

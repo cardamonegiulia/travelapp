@@ -65,7 +65,7 @@ object ProfileIcons {
         )
     }
 
-    /** Fumetto con righe: sezione "Recensioni scritte". */
+    /** Fumetto con righe: sezione "Le mie recensioni". */
     val Review: ImageVector by lazy {
         materialVector(
             name = "Review",

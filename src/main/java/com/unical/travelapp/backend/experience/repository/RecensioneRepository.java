@@ -26,6 +26,15 @@ public interface RecensioneRepository extends JpaRepository<Recensione, Long> {
     // usato per il calcolo della media voti: qui serve l'intera lista, non paginata
     List<Recensione> findByItinerario_Id(Long itinerarioId);
 
+    /**
+     * Le recensioni scritte da un utente (paginato), per la sezione "Le mie recensioni".
+     *
+     * <p>L'itinerario viene caricato insieme alla riga: l'elenco mostra il titolo del
+     * viaggio recensito, e senza entity graph sarebbe una query in piu' per ogni recensione.
+     */
+    @EntityGraph(attributePaths = {"utente", "itinerario"})
+    Page<Recensione> findByUtente_Id(Long utenteId, Pageable pageable);
+
     // un utente non deve poter recensire la stessa prenotazione due volte
     boolean existsByPrenotazione(Prenotazione prenotazione);
 

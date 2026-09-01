@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -48,6 +49,22 @@ public class RecensioneController {
     })
     public ResponseEntity<RecensioneResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
+    }
+
+    @GetMapping("/mie")
+    @Operation(
+            summary = "Restituisce le recensioni scritte dall'utente autenticato",
+            description = "Elenco paginato delle proprie recensioni, dalla piu' recente. Non accetta un id "
+                    + "utente: si leggono sempre e solo le proprie. Restituisce una pagina vuota se non ne "
+                    + "sono state ancora scritte."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista recensioni restituita con successo"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido")
+    })
+    public ResponseEntity<Page<RecensioneResponse>> leggiMieRecensioni(
+            @PageableDefault(size = 20, sort = "creatoIl", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(service.getMieRecensioni(pageable));
     }
 
     @GetMapping("/itinerario/{itinerarioId}")

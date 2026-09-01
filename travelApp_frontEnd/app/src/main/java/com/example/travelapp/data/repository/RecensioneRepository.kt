@@ -22,6 +22,20 @@ class RecensioneRepository(
             Result.failure(e)
         }
 
+    /** Le recensioni scritte dall'utente loggato, dalla piu' recente (ordine deciso dal backend). */
+    suspend fun getMieRecensioni(): Result<List<Recensione>> =
+        try {
+            val response = api.getMieRecensioni()
+            val corpo = response.body()
+            if (response.isSuccessful && corpo != null) {
+                Result.success(corpo.content.map { it.toDomain() })
+            } else {
+                Result.failure(Exception("Errore recupero recensioni: HTTP ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
     /**
      * La propria recensione su una prenotazione.
      *

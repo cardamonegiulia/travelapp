@@ -68,6 +68,18 @@ public class RecensioneService {
     }
 
 
+    /**
+     * Le recensioni scritte dall'utente del token, dalla piu' recente.
+     *
+     * <p>Nessun id nell'URL: si leggono sempre e solo le proprie, cosi' la sezione
+     * "Le mie recensioni" del profilo non puo' diventare un modo per sfogliare quelle altrui.
+     */
+    public Page<RecensioneResponse> getMieRecensioni(Pageable pageable) {
+        Utente utente = utenteService.getUtenteSessione();
+        return repo.findByUtente_Id(utente.getId(), pageable).map(this::toResponse);
+    }
+
+
     public double getMediaVoti(Long itinerarioId) {
         List<Recensione> recensioni = repo.findByItinerario_Id(itinerarioId);
         return recensioni.stream()
@@ -346,6 +358,7 @@ public class RecensioneService {
 
         if (r.getItinerario() != null) {
             dto.setItinerarioId(r.getItinerario().getId());
+            dto.setItinerarioTitolo(r.getItinerario().getTitolo());
         }
         if (r.getPrenotazione() != null) {
             dto.setPrenotazioneId(r.getPrenotazione().getId());

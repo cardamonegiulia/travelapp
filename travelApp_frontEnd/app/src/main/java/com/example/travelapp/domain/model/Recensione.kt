@@ -10,6 +10,8 @@ data class Recensione(
     val id: Long,
     val prenotazioneId: Long?,
     val itinerarioId: Long?,
+    /** Titolo del viaggio recensito: nullo se il backend non lo manda (recensione orfana). */
+    val titoloItinerario: String? = null,
     val autoreId: Long?,
     val votazione: Int,
     val commento: String?,
