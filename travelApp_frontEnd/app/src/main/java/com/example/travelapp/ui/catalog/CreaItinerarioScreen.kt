@@ -78,19 +78,22 @@ fun CreaItinerarioScreen(
     }
 
     val durataIniziale = (itinerarioDaModificare?.durataGiorni ?: 7).coerceAtLeast(1)
-    val inizioIniziale = remember {
-        dataIsoInMillis(itinerarioDaModificare?.dataInizio) ?: (oggiMillis + 7L * GIORNO_MILLIS)
-    }
-    val fineIniziale = remember {
-        dataIsoInMillis(itinerarioDaModificare?.dataFine)
-            ?: (inizioIniziale + (durataIniziale - 1) * GIORNO_MILLIS)
-    }
 
-    val limiteIniziale = remember { dataIsoInMillis(itinerarioDaModificare?.dataLimitePrenotazione) }
+    /*
+     * In modifica le date NON sono quelle gia' pubblicate: una partenza venduta non si
+     * sposta. I campi descrivono sempre una partenza nuova, quindi partono da una data
+     * futura anche quando l'itinerario ne ha gia' altre.
+     */
+    val inizioIniziale = remember { oggiMillis + 7L * GIORNO_MILLIS }
+    val fineIniziale = remember { inizioIniziale + (durataIniziale - 1) * GIORNO_MILLIS }
 
     var dataInizioMillis by remember { mutableStateOf(inizioIniziale) }
     var dataFineMillis by remember { mutableStateOf(fineIniziale) }
-    var dataLimiteMillis by remember { mutableStateOf(limiteIniziale) }
+    var dataLimiteMillis by remember { mutableStateOf<Long?>(null) }
+
+    // Creando un itinerario la prima partenza e' obbligatoria; modificandolo aggiungerne
+    // una e' una scelta, e di norma si sta cambiando altro (prezzo, foto, descrizione).
+    var aggiungiPartenza by remember { mutableStateOf(!isModifica) }
 
     var mostraDatePickerInizio by remember { mutableStateOf(false) }
     var mostraDatePickerFine by remember { mutableStateOf(false) }
@@ -122,7 +125,10 @@ fun CreaItinerarioScreen(
     val partecipantiNumerici = maxPartecipantiInput.toIntOrNull()
     val isPartecipantiValidi = partecipantiNumerici != null && partecipantiNumerici > 0
 
-    val isFormValido = titolo.isNotBlank() && destinazione.isNotBlank() && isPrezzoValido && isPeriodoValido && isLimiteValido && isPartecipantiValidi
+    val isPeriodoRichiestoValido = !aggiungiPartenza || (isPeriodoValido && isLimiteValido)
+
+    val isFormValido = titolo.isNotBlank() && destinazione.isNotBlank() && isPrezzoValido &&
+            isPeriodoRichiestoValido && isPartecipantiValidi
 
     if (mostraDatePickerInizio) {
         val datePickerState = rememberDatePickerState(
@@ -377,82 +383,112 @@ fun CreaItinerarioScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedTextField(
-                    value = displayDateFormat.format(Date(dataInizioMillis)),
-                    onValueChange = {},
-                    readOnly = true,
-                    isError = !isInizioValido,
-                    label = { Text("DATA INIZIO") },
-                    trailingIcon = {
-                        IconButton(onClick = { mostraDatePickerInizio = true }) {
-                            Icon(Icons.Default.DateRange, contentDescription = "Scegli data inizio", tint = TravelBlue)
-                        }
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { mostraDatePickerInizio = true }
-                )
+            if (isModifica) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Aggiungi una nuova partenza",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = TravelTextDark
+                        )
+                        Text(
+                            text = "Le partenze gia' pubblicate non si modificano: chi ha " +
+                                    "prenotato conta su quelle date. Puoi eliminarle dalla " +
+                                    "schermata delle partenze dell'itinerario.",
+                            color = TravelTextMuted,
+                            fontSize = 13.sp
+                        )
+                    }
 
-                OutlinedTextField(
-                    value = displayDateFormat.format(Date(dataFineMillis)),
-                    onValueChange = {},
-                    readOnly = true,
-                    isError = !isPeriodoValido,
-                    label = { Text("DATA FINE") },
-                    trailingIcon = {
-                        IconButton(onClick = { mostraDatePickerFine = true }) {
-                            Icon(Icons.Default.DateRange, contentDescription = "Scegli data fine", tint = TravelBlue)
-                        }
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { mostraDatePickerFine = true }
-                )
+                    Switch(
+                        checked = aggiungiPartenza,
+                        onCheckedChange = { aggiungiPartenza = it }
+                    )
+                }
             }
 
-            Text(
-                text = when {
-                    !isInizioValido -> "La data di inizio non puo' essere nel passato"
-                    !isPeriodoValido -> "La data di fine non puo' precedere quella di inizio"
-                    else -> "Durata: $durataCalcolata giorni"
-                },
-                color = if (isPeriodoValido) TravelTextMuted else MaterialTheme.colorScheme.error,
-                fontSize = 13.sp
-            )
-
-            OutlinedTextField(
-                value = dataLimiteMillis?.let { displayDateFormat.format(Date(it)) }
-                    ?: "Nessun limite: si prenota fino alla partenza",
-                onValueChange = {},
-                readOnly = true,
-                isError = !isLimiteValido,
-                label = { Text("PRENOTAZIONI ENTRO IL") },
-                supportingText = {
-                    Text(
-                        if (isLimiteValido) "Facoltativo: dopo questa data l'itinerario non e' piu' prenotabile"
-                        else "Il termine deve cadere fra oggi e la data di inizio"
+            if (aggiungiPartenza) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedTextField(
+                        value = displayDateFormat.format(Date(dataInizioMillis)),
+                        onValueChange = {},
+                        readOnly = true,
+                        isError = !isInizioValido,
+                        label = { Text("DATA INIZIO") },
+                        trailingIcon = {
+                            IconButton(onClick = { mostraDatePickerInizio = true }) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Scegli data inizio", tint = TravelBlue)
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { mostraDatePickerInizio = true }
                     )
-                },
-                trailingIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (dataLimiteMillis != null) {
-                            IconButton(onClick = { dataLimiteMillis = null }) {
-                                Icon(Icons.Default.Close, contentDescription = "Rimuovi il termine", tint = TravelTextMuted)
+
+                    OutlinedTextField(
+                        value = displayDateFormat.format(Date(dataFineMillis)),
+                        onValueChange = {},
+                        readOnly = true,
+                        isError = !isPeriodoValido,
+                        label = { Text("DATA FINE") },
+                        trailingIcon = {
+                            IconButton(onClick = { mostraDatePickerFine = true }) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Scegli data fine", tint = TravelBlue)
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { mostraDatePickerFine = true }
+                    )
+                }
+
+                Text(
+                    text = when {
+                        !isInizioValido -> "La data di inizio non puo' essere nel passato"
+                        !isPeriodoValido -> "La data di fine non puo' precedere quella di inizio"
+                        else -> "Durata: $durataCalcolata giorni"
+                    },
+                    color = if (isPeriodoValido) TravelTextMuted else MaterialTheme.colorScheme.error,
+                    fontSize = 13.sp
+                )
+
+                OutlinedTextField(
+                    value = dataLimiteMillis?.let { displayDateFormat.format(Date(it)) }
+                        ?: "Nessun limite: si prenota fino alla partenza",
+                    onValueChange = {},
+                    readOnly = true,
+                    isError = !isLimiteValido,
+                    label = { Text("PRENOTAZIONI ENTRO IL") },
+                    supportingText = {
+                        Text(
+                            if (isLimiteValido) "Facoltativo: dopo questa data l'itinerario non e' piu' prenotabile"
+                            else "Il termine deve cadere fra oggi e la data di inizio"
+                        )
+                    },
+                    trailingIcon = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (dataLimiteMillis != null) {
+                                IconButton(onClick = { dataLimiteMillis = null }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Rimuovi il termine", tint = TravelTextMuted)
+                                }
+                            }
+                            IconButton(onClick = { mostraDatePickerLimite = true }) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Scegli il termine", tint = TravelBlue)
                             }
                         }
-                        IconButton(onClick = { mostraDatePickerLimite = true }) {
-                            Icon(Icons.Default.DateRange, contentDescription = "Scegli il termine", tint = TravelBlue)
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { mostraDatePickerLimite = true }
-            )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { mostraDatePickerLimite = true }
+                )
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -513,9 +549,17 @@ fun CreaItinerarioScreen(
                                 descrizione = descrizione,
                                 destinazionePrincipale = destinazione,
                                 prezzoBase = BigDecimal(prezzoNumerico!!),
-                                dataInizio = isoDateFormat.format(Date(dataInizioMillis)),
-                                dataFine = isoDateFormat.format(Date(dataFineMillis)),
-                                dataLimitePrenotazione = dataLimiteMillis?.let { isoDateFormat.format(Date(it)) },
+                                // Senza una nuova partenza non si inviano date: il server
+                                // le interpreterebbe come una partenza in piu'. La durata
+                                // va comunque mandata, perche' deve restare determinabile.
+                                dataInizio = if (aggiungiPartenza) isoDateFormat.format(Date(dataInizioMillis)) else null,
+                                dataFine = if (aggiungiPartenza) isoDateFormat.format(Date(dataFineMillis)) else null,
+                                dataLimitePrenotazione = if (aggiungiPartenza) {
+                                    dataLimiteMillis?.let { isoDateFormat.format(Date(it)) }
+                                } else {
+                                    null
+                                },
+                                durataGiorni = if (aggiungiPartenza) null else durataIniziale,
                                 maxPartecipanti = partecipantiNumerici!!
                             ),
                             immaginiUri = immaginiUri

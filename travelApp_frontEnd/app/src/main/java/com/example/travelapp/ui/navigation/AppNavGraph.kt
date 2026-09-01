@@ -692,6 +692,32 @@ fun AppNavGraph(
 
                         partenzeViewModel
                             .ricaricaPartenze()
+                    },
+
+                    onEliminaPartenza = { partenza ->
+
+                        partenzeViewModel
+                            .chiediConfermaEliminazione(
+                                partenza
+                            )
+                    },
+
+                    onConfermaEliminazione = {
+
+                        partenzeViewModel
+                            .confermaEliminazione()
+                    },
+
+                    onAnnullaEliminazione = {
+
+                        partenzeViewModel
+                            .annullaEliminazione()
+                    },
+
+                    onMessaggioMostrato = {
+
+                        partenzeViewModel
+                            .messaggioMostrato()
                     }
                 )
             }

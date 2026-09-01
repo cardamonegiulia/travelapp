@@ -188,7 +188,8 @@ public class GlobalExceptionHandler {
     // 409 - Stato prenotazione/pagamento non valido
     @ExceptionHandler({
             StatoPrenotazioneNonValidoException.class,
-            StatoPagamentoNonValidoException.class
+            StatoPagamentoNonValidoException.class,
+            PartenzaConPrenotazioniException.class
     })
     public ResponseEntity<ProblemDetail> handleStatoNonValido(
             RuntimeException ex,

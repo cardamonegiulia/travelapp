@@ -173,18 +173,12 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         assertThat(disponibilitaRepository.findByItinerario_Id(idItinerario)).isEmpty();
     }
 
+    // Una partenza pubblicata non si sposta: chi ha prenotato si e' impegnato su quelle
+    // date. Il periodo inviato con la modifica e' quindi una partenza in piu'.
     @Test
-    void laModificaSpostaIlPeriodoSenzaAzzerareIPostiGiaPrenotati() throws Exception {
+    void laModificaAggiungeUnaPartenzaSenzaToccareQuellaGiaPubblicata() throws Exception {
         LocalDate inizio = LocalDate.now().plusDays(10);
-        MvcResult creazione = mockMvc.perform(post("/api/itinerari")
-                        .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload(inizio.toString(), inizio.plusDays(4).toString())))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        long idItinerario = objectMapper.readTree(creazione.getResponse().getContentAsString())
-                .get("id").asLong();
+        long idItinerario = creaItinerarioConPeriodo(inizio, inizio.plusDays(4), null);
 
         // simuliamo delle prenotazioni gia' incassate sulla disponibilita' creata
         DisponibilitaItinerario periodo = disponibilitaRepository.findByItinerario_Id(idItinerario).get(0);
@@ -199,19 +193,44 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload(nuovoInizio.toString(), nuovaFine.toString())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.durataGiorni").value(3))
-                .andExpect(jsonPath("$.dataInizio").value(nuovoInizio.toString()));
+                // in bacheca resta la partenza piu' vicina, che e' ancora quella originale
+                .andExpect(jsonPath("$.dataInizio").value(inizio.toString()));
 
         assertThat(disponibilitaRepository.findByItinerario_Id(idItinerario))
-                .as("la modifica deve spostare la disponibilita' esistente, non aggiungerne una")
-                .singleElement()
-                .satisfies(aggiornata -> {
-                    assertThat(aggiornata.getDataInizio().toLocalDate()).isEqualTo(nuovoInizio);
-                    assertThat(aggiornata.getDataFine().toLocalDate()).isEqualTo(nuovaFine);
-                    assertThat(aggiornata.getPostiDisponibili())
-                            .as("i posti seguono le prenotazioni, non il massimo dell'itinerario")
-                            .isEqualTo(6);
+                .as("la partenza gia' pubblicata resta, quella nuova si aggiunge")
+                .hasSize(2);
+
+        DisponibilitaItinerario originale = disponibilitaRepository.findByItinerario_Id(idItinerario).stream()
+                .filter(d -> d.getDataInizio().toLocalDate().equals(inizio))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(originale.getDataFine().toLocalDate()).isEqualTo(inizio.plusDays(4));
+        assertThat(originale.getPostiDisponibili())
+                .as("i posti della partenza gia' venduta non vengono ricalcolati")
+                .isEqualTo(6);
+
+        assertThat(disponibilitaRepository.findByItinerario_Id(idItinerario))
+                .anySatisfy(nuova -> {
+                    assertThat(nuova.getDataInizio().toLocalDate()).isEqualTo(nuovoInizio);
+                    assertThat(nuova.getDataFine().toLocalDate()).isEqualTo(nuovaFine);
                 });
+    }
+
+    // Rimandare lo stesso periodo (il caso di chi salva il form senza toccare le date) non
+    // deve lasciare una partenza doppia.
+    @Test
+    void unPeriodoUgualeAUnoGiaPresenteNonCreaUnDoppione() throws Exception {
+        LocalDate inizio = LocalDate.now().plusDays(10);
+        long idItinerario = creaItinerarioConPeriodo(inizio, inizio.plusDays(4), null);
+
+        mockMvc.perform(put("/api/itinerari/" + idItinerario)
+                        .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload(inizio.toString(), inizio.plusDays(4).toString())))
+                .andExpect(status().isOk());
+
+        assertThat(disponibilitaRepository.findByItinerario_Id(idItinerario)).hasSize(1);
     }
 
     @Test
@@ -301,24 +320,27 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         assertThat(itinerarioRepository.findAll()).isEmpty();
     }
 
+    // Anche il termine per prenotare fa parte di una partenza pubblicata: rimandare lo
+    // stesso periodo senza termine non lo cancella. Per cambiarlo si elimina la partenza e
+    // se ne aggiunge un'altra.
     @Test
-    void laModificaSenzaTermineLoRimuove() throws Exception {
+    void ilTermineDiUnaPartenzaGiaPubblicataNonCambia() throws Exception {
         LocalDate inizio = LocalDate.now().plusDays(30);
-        long idItinerario = creaItinerarioConPeriodo(inizio, inizio.plusDays(3), inizio.minusDays(5));
+        LocalDate limite = inizio.minusDays(5);
+        long idItinerario = creaItinerarioConPeriodo(inizio, inizio.plusDays(3), limite);
 
         mockMvc.perform(put("/api/itinerari/" + idItinerario)
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload(inizio.toString(), inizio.plusDays(3).toString())))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.dataLimitePrenotazione").doesNotExist());
+                .andExpect(status().isOk());
 
         assertThat(disponibilitaRepository.findByItinerario_Id(idItinerario))
                 .singleElement()
                 .satisfies(periodo ->
-                        assertThat(periodo.getDataLimitePrenotazione())
-                                .as("togliere il termine deve riaprire le prenotazioni fino alla partenza")
-                                .isNull());
+                        assertThat(periodo.getDataLimitePrenotazione().toLocalDate())
+                                .as("il termine gia' comunicato ai viaggiatori resta quello")
+                                .isEqualTo(limite));
     }
 
     @Test

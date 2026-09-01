@@ -2,6 +2,7 @@ package com.unical.travelapp.backend.booking.service;
 
 import com.unical.travelapp.backend.booking.dto.PartenzaOrganizzatoreDto;
 import com.unical.travelapp.backend.booking.entity.StatoPrenotazione;
+import com.unical.travelapp.backend.booking.exception.PartenzaConPrenotazioniException;
 import com.unical.travelapp.backend.booking.repositories.ExtraPrenotazioneRepository;
 import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
 import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
@@ -165,6 +166,52 @@ class PartenzeOrganizzatoreTest {
         Pageable pageable = PageRequest.of(0, 50);
         assertThatThrownBy(() -> service().getPrenotazioniPerPartenza(99L, pageable))
                 .isInstanceOf(ItinerarioNonTrovatoException.class);
+    }
+
+    @Test
+    void unaPartenzaSenzaPrenotazioniPuoEssereEliminata() {
+        proprietarioDellItinerario();
+
+        DisponibilitaItinerario partenza = disponibilita(99L, LocalDateTime.now(), LocalDateTime.now());
+        when(disponibilitaItinerarioRepository.findById(99L)).thenReturn(Optional.of(partenza));
+        when(prenotazioneRepo.existsByDisponibilitaItinerario_Id(99L)).thenReturn(false);
+
+        service().eliminaPartenza(99L);
+
+        org.mockito.Mockito.verify(disponibilitaItinerarioRepository).delete(partenza);
+    }
+
+    // Vale anche per una prenotazione cancellata: resta nello storico del viaggiatore e
+    // continua a puntare a questa partenza.
+    @Test
+    void unaPartenzaGiaPrenotataNonSiElimina() {
+        proprietarioDellItinerario();
+
+        when(disponibilitaItinerarioRepository.findById(99L))
+                .thenReturn(Optional.of(disponibilita(99L, LocalDateTime.now(), LocalDateTime.now())));
+        when(prenotazioneRepo.existsByDisponibilitaItinerario_Id(99L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service().eliminaPartenza(99L))
+                .isInstanceOf(PartenzaConPrenotazioniException.class);
+
+        org.mockito.Mockito.verify(disponibilitaItinerarioRepository, org.mockito.Mockito.never())
+                .delete(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void unOrganizzatoreNonEliminaLaPartenzaDiUnItinerarioAltrui() {
+        when(utenteService.isAdmin()).thenReturn(false);
+        when(utenteService.getUtenteSessione()).thenReturn(utente(2L));
+        when(disponibilitaItinerarioRepository.findById(99L))
+                .thenReturn(Optional.of(disponibilita(99L, LocalDateTime.now(), LocalDateTime.now())));
+        when(itinerarioRepository.findByIdAndOrganizzatore_Id(ITINERARIO_ID, 2L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service().eliminaPartenza(99L))
+                .isInstanceOf(ItinerarioNonTrovatoException.class);
+
+        org.mockito.Mockito.verify(disponibilitaItinerarioRepository, org.mockito.Mockito.never())
+                .delete(org.mockito.ArgumentMatchers.any());
     }
 
     @Test

@@ -190,6 +190,27 @@ public class PrenotazioneController {
                 prenotazioneService.getPrenotazioniPerPartenza(disponibilitaId, pageable)));
     }
 
+    @DeleteMapping("/organizzatore/partenze/{disponibilitaId}")
+    @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
+    @Operation(
+            summary = "Elimina una partenza del proprio itinerario",
+            description = "Riservato all'organizzatore dell'itinerario a cui la partenza appartiene "
+                    + "(un ADMIN puo' eliminare qualsiasi partenza). Una partenza gia' prenotata non "
+                    + "si elimina: vanno prima annullate le prenotazioni."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Partenza eliminata"),
+            @ApiResponse(responseCode = "401", description = "Token JWT mancante o non valido"),
+            @ApiResponse(responseCode = "403", description = "Permessi insufficienti"),
+            @ApiResponse(responseCode = "404", description = "Partenza inesistente o di un altro organizzatore"),
+            @ApiResponse(responseCode = "409", description = "La partenza ha delle prenotazioni")
+    })
+    public ResponseEntity<Void> eliminaPartenza(@PathVariable Long disponibilitaId) {
+        prenotazioneService.eliminaPartenza(disponibilitaId);
+        auditLogger.success("PARTENZA_ELIMINATA", "DisponibilitaItinerario", String.valueOf(disponibilitaId));
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/saldo/totale")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Ottiene il saldo globale totale della piattaforma")

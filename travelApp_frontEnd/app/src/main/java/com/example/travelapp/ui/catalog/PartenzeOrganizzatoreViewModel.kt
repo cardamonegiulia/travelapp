@@ -20,7 +20,14 @@ data class PartenzeUiState(
     val titoloItinerario: String = "",
     val partenze: List<PartenzaOrganizzatore> = emptyList(),
     val isLoading: Boolean = false,
-    val errore: String? = null
+    val errore: String? = null,
+
+    /** Partenza per cui e' aperta la richiesta di conferma dell'eliminazione. */
+    val partenzaDaEliminare: PartenzaOrganizzatore? = null,
+    val eliminazioneInCorso: Boolean = false,
+
+    /** Esito dell'ultima eliminazione, da mostrare una volta sola. */
+    val messaggio: String? = null
 )
 
 /** Chi ha comprato una singola partenza. */
@@ -86,6 +93,62 @@ class PartenzeOrganizzatoreViewModel(
             }
         }
     }
+
+    /*
+     * Eliminazione di una partenza.
+     *
+     * La conferma passa dallo stato e non da un flag locale della schermata: cosi' la
+     * richiesta resta aperta anche se la lista si ricompone.
+     */
+
+    fun chiediConfermaEliminazione(partenza: PartenzaOrganizzatore) {
+        _partenze.update { it.copy(partenzaDaEliminare = partenza) }
+    }
+
+    fun annullaEliminazione() {
+        _partenze.update { it.copy(partenzaDaEliminare = null) }
+    }
+
+    fun confermaEliminazione() {
+        val partenza = _partenze.value.partenzaDaEliminare ?: return
+
+        _partenze.update {
+            it.copy(
+                partenzaDaEliminare = null,
+                eliminazioneInCorso = true
+            )
+        }
+
+        viewModelScope.launch {
+            val esito = repository.eliminaPartenza(partenza.disponibilitaId)
+
+            if (esito.isSuccess) {
+                // Tolta dalla lista senza rileggerla dalla rete: e' l'unica cosa cambiata.
+                _partenze.update { stato ->
+                    stato.copy(
+                        partenze = stato.partenze.filterNot {
+                            it.disponibilitaId == partenza.disponibilitaId
+                        },
+                        eliminazioneInCorso = false,
+                        messaggio = "Partenza eliminata"
+                    )
+                }
+            } else {
+                _partenze.update {
+                    it.copy(
+                        eliminazioneInCorso = false,
+                        messaggio = esito.exceptionOrNull()?.message
+                            ?: "Impossibile eliminare la partenza"
+                    )
+                }
+            }
+        }
+    }
+
+    fun messaggioMostrato() {
+        _partenze.update { it.copy(messaggio = null) }
+    }
+
 
     /** Ricarica l'itinerario gia' aperto: serve al pulsante "Riprova". */
     fun ricaricaPartenze() {

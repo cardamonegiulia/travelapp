@@ -22,8 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -110,15 +110,19 @@ public class ItinerarioService {
         esistente.setDurataGiorni(datiAggiornati.getDurataGiorni());
         esistente.setMaxPartecipanti(datiAggiornati.getMaxPartecipanti());
 
-        aggiornaPeriodo(esistente, datiAggiornati.getDisponibilita());
+        aggiungiPartenza(esistente, datiAggiornati.getDisponibilita());
 
         return itinerarioRepository.save(esistente);
     }
 
-    // Il periodo arriva dalla richiesta come singola disponibilita': se l'itinerario ne ha gia'
-    // una si spostano solo le date, perche' i posti disponibili seguono le prenotazioni gia'
-    // fatte e sovrascriverli le cancellerebbe di fatto.
-    private void aggiornaPeriodo(Itinerario esistente, List<DisponibilitaItinerario> periodoRichiesto) {
+    // Il periodo che arriva con un aggiornamento e' sempre una partenza in piu': le date
+    // gia' pubblicate non si spostano, perche' chi ha prenotato si e' impegnato su quelle e
+    // spostargliele sotto i piedi sarebbe un altro viaggio. Per togliere una partenza c'e'
+    // l'eliminazione esplicita, che si rifiuta di cancellare quelle gia' vendute.
+    //
+    // Un periodo identico a uno gia' presente non viene aggiunto: cosi' salvare due volte
+    // lo stesso form non lascia doppioni.
+    private void aggiungiPartenza(Itinerario esistente, List<DisponibilitaItinerario> periodoRichiesto) {
         if (periodoRichiesto == null || periodoRichiesto.isEmpty()) {
             return;
         }
@@ -130,21 +134,16 @@ public class ItinerarioService {
         }
         List<DisponibilitaItinerario> attuali = esistente.getDisponibilita();
 
-        if (attuali.isEmpty()) {
-            richiesto.setItinerario(esistente);
-            attuali.add(richiesto);
+        boolean giaPresente = attuali.stream().anyMatch(d ->
+                Objects.equals(d.getDataInizio(), richiesto.getDataInizio())
+                        && Objects.equals(d.getDataFine(), richiesto.getDataFine()));
+
+        if (giaPresente) {
             return;
         }
 
-        DisponibilitaItinerario periodo = attuali.stream()
-                .filter(d -> d.getDataInizio() != null)
-                .min(Comparator.comparing(DisponibilitaItinerario::getDataInizio))
-                .orElse(attuali.get(0));
-
-        periodo.setDataInizio(richiesto.getDataInizio());
-        periodo.setDataFine(richiesto.getDataFine());
-        // il termine assente nella richiesta significa "nessun limite": va azzerato anche qui
-        periodo.setDataLimitePrenotazione(richiesto.getDataLimitePrenotazione());
+        richiesto.setItinerario(esistente);
+        attuali.add(richiesto);
     }
 
     @Transactional

@@ -6,6 +6,7 @@ import com.example.travelapp.data.remote.dto.PartenzaOrganizzatoreDto
 import com.example.travelapp.data.remote.dto.PrenotazioneDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -60,6 +61,15 @@ interface PrenotazioneApi {
     suspend fun getPrenotatiPartenza(
         @Path("disponibilitaId") disponibilitaId: Long
     ): PageDto<PrenotazioneDto>
+
+    /*
+     * Elimina una partenza del proprio itinerario.
+     * Il server rifiuta se la partenza ha gia' delle prenotazioni.
+     */
+    @DELETE("api/prenotazioni/organizzatore/partenze/{disponibilitaId}")
+    suspend fun eliminaPartenza(
+        @Path("disponibilitaId") disponibilitaId: Long
+    ): Response<Unit>
 
     /*
      * Dettaglio di una singola prenotazione.

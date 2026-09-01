@@ -7,6 +7,7 @@ import com.example.travelapp.data.remote.dto.toPrenotatoPartenza
 import com.example.travelapp.domain.model.PartenzaOrganizzatore
 import com.example.travelapp.domain.model.Prenotazione
 import com.example.travelapp.domain.model.PrenotatoPartenza
+import org.json.JSONObject
 import java.math.BigDecimal
 
 /**
@@ -90,6 +91,62 @@ class PrenotazioneRepository(
             .getPrenotatiPartenza(disponibilitaId)
             .content
             .map { it.toPrenotatoPartenza() }
+    }
+
+    /**
+     * Elimina una partenza del proprio itinerario.
+     *
+     * Il rifiuto piu' probabile e' il 409 su una partenza gia' venduta: il motivo lo
+     * spiega il backend, quindi si usa il suo messaggio invece di inventarne uno.
+     */
+    suspend fun eliminaPartenza(
+        disponibilitaId: Long
+    ): Result<Unit> =
+        try {
+            val response = api.eliminaPartenza(disponibilitaId)
+
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(
+                    Exception(
+                        messaggioErroreEliminazione(
+                            response.code(),
+                            response.errorBody()?.string()
+                        )
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    private fun messaggioErroreEliminazione(
+        codice: Int,
+        corpoErrore: String?
+    ): String {
+
+        val dettaglioBackend =
+            runCatching {
+                corpoErrore
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { json ->
+                        JSONObject(json)
+                            .optString("detail")
+                            .takeIf { it.isNotBlank() }
+                    }
+            }.getOrNull()
+
+        if (dettaglioBackend != null) {
+            return dettaglioBackend
+        }
+
+        return when (codice) {
+            403 -> "Non puoi eliminare le partenze di questo itinerario"
+            404 -> "Partenza non trovata"
+            409 -> "La partenza ha gia' delle prenotazioni e non puo' essere eliminata"
+            else -> "Errore durante l'eliminazione della partenza: HTTP $codice"
+        }
     }
 
     /**

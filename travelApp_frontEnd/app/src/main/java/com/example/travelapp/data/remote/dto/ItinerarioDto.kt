@@ -57,11 +57,15 @@ data class ItinerarioRequestDto(
     val descrizione: String?,
     val destinazionePrincipale: String,
     val prezzoBase: BigDecimal,
-    // Il periodo del viaggio (formato ISO yyyy-MM-dd): il server ne ricava la durata in giorni.
-    val dataInizio: String,
-    val dataFine: String,
+    // Periodo di una partenza (ISO yyyy-MM-dd): il server ne ricava la durata in giorni.
+    // In aggiornamento e' il periodo di una partenza NUOVA, non una correzione di quelle
+    // gia' pubblicate; se non se ne aggiunge nessuna resta null e si manda la durata.
+    val dataInizio: String? = null,
+    val dataFine: String? = null,
     // Termine per le prenotazioni: null significa "fino alla partenza".
-    val dataLimitePrenotazione: String?,
+    val dataLimitePrenotazione: String? = null,
+    // Serve quando non si invia un periodo: il server esige di poter determinare la durata.
+    val durataGiorni: Int? = null,
     val maxPartecipanti: Int
 )
 

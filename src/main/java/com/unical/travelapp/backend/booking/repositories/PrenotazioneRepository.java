@@ -96,6 +96,10 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
                                                     @Param("statoEscluso") StatoPrenotazione statoEscluso,
                                                     Pageable pageable);
 
+    // Anche una sola prenotazione cancellata basta a bloccare l'eliminazione della
+    // partenza: resta nello storico del viaggiatore e continua a puntare qui.
+    boolean existsByDisponibilitaItinerario_Id(Long disponibilitaId);
+
     /**
      * Per ogni partenza indicata: id, numero di prenotazioni attive e totale dei
      * partecipanti. Una sola query per l'intera lista, invece di due per riga.

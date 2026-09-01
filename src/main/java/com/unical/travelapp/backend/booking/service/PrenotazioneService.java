@@ -9,6 +9,7 @@ import com.unical.travelapp.backend.booking.repositories.PrenotazioneRepository;
 import com.unical.travelapp.backend.booking.dto.PartenzaOrganizzatoreDto;
 import com.unical.travelapp.backend.catalog.entity.Attivita;
 import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
+import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.catalog.entity.SessioneSingolaAttivita;
 import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
 import com.unical.travelapp.backend.catalog.repository.AttivitaRepository;
@@ -479,6 +480,35 @@ public class PrenotazioneService {
 
         return prenotazioneRepo.findByDisponibilitaItinerario(
                 disponibilitaId, StatoPrenotazione.CANCELLATA, pageable);
+    }
+
+    /**
+     * Elimina una partenza dell'itinerario.
+     *
+     * <p>Si rifiuta se qualcuno l'ha prenotata: annullare il viaggio a chi l'ha comprato non
+     * e' una cancellazione di calendario, e va fatto prima sulle singole prenotazioni. Anche
+     * una prenotazione gia' cancellata blocca l'operazione, perche' resta nello storico del
+     * viaggiatore e continua a riferirsi a questa partenza.
+     */
+    @Transactional
+    public void eliminaPartenza(Long disponibilitaId) {
+        DisponibilitaItinerario disponibilita = recuperaDisponibilita(disponibilitaId);
+        Itinerario itinerario = disponibilita.getItinerario();
+
+        verificaAccessoItinerario(itinerario != null ? itinerario.getId() : null);
+
+        if (prenotazioneRepo.existsByDisponibilitaItinerario_Id(disponibilitaId)) {
+            throw new PartenzaConPrenotazioniException(
+                    "Non puoi eliminare una partenza che ha gia' delle prenotazioni");
+        }
+
+        // Tolta anche dalla collezione del padre: e' in cascade, e lasciarcela dentro la
+        // farebbe risalvare al flush subito dopo averla cancellata.
+        if (itinerario != null && itinerario.getDisponibilita() != null) {
+            itinerario.getDisponibilita().remove(disponibilita);
+        }
+
+        disponibilitaItinerarioRepository.delete(disponibilita);
     }
 
     private boolean partenzaConclusa(DisponibilitaItinerario disp, LocalDateTime adesso) {
