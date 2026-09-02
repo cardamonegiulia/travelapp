@@ -49,6 +49,12 @@ public class ItinerarioDTO {
      */
     private boolean dateDisponibili;
 
+    /**
+     * Programma giorno per giorno, ordinato. Sempre presente, eventualmente vuoto per gli
+     * itinerari creati prima che il programma diventasse obbligatorio.
+     */
+    private List<GiornoProgrammaDTO> programma = new ArrayList<>();
+
     // galleria dell'itinerario: la prima immagine e' la copertina.
     // Sempre presente, eventualmente vuota.
     private List<ImmagineResponse> immagini = new ArrayList<>();

@@ -1,9 +1,11 @@
 package com.unical.travelapp.backend.catalog.mapper;
 
 import com.unical.travelapp.backend.catalog.dto.DisponibilitaItinerarioDTO;
+import com.unical.travelapp.backend.catalog.dto.GiornoProgrammaDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioRequestDTO;
 import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
+import com.unical.travelapp.backend.catalog.entity.GiornoProgramma;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.experience.mapper.ImmagineMapper;
 import com.unical.travelapp.backend.experience.models.DTO.ValutazioneMediaDTO;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 public class ItinerarioMapper {
@@ -82,6 +85,20 @@ public class ItinerarioMapper {
                         ? durataDalPeriodo
                         : dto.getDurataGiorni()
         );
+
+        itinerario.setProgramma(
+                giorniDaRequest(
+                        dto.getProgramma()
+                )
+        );
+
+        itinerario
+                .getProgramma()
+                .forEach(giorno ->
+                        giorno.setItinerario(
+                                itinerario
+                        )
+                );
 
         /*
          * Se è stato indicato un periodo,
@@ -198,6 +215,12 @@ public class ItinerarioMapper {
         dto.setImmagini(
                 immagineMapper.toResponse(
                         itinerario.getImmagini()
+                )
+        );
+
+        dto.setProgramma(
+                giorniDaEntity(
+                        itinerario.getProgramma()
                 )
         );
 
@@ -341,6 +364,85 @@ public class ItinerarioMapper {
      * SUPPORTO
      * ============================================================
      */
+
+    /**
+     * Il numero della giornata lo assegna il server dalla posizione: quello eventualmente
+     * inviato dal client viene ignorato, cosi' l'elenco resta sempre 1, 2, 3... senza buchi
+     * ne' duplicati.
+     */
+    private List<GiornoProgramma> giorniDaRequest(
+            List<GiornoProgrammaDTO> giorni
+    ) {
+
+        List<GiornoProgramma> risultato =
+                new ArrayList<>();
+
+        if (giorni == null) {
+            return risultato;
+        }
+
+        int numero = 1;
+
+        for (GiornoProgrammaDTO richiesto : giorni) {
+
+            if (richiesto == null) {
+                continue;
+            }
+
+            GiornoProgramma giorno =
+                    new GiornoProgramma();
+
+            giorno.setGiorno(numero++);
+
+            giorno.setTitolo(
+                    richiesto.getTitolo()
+            );
+
+            giorno.setDescrizione(
+                    richiesto.getDescrizione()
+            );
+
+            risultato.add(giorno);
+        }
+
+        return risultato;
+    }
+
+    private List<GiornoProgrammaDTO> giorniDaEntity(
+            List<GiornoProgramma> giorni
+    ) {
+
+        if (giorni == null) {
+            return new ArrayList<>();
+        }
+
+        return giorni
+                .stream()
+                .map(giorno -> {
+
+                    GiornoProgrammaDTO dto =
+                            new GiornoProgrammaDTO();
+
+                    dto.setGiorno(
+                            giorno.getGiorno()
+                    );
+
+                    dto.setTitolo(
+                            giorno.getTitolo()
+                    );
+
+                    dto.setDescrizione(
+                            giorno.getDescrizione()
+                    );
+
+                    return dto;
+                })
+                .collect(
+                        Collectors.toCollection(
+                                ArrayList::new
+                        )
+                );
+    }
 
     private Optional<DisponibilitaItinerario> primaDisponibilita(
             Itinerario itinerario

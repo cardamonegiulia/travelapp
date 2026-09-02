@@ -1,6 +1,7 @@
 package com.example.travelapp.data.remote.dto
 
 import com.example.travelapp.data.remote.ApiClient
+import com.example.travelapp.domain.model.GiornoProgramma
 import com.example.travelapp.domain.model.ImmagineResponse
 import com.example.travelapp.domain.model.Itinerario
 import java.math.BigDecimal
@@ -24,6 +25,9 @@ data class ItinerarioResponseDto(
     // false quando non resta nessuna partenza prenotabile: l'itinerario resta comunque
     // in bacheca, con un'etichetta che lo dice.
     val dateDisponibili: Boolean = false,
+    // Programma giorno per giorno. Assente sugli itinerari creati prima che diventasse
+    // obbligatorio: la scheda in quel caso lo dice, invece di mostrare una sezione vuota.
+    val programma: List<GiornoProgrammaDto>? = null,
     val immagini: List<ImmagineDto>? = null
 ) {
     fun toDomain(): Itinerario = Itinerario(
@@ -42,6 +46,16 @@ data class ItinerarioResponseDto(
         mediaVoti = mediaVoti,
         numeroRecensioni = numeroRecensioni,
         dateDisponibili = dateDisponibili,
+        programma = programma
+            ?.mapIndexed { indice, giorno ->
+                GiornoProgramma(
+                    // Il progressivo lo assegna il server; se manca vale la posizione.
+                    giorno = giorno.giorno ?: (indice + 1),
+                    titolo = giorno.titolo,
+                    descrizione = giorno.descrizione
+                )
+            }
+            ?: emptyList(),
         immagini = immagini?.map { img ->
             ImmagineResponse(
                 id = img.id,
@@ -51,6 +65,16 @@ data class ItinerarioResponseDto(
         } ?: emptyList()
     )
 }
+
+/**
+ * Una giornata del programma. Serve sia in risposta sia in richiesta: in richiesta il
+ * campo [giorno] resta null, perche' la numerazione la assegna il server dalla posizione.
+ */
+data class GiornoProgrammaDto(
+    val giorno: Int? = null,
+    val titolo: String,
+    val descrizione: String
+)
 
 data class ItinerarioRequestDto(
     val titolo: String,
@@ -66,7 +90,9 @@ data class ItinerarioRequestDto(
     val dataLimitePrenotazione: String? = null,
     // Serve quando non si invia un periodo: il server esige di poter determinare la durata.
     val durataGiorni: Int? = null,
-    val maxPartecipanti: Int
+    val maxPartecipanti: Int,
+    // Obbligatorio come il titolo o il prezzo: almeno una giornata, in ordine.
+    val programma: List<GiornoProgrammaDto>
 )
 
 data class PageResponse<T>(

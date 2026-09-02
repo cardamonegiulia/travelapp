@@ -177,7 +177,7 @@ class RedazioneSegretiNeiLogSecurityTest extends SecurityIntegrationTestBase {
                                     TestJwt.ISSUER, List.of(TestJwt.CLIENT_ID), SUB_ORGANIZZATORE,
                                     Map.of("realm_access", Map.of("roles", List.of("ORGANIZZATORE")))))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"titolo\":\"Con token\",\"destinazionePrincipale\":\"D\","
+                            .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Con token\",\"destinazionePrincipale\":\"D\","
                                     + "\"prezzoBase\":10.0,\"durataGiorni\":1,\"maxPartecipanti\":2}"))
                     .andReturn();
 

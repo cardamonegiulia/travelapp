@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,7 +45,7 @@ import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.ListaPreferiti
 import com.example.travelapp.domain.model.Recensione
 import com.example.travelapp.domain.model.SingolaAttivita
-import com.example.travelapp.ui.components.AuthedAsyncImage
+import com.example.travelapp.ui.components.CaroselloImmagini
 import com.example.travelapp.ui.components.StelleValutazione
 import com.example.travelapp.ui.theme.ErrorRed
 import com.example.travelapp.ui.theme.FavoriteRed
@@ -68,7 +67,6 @@ fun ItinerarioDetailScreen(
     onPrenota: (DisponibilitaItinerarioResponseDto) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val copertinaUrl = itinerario.immagini.firstOrNull()?.url
 
     LaunchedEffect(itinerario.id) {
         viewModel.caricaDisponibilitaItinerario(itinerario.id)
@@ -181,11 +179,10 @@ fun ItinerarioDetailScreen(
                     .height(260.dp)
             ) {
 
-                AuthedAsyncImage(
-                    url = copertinaUrl,
+                CaroselloImmagini(
+                    immagini = itinerario.immagini,
                     contentDescription = itinerario.titolo,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    modifier = Modifier.fillMaxSize()
                 )
 
                 Row(
@@ -491,28 +488,32 @@ fun ItinerarioDetailScreen(
                     color = TravelTextDark
                 )
 
-                Column(
-                    verticalArrangement =
-                        Arrangement.spacedBy(12.dp)
-                ) {
+                if (itinerario.programma.isEmpty()) {
 
-                    TappaItem(
-                        giorno = "Giorno 1",
-                        titolo = "Arrivo e check-in",
-                        desc = "Accoglienza dei partecipanti e briefing iniziale."
+                    // Capita solo sugli itinerari pubblicati prima che il programma
+                    // diventasse obbligatorio: meglio dirlo che mostrare il nulla.
+                    Text(
+                        text = "L'organizzatore non ha ancora pubblicato il programma di questo itinerario.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TravelTextMuted
                     )
 
-                    TappaItem(
-                        giorno = "Giorno 2",
-                        titolo = "Escursione principale",
-                        desc = "Visita guidata ai punti di maggiore interesse."
-                    )
+                } else {
 
-                    TappaItem(
-                        giorno = "Giorno 3",
-                        titolo = "Rientro e saluti",
-                        desc = "Tempo libero per shopping e ripartenza."
-                    )
+                    Column(
+                        verticalArrangement =
+                            Arrangement.spacedBy(12.dp)
+                    ) {
+
+                        itinerario.programma.forEach { giornata ->
+
+                            TappaItem(
+                                giorno = "Giorno ${giornata.giorno}",
+                                titolo = giornata.titolo,
+                                desc = giornata.descrizione
+                            )
+                        }
+                    }
                 }
 
                 HorizontalDivider(
@@ -537,8 +538,6 @@ fun AttivitaDetailScreen(
 ) {
 
     val uiState by viewModel.uiState.collectAsState()
-    val copertinaUrl =
-        attivita.immagini.firstOrNull()?.url
 
     LaunchedEffect(attivita.id) {
         viewModel.caricaSessioniAttivita(
@@ -631,11 +630,10 @@ fun AttivitaDetailScreen(
                     .height(260.dp)
             ) {
 
-                AuthedAsyncImage(
-                    url = copertinaUrl,
+                CaroselloImmagini(
+                    immagini = attivita.immagini,
                     contentDescription = attivita.titolo,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    modifier = Modifier.fillMaxSize()
                 )
 
                 Row(

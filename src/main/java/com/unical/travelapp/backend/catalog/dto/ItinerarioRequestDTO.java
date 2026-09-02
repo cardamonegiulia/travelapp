@@ -1,10 +1,12 @@
 package com.unical.travelapp.backend.catalog.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -13,6 +15,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 // DTO di request: niente id/organizzatoreId/stato, sono gestiti dal server (mai dal client)
 @Data
@@ -50,6 +53,14 @@ public class ItinerarioRequestDTO {
     @NotNull(message = "Il numero massimo di partecipanti è obbligatorio")
     @Positive(message = "Il numero massimo di partecipanti deve essere positivo")
     private Integer maxPartecipanti;
+
+    // Il programma e' obbligatorio quanto il titolo o il prezzo: e' quello che il
+    // viaggiatore legge per capire cosa compra. Almeno una giornata, con titolo e
+    // descrizione compilati (@Valid fa scendere la validazione dentro ogni elemento).
+    @NotEmpty(message = "Il programma dell'itinerario è obbligatorio: indica almeno una giornata")
+    @Size(max = 60, message = "Il programma non può superare le 60 giornate")
+    @Valid
+    private List<GiornoProgrammaDTO> programma;
 
     // O si inviano entrambe le date del viaggio, o nessuna: una sola non descrive un periodo.
     @JsonIgnore

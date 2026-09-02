@@ -139,7 +139,10 @@ class ItinerarioControllerTest {
                 "destinazionePrincipale": "Amalfi",
                 "durataGiorni": 3,
                 "maxPartecipanti": 15,
-                "prezzoBase": 150.00
+                "prezzoBase": 150.00,
+                "programma": [
+                    { "titolo": "Arrivo", "descrizione": "Accoglienza e briefing iniziale." }
+                ]
             }
             """;
 
@@ -175,7 +178,10 @@ class ItinerarioControllerTest {
                 "destinazionePrincipale": "Costiera Amalfitana",
                 "durataGiorni": 4,
                 "maxPartecipanti": 20,
-                "prezzoBase": 200.00
+                "prezzoBase": 200.00,
+                "programma": [
+                    { "titolo": "Arrivo", "descrizione": "Accoglienza e briefing iniziale." }
+                ]
             }
             """;
 

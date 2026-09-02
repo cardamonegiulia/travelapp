@@ -44,7 +44,7 @@ class JpaAuditingSecurityTest extends SecurityIntegrationTestBase {
     }
 
     private String payloadItinerario(String titolo, String extra) {
-        return "{\"titolo\":\"" + titolo + "\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+        return "{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"" + titolo + "\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                 + "\"durataGiorni\":1,\"maxPartecipanti\":2" + extra + "}";
     }
 

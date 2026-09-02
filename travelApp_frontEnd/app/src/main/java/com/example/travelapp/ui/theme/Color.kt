@@ -36,6 +36,18 @@ val TravelChipBg: Color
             Color(0xFFEBF3F9)
         }
 
+/**
+ * Testo e icone sopra [TravelChipBg]. [TravelBlueDark] e' un blu quasi nero: sul chip
+ * scuro del tema notturno spariva contro lo sfondo.
+ */
+val TravelChipText: Color
+    @Composable get() =
+        if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
+            Color(0xFF8FC7EC)
+        } else {
+            TravelBlueDark
+        }
+
 // ── Semantici ────────────────────────────────────────────────────────────────
 val SuccessGreen = Color(0xFF2E9E5B)
 
@@ -137,6 +149,19 @@ val IconGrey = Color(0xFF6B6A76)
 
 // ── Card viaggio / Preferiti ─────────────────────────────────────────────────
 val OutlineGrey = Color(0xFFE2E0EC)
+
+/**
+ * Sfondo dei riquadri che ospitano un'immagine: copertine mancanti o ancora in
+ * caricamento, caselle di upload. Un grigio chiaro fisso su tema scuro diventava una
+ * striscia bianca in mezzo alla pagina.
+ */
+val ImagePlaceholder: Color
+    @Composable get() =
+        if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
+            Color(0xFF2A2F36)
+        } else {
+            Color(0xFFE2E8F0)
+        }
 
 val CoverPlaceholderStart = Color(0xFFD9E4FF)
 val CoverPlaceholderEnd = Color(0xFFEFE3FF)

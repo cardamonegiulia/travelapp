@@ -72,7 +72,7 @@ class EventiDiAuditSecurityTest extends SecurityIntegrationTestBase {
             mockMvc.perform(post("/api/itinerari")
                             .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"titolo\":\"Audit\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                            .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Audit\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                                     + "\"durataGiorni\":1,\"maxPartecipanti\":2}"))
                     .andExpect(status().isOk());
 
@@ -196,7 +196,7 @@ class EventiDiAuditSecurityTest extends SecurityIntegrationTestBase {
             mockMvc.perform(post("/api/itinerari")
                             .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"titolo\":\"NonDuplicare\",\"destinazionePrincipale\":\"D\","
+                            .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"NonDuplicare\",\"destinazionePrincipale\":\"D\","
                                     + "\"prezzoBase\":10.0,\"durataGiorni\":1,\"maxPartecipanti\":2}"))
                     .andExpect(status().isOk());
 
@@ -215,7 +215,7 @@ class EventiDiAuditSecurityTest extends SecurityIntegrationTestBase {
             mockMvc.perform(post("/api/itinerari")
                     .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"titolo\":\"Riga\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                    .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Riga\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                             + "\"durataGiorni\":1,\"maxPartecipanti\":2}"));
             mockMvc.perform(get("/api/utenti").with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")));
 

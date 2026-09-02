@@ -51,6 +51,14 @@ public class Itinerario extends Auditable {
     @OneToMany(mappedBy = "itinerario", cascade = CascadeType.ALL)
     private List<DisponibilitaItinerario> disponibilita;
 
+    // Programma giorno per giorno, mostrato nella scheda dell'itinerario. E' parte della
+    // descrizione del viaggio, quindi vive e muore con l'itinerario (orphanRemoval): un
+    // aggiornamento riscrive l'elenco e le giornate rimosse spariscono davvero.
+    @OneToMany(mappedBy = "itinerario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("giorno ASC")
+    @BatchSize(size = 30)
+    private List<GiornoProgramma> programma = new ArrayList<>();
+
     @OneToMany(mappedBy = "itinerario", cascade = CascadeType.ALL)
     private List<Recensione> recensioni;
 

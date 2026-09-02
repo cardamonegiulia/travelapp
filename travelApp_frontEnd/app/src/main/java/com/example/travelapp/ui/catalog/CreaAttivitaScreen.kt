@@ -202,7 +202,7 @@ fun CreaAttivitaScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro", tint = TravelTextDark)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = TravelSurface)
             )
         }
     ) { padding ->
@@ -233,7 +233,7 @@ fun CreaAttivitaScreen(
                     modifier = Modifier
                         .size(110.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFE2E8F0))
+                        .background(ImagePlaceholder)
                         .clickable { imagePickerLauncher.launch("image/*") },
                     contentAlignment = Alignment.Center
                 ) {
@@ -369,7 +369,7 @@ fun CreaAttivitaScreen(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(if (isSelezionato) TravelBlue else Color.White)
+                            .background(if (isSelezionato) TravelBlue else TravelSurface)
                             .border(1.dp, if (isSelezionato) TravelBlue else Color.LightGray, CircleShape)
                             .clickable {
                                 giorniSelezionati = if (isSelezionato) {

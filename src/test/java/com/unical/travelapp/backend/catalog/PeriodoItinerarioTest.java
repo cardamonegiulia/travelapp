@@ -37,13 +37,13 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
     }
 
     private String payload(String dataInizio, String dataFine) {
-        return "{\"titolo\":\"Tour della Sila\",\"destinazionePrincipale\":\"Camigliatello\","
+        return "{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Tour della Sila\",\"destinazionePrincipale\":\"Camigliatello\","
                 + "\"prezzoBase\":149.90,\"maxPartecipanti\":15,"
                 + "\"dataInizio\":\"" + dataInizio + "\",\"dataFine\":\"" + dataFine + "\"}";
     }
 
     private String payloadConLimite(String dataInizio, String dataFine, String dataLimite) {
-        return "{\"titolo\":\"Tour della Sila\",\"destinazionePrincipale\":\"Camigliatello\","
+        return "{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Tour della Sila\",\"destinazionePrincipale\":\"Camigliatello\","
                 + "\"prezzoBase\":149.90,\"maxPartecipanti\":15,"
                 + "\"dataInizio\":\"" + dataInizio + "\",\"dataFine\":\"" + dataFine + "\","
                 + "\"dataLimitePrenotazione\":\"" + dataLimite + "\"}";
@@ -103,7 +103,7 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                                 + "\"maxPartecipanti\":2,\"durataGiorni\":99,"
                                 + "\"dataInizio\":\"" + inizio + "\","
                                 + "\"dataFine\":\"" + inizio.plusDays(1) + "\"}"))
@@ -136,7 +136,7 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                                 + "\"maxPartecipanti\":2,\"dataInizio\":\"" + LocalDate.now().plusDays(2) + "\"}"))
                 .andExpect(status().isBadRequest());
 
@@ -148,7 +148,7 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                                 + "\"maxPartecipanti\":2}"))
                 .andExpect(status().isBadRequest());
 
@@ -160,7 +160,7 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         MvcResult creazione = mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                                 + "\"maxPartecipanti\":2,\"durataGiorni\":3}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.durataGiorni").value(3))
@@ -238,7 +238,7 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         MvcResult creazione = mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                                 + "\"maxPartecipanti\":2,\"durataGiorni\":3}"))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -312,7 +312,7 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                                 + "\"maxPartecipanti\":2,\"durataGiorni\":3,"
                                 + "\"dataLimitePrenotazione\":\"" + LocalDate.now().plusDays(2) + "\"}"))
                 .andExpect(status().isBadRequest());

@@ -4,6 +4,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.travelapp.data.remote.dto.GiornoProgrammaDto
 import com.example.travelapp.data.remote.dto.ItinerarioRequestDto
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.ui.theme.*
@@ -106,6 +109,21 @@ fun CreaItinerarioScreen(
     var maxPartecipantiInput by remember { mutableStateOf(itinerarioDaModificare?.maxPartecipanti?.toString() ?: "20") }
     var immaginiUri by remember { mutableStateOf<List<Uri>>(emptyList()) }
 
+    /*
+     * Programma giorno per giorno. In modifica si riparte da quello gia' pubblicato; in
+     * creazione da una giornata vuota, perche' almeno una e' obbligatoria e presentare
+     * l'elenco gia' aperto e' piu' chiaro di un pulsante "aggiungi" isolato.
+     */
+    var programma by remember {
+        mutableStateOf(
+            itinerarioDaModificare
+                ?.programma
+                ?.map { GiornataForm(it.titolo, it.descrizione) }
+                ?.takeIf { it.isNotEmpty() }
+                ?: listOf(GiornataForm())
+        )
+    }
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris: List<Uri> ->
@@ -127,8 +145,12 @@ fun CreaItinerarioScreen(
 
     val isPeriodoRichiestoValido = !aggiungiPartenza || (isPeriodoValido && isLimiteValido)
 
+    // Il programma e' obbligatorio quanto il titolo: almeno una giornata, tutte compilate.
+    val isProgrammaValido = programma.isNotEmpty() &&
+            programma.all { it.titolo.isNotBlank() && it.descrizione.isNotBlank() }
+
     val isFormValido = titolo.isNotBlank() && destinazione.isNotBlank() && isPrezzoValido &&
-            isPeriodoRichiestoValido && isPartecipantiValidi
+            isPeriodoRichiestoValido && isPartecipantiValidi && isProgrammaValido
 
     if (mostraDatePickerInizio) {
         val datePickerState = rememberDatePickerState(
@@ -264,7 +286,7 @@ fun CreaItinerarioScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro", tint = TravelTextDark)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = TravelSurface)
             )
         }
     ) { padding ->
@@ -295,7 +317,7 @@ fun CreaItinerarioScreen(
                     modifier = Modifier
                         .size(110.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFE2E8F0))
+                        .background(ImagePlaceholder)
                         .clickable { imagePickerLauncher.launch("image/*") },
                     contentAlignment = Alignment.Center
                 ) {
@@ -381,6 +403,21 @@ fun CreaItinerarioScreen(
                 placeholder = { Text("Descrivi l'esperienza...") },
                 minLines = 4,
                 modifier = Modifier.fillMaxWidth()
+            )
+
+            SezioneProgramma(
+                programma = programma,
+                onGiornataCambiata = { indice, giornata ->
+                    programma = programma.mapIndexed { i, corrente ->
+                        if (i == indice) giornata else corrente
+                    }
+                },
+                onRimuoviGiornata = { indice ->
+                    programma = programma.filterIndexed { i, _ -> i != indice }
+                },
+                onAggiungiGiornata = {
+                    programma = programma + GiornataForm()
+                }
             )
 
             if (isModifica) {
@@ -526,11 +563,11 @@ fun CreaItinerarioScreen(
                     modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Info, contentDescription = null, tint = TravelBlue, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Info, contentDescription = null, tint = TravelChipText, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(10.dp))
                     Text(
                         text = "Nota: Potrai gestire foto aggiuntive e tappe in qualsiasi momento.",
-                        color = TravelBlueDark,
+                        color = TravelChipText,
                         fontSize = 13.sp
                     )
                 }
@@ -560,7 +597,15 @@ fun CreaItinerarioScreen(
                                     null
                                 },
                                 durataGiorni = if (aggiungiPartenza) null else durataIniziale,
-                                maxPartecipanti = partecipantiNumerici!!
+                                maxPartecipanti = partecipantiNumerici!!,
+                                // Il numero della giornata lo assegna il server dalla
+                                // posizione: qui conta solo l'ordine dell'elenco.
+                                programma = programma.map {
+                                    GiornoProgrammaDto(
+                                        titolo = it.titolo.trim(),
+                                        descrizione = it.descrizione.trim()
+                                    )
+                                }
                             ),
                             immaginiUri = immaginiUri
                         )
@@ -588,6 +633,128 @@ fun CreaItinerarioScreen(
                     }
                 }
             }
+        }
+    }
+}
+/** Una giornata del programma mentre la si sta scrivendo: ancora senza numero, che assegna il server. */
+private data class GiornataForm(
+    val titolo: String = "",
+    val descrizione: String = ""
+)
+
+/**
+ * Editor del programma dell'itinerario: l'elenco delle giornate che il viaggiatore legge
+ * nella scheda prima di prenotare.
+ *
+ * Le giornate sono numerate dalla posizione, quindi eliminandone una le successive si
+ * rinumerano da sole. L'ultima non e' eliminabile: il programma e' obbligatorio.
+ */
+@Composable
+private fun SezioneProgramma(
+    programma: List<GiornataForm>,
+    onGiornataCambiata: (Int, GiornataForm) -> Unit,
+    onRimuoviGiornata: (Int) -> Unit,
+    onAggiungiGiornata: () -> Unit
+) {
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+
+        Text(
+            text = "PROGRAMMA DELL'ITINERARIO",
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            color = TravelTextMuted
+        )
+
+        Text(
+            text = "Racconta cosa si fa giorno per giorno: è quello che il viaggiatore " +
+                    "legge per capire cosa sta prenotando. Serve almeno una giornata.",
+            color = TravelTextMuted,
+            fontSize = 13.sp
+        )
+
+        programma.forEachIndexed { indice, giornata ->
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = TravelSurface,
+                border = BorderStroke(1.dp, TravelBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Text(
+                            text = "Giorno ${indice + 1}",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = TravelTextDark
+                        )
+
+                        // Con una sola giornata il cestino sparisce: toglierla lascerebbe
+                        // l'itinerario senza programma, che non e' uno stato salvabile.
+                        if (programma.size > 1) {
+                            IconButton(onClick = { onRimuoviGiornata(indice) }) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Elimina il giorno ${indice + 1}",
+                                    tint = TravelTextMuted
+                                )
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = giornata.titolo,
+                        onValueChange = { nuovo ->
+                            if (nuovo.length <= 150) {
+                                onGiornataCambiata(indice, giornata.copy(titolo = nuovo))
+                            }
+                        },
+                        label = { Text("TITOLO DELLA GIORNATA") },
+                        placeholder = { Text("Es. Arrivo e check-in") },
+                        isError = giornata.titolo.isBlank(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = giornata.descrizione,
+                        onValueChange = { nuovo ->
+                            if (nuovo.length <= 2000) {
+                                onGiornataCambiata(indice, giornata.copy(descrizione = nuovo))
+                            }
+                        },
+                        label = { Text("COSA SI FA") },
+                        placeholder = { Text("Es. Accoglienza dei partecipanti e briefing iniziale.") },
+                        isError = giornata.descrizione.isBlank(),
+                        minLines = 2,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+
+        OutlinedButton(
+            onClick = onAggiungiGiornata,
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, tint = TravelBlue)
+            Spacer(Modifier.width(8.dp))
+            Text("Aggiungi una giornata", color = TravelBlue, fontWeight = FontWeight.Bold)
         }
     }
 }

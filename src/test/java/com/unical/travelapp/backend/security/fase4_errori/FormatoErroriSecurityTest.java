@@ -76,7 +76,7 @@ class FormatoErroriSecurityTest extends SecurityIntegrationTestBase {
         erroreConforme(post("/api/itinerari")
                 .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"titolo\":\"\"}"), 400);
+                .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"\"}"), 400);
     }
 
     @Test

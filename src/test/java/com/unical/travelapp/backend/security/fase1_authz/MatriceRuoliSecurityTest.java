@@ -61,7 +61,7 @@ class MatriceRuoliSecurityTest extends SecurityIntegrationTestBase {
                 Arguments.of("GET", "/api/itinerari", QUALSIASI_AUTENTICATO, null),
                 Arguments.of("GET", "/api/itinerari/{itinerario}", QUALSIASI_AUTENTICATO, null),
                 Arguments.of("POST", "/api/itinerari", "ORGANIZZATORE,ADMIN",
-                        "{\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                        "{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                                 + "\"durataGiorni\":2,\"maxPartecipanti\":5}"),
                 Arguments.of("DELETE", "/api/itinerari/{itinerario}", "ORGANIZZATORE,ADMIN", null),
                 Arguments.of("GET", "/api/attivita", QUALSIASI_AUTENTICATO, null),
@@ -146,7 +146,7 @@ class MatriceRuoliSecurityTest extends SecurityIntegrationTestBase {
         risultati.add(mockMvc.perform(costruisci("GET", "/api/utenti", null)
                 .with(TestJwt.senzaRuoli(SUB_UTENTE_A))).andReturn());
         risultati.add(mockMvc.perform(costruisci("POST", "/api/itinerari",
-                        "{\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                        "{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                                 + "\"durataGiorni\":2,\"maxPartecipanti\":5}")
                 .with(TestJwt.senzaRuoli(SUB_UTENTE_A))).andReturn());
 

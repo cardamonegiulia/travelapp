@@ -112,12 +112,12 @@ fun OrganizzatoreHomeScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = TravelSurface)
             )
         },
         bottomBar = {
             Surface(
-                color = Color.White,
+                color = TravelSurface,
                 shadowElevation = 8.dp
             ) {
                 Row(
@@ -202,7 +202,7 @@ fun OrganizzatoreHomeScreen(
 
             TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = Color.White,
+                containerColor = TravelSurface,
                 contentColor = TravelBlue
             ) {
                 Tab(
@@ -279,7 +279,7 @@ fun OrganizzatoreHomeScreen(
                                             contentDescription = item.titolo,
                                             modifier = Modifier
                                                 .fillMaxSize()
-                                                .background(Color(0xFFCBD5E1)),
+                                                .background(ImagePlaceholder),
                                             contentScale = ContentScale.Crop
                                         )
 
@@ -422,7 +422,7 @@ fun OrganizzatoreHomeScreen(
                                             contentDescription = item.titolo,
                                             modifier = Modifier
                                                 .fillMaxSize()
-                                                .background(Color(0xFFE2E8F0)),
+                                                .background(ImagePlaceholder),
                                             contentScale = ContentScale.Crop
                                         )
 

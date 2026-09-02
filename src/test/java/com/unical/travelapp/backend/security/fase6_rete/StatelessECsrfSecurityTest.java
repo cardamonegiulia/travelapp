@@ -112,7 +112,7 @@ class StatelessECsrfSecurityTest extends SecurityIntegrationTestBase {
         // senza bearer token non combini nulla
         MvcResult risultato = mockMvc.perform(post("/api/itinerari")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"Da un altro sito\",\"destinazionePrincipale\":\"D\","
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Da un altro sito\",\"destinazionePrincipale\":\"D\","
                                 + "\"prezzoBase\":10.0,\"durataGiorni\":1,\"maxPartecipanti\":2}"))
                 .andReturn();
 

@@ -2,6 +2,7 @@ package com.unical.travelapp.backend.catalog.service;
 
 import com.unical.travelapp.backend.catalog.dto.AttivitaExtraDTO;
 import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
+import com.unical.travelapp.backend.catalog.entity.GiornoProgramma;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.catalog.exception.ItinerarioNonTrovatoException;
 import com.unical.travelapp.backend.catalog.repository.AttivitaRepository;
@@ -88,6 +89,9 @@ public class ItinerarioService {
         if (itinerario.getDisponibilita() != null) {
             itinerario.getDisponibilita().forEach(periodo -> periodo.setItinerario(itinerario));
         }
+        if (itinerario.getProgramma() != null) {
+            itinerario.getProgramma().forEach(giorno -> giorno.setItinerario(itinerario));
+        }
         return itinerarioRepository.save(itinerario);
     }
 
@@ -110,9 +114,31 @@ public class ItinerarioService {
         esistente.setDurataGiorni(datiAggiornati.getDurataGiorni());
         esistente.setMaxPartecipanti(datiAggiornati.getMaxPartecipanti());
 
+        sostituisciProgramma(esistente, datiAggiornati.getProgramma());
         aggiungiPartenza(esistente, datiAggiornati.getDisponibilita());
 
         return itinerarioRepository.save(esistente);
+    }
+
+    // Il programma, a differenza delle partenze, si riscrive per intero a ogni salvataggio:
+    // e' la descrizione del viaggio, non un impegno preso con chi ha gia' prenotato.
+    // La lista esistente viene svuotata invece di essere sostituita, perche' e' orphanRemoval:
+    // solo cosi' Hibernate si accorge delle giornate rimosse e le cancella davvero.
+    private void sostituisciProgramma(Itinerario esistente, List<GiornoProgramma> nuovoProgramma) {
+        if (nuovoProgramma == null) {
+            return;
+        }
+
+        if (esistente.getProgramma() == null) {
+            esistente.setProgramma(new ArrayList<>());
+        }
+
+        esistente.getProgramma().clear();
+
+        for (GiornoProgramma giorno : nuovoProgramma) {
+            giorno.setItinerario(esistente);
+            esistente.getProgramma().add(giorno);
+        }
     }
 
     // Il periodo che arriva con un aggiornamento e' sempre una partenza in piu': le date

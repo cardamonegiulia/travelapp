@@ -30,5 +30,13 @@ data class Itinerario(
      */
     val dateDisponibili: Boolean = false,
 
+    /**
+     * Programma giorno per giorno scritto dall'organizzatore, gia' ordinato.
+     *
+     * Vuoto solo per gli itinerari pubblicati prima che il programma diventasse
+     * obbligatorio: la scheda lo segnala esplicitamente.
+     */
+    val programma: List<GiornoProgramma> = emptyList(),
+
     val immagini: List<ImmagineResponse> = emptyList()
 )

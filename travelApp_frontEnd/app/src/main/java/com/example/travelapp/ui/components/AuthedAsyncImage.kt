@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.ui.theme.CoverPlaceholderIcon
+import com.example.travelapp.ui.theme.ImagePlaceholder
 import com.example.travelapp.ui.theme.TravelBlue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -62,7 +63,7 @@ fun AuthedAsyncImage(
     }
 
     Box(
-        modifier = modifier.background(Color(0xFFE2E8F0)),
+        modifier = modifier.background(ImagePlaceholder),
         contentAlignment = Alignment.Center
     ) {
         if (bitmap != null) {

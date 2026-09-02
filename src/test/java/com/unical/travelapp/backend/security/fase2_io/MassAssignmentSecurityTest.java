@@ -52,7 +52,7 @@ class MassAssignmentSecurityTest extends SecurityIntegrationTestBase {
         MvcResult risultato = mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"Tentativo\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Tentativo\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                                 + "\"durataGiorni\":1,\"maxPartecipanti\":2,\"" + campo + "\":" + valore + "}"))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -159,7 +159,7 @@ class MassAssignmentSecurityTest extends SecurityIntegrationTestBase {
         mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"T\",\"destinazionePrincipale\":\"D\",\"prezzoBase\":10.0,"
                                 + "\"durataGiorni\":1,\"maxPartecipanti\":2,"
                                 + "\"organizzatore\":{\"id\":99,\"ruolo\":\"ADMIN\"}}"))
                 .andExpect(status().isBadRequest());

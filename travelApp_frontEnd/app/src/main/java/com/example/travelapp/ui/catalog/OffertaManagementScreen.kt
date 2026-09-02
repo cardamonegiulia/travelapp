@@ -68,7 +68,7 @@ fun OfferteManagementScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro", tint = TravelTextDark)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = TravelSurface)
             )
         }
     ) { padding ->
@@ -80,7 +80,7 @@ fun OfferteManagementScreen(
         ) {
             TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = Color.White,
+                containerColor = TravelBg,
                 contentColor = TravelBlue
             ) {
                 Tab(
@@ -126,7 +126,7 @@ fun OfferteManagementScreen(
                                         AsyncImage(
                                             model = item.immagini.firstOrNull()?.url,
                                             contentDescription = item.titolo,
-                                            modifier = Modifier.fillMaxSize().background(Color(0xFFCBD5E1)),
+                                            modifier = Modifier.fillMaxSize().background(ImagePlaceholder),
                                             contentScale = ContentScale.Crop
                                         )
 
@@ -193,7 +193,7 @@ fun OfferteManagementScreen(
                                             .fillMaxWidth()
                                             .height(140.dp)
                                     ) {
-                                        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE2E8F0)))
+                                        Box(modifier = Modifier.fillMaxSize().background(ImagePlaceholder))
 
                                         Row(
                                             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),

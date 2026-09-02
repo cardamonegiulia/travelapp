@@ -72,7 +72,7 @@ class ValidazioneInputSecurityTest extends SecurityIntegrationTestBase {
         mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"" + titoloLungo + "\",\"destinazionePrincipale\":\"D\","
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"" + titoloLungo + "\",\"destinazionePrincipale\":\"D\","
                                 + "\"prezzoBase\":10.0,\"durataGiorni\":1,\"maxPartecipanti\":2}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errori.titolo").exists());
@@ -83,7 +83,7 @@ class ValidazioneInputSecurityTest extends SecurityIntegrationTestBase {
         MvcResult risultato = mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"\",\"prezzoBase\":-1}"))
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"\",\"prezzoBase\":-1}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.type").value("urn:travelapp:problem:validazione-fallita"))
                 .andExpect(jsonPath("$.title").exists())

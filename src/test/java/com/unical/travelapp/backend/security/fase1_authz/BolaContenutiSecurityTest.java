@@ -112,7 +112,7 @@ class BolaContenutiSecurityTest extends SecurityIntegrationTestBase {
         mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE_2, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"Nuovo\",\"destinazionePrincipale\":\"Scilla\","
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Nuovo\",\"destinazionePrincipale\":\"Scilla\","
                                 + "\"prezzoBase\":50.0,\"durataGiorni\":1,\"maxPartecipanti\":8}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.organizzatoreId").value(organizzatore2.getId().intValue()));
@@ -133,7 +133,7 @@ class BolaContenutiSecurityTest extends SecurityIntegrationTestBase {
         mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE_2, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"Furto\",\"destinazionePrincipale\":\"Scilla\","
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Furto\",\"destinazionePrincipale\":\"Scilla\","
                                 + "\"prezzoBase\":50.0,\"durataGiorni\":1,\"maxPartecipanti\":8,"
                                 + "\"organizzatoreId\":" + organizzatore1.getId() + ",\"stato\":\"PUBBLICATO\"}"))
                 .andExpect(status().isBadRequest());

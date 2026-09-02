@@ -86,7 +86,7 @@ class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
         MvcResult creazione = mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"Tour della Sila\",\"descrizione\":\"Tre giorni in montagna\","
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Tour della Sila\",\"descrizione\":\"Tre giorni in montagna\","
                                 + "\"destinazionePrincipale\":\"Camigliatello\",\"prezzoBase\":149.90,"
                                 + "\"durataGiorni\":3,\"maxPartecipanti\":15}"))
                 .andExpect(status().isOk())
@@ -238,7 +238,7 @@ class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
         MvcResult creazione = mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"titolo\":\"Da cancellare\",\"destinazionePrincipale\":\"D\","
+                        .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Da cancellare\",\"destinazionePrincipale\":\"D\","
                                 + "\"prezzoBase\":10.0,\"durataGiorni\":1,\"maxPartecipanti\":2}"))
                 .andExpect(status().isOk())
                 .andReturn();
