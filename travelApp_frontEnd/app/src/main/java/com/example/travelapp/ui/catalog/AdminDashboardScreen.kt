@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
@@ -71,14 +70,6 @@ fun AdminDashboardScreen(
                             Icons.Default.AccountBox,
                             contentDescription = "Profilo",
                             tint = TravelBlue
-                        )
-                    }
-
-                    IconButton(onClick = onLogout) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "Logout",
-                            tint = Color(0xFFDC2626)
                         )
                     }
                 },

@@ -39,6 +39,10 @@ fun OfferteManagementScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
 
+    LaunchedEffect(isAdmin) {
+        viewModel.caricaOfferte(soloMie = !isAdmin)
+    }
+
     LaunchedEffect(uiState.feedbackMessage) {
         uiState.feedbackMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
