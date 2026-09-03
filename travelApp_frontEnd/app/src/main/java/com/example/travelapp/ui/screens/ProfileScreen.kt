@@ -10,11 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -159,52 +157,11 @@ fun ProfileScreen(
 
             /*
              * ============================================================
-             * ADMIN
+             * ATTIVITÀ VIAGGIATORE (Mostrate solo se NON è Organizzatore e NON è Admin)
              * ============================================================
              */
 
-            if (isAdmin) {
-
-                SectionTitle(
-                    text = "Pannello Amministrazione",
-                    modifier =
-                        Modifier.padding(top = 14.dp)
-                )
-
-                ProfileMenuRow(
-                    icon =
-                        Icons.AutoMirrored.Filled.List,
-                    title =
-                        "Tutte le offerte della piattaforma",
-                    iconTint =
-                        IconPurple,
-                    badgeColor =
-                        BadgePurple,
-                    onClick =
-                        onGestioneOfferteAdminClick
-                )
-
-                ProfileMenuRow(
-                    icon =
-                        Icons.Default.Person,
-                    title =
-                        "Gestione utenti registrati",
-                    iconTint =
-                        IconIndigo,
-                    badgeColor =
-                        BadgeIndigo,
-                    onClick =
-                        onGestioneUtentiAdminClick
-                )
-            }
-
-            /*
-             * ============================================================
-             * ATTIVITÀ VIAGGIATORE
-             * ============================================================
-             */
-
-            if (!isOrganizzatore) {
+            if (!isOrganizzatore && !isAdmin) {
 
                 SectionTitle(
                     text = "Le mie attività",
@@ -267,7 +224,7 @@ fun ProfileScreen(
 
             /*
              * ============================================================
-             * IMPOSTAZIONI
+             * IMPOSTAZIONI (Visibili a tutti, inclusi Admin)
              * ============================================================
              */
 

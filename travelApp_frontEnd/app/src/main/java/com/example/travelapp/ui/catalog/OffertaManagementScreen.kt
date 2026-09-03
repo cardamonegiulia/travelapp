@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,7 +24,6 @@ import coil.compose.AsyncImage
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.theme.*
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OfferteManagementScreen(
@@ -38,21 +36,21 @@ fun OfferteManagementScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
-
+    LaunchedEffect(isAdmin) {
+        viewModel.caricaOfferte(soloMie = !isAdmin)
+    }
     LaunchedEffect(uiState.feedbackMessage) {
         uiState.feedbackMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearFeedback()
         }
     }
-
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             viewModel.clearFeedback()
         }
     }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -94,13 +92,11 @@ fun OfferteManagementScreen(
                     text = { Text("Attività (${uiState.attivita.size})", fontWeight = FontWeight.Bold) }
                 )
             }
-
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = TravelBlue)
                 }
             } else if (selectedTab == 0) {
-                // --- TAB ITINERARI ---
                 if (uiState.itinerari.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
                         Text("Nessun itinerario presente", color = TravelTextMuted)
@@ -129,12 +125,10 @@ fun OfferteManagementScreen(
                                             modifier = Modifier.fillMaxSize().background(ImagePlaceholder),
                                             contentScale = ContentScale.Crop
                                         )
-
                                         Row(
                                             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            // Il tasto modifica compare SOLO se NON è Admin
                                             if (!isAdmin) {
                                                 IconButton(
                                                     onClick = { onModificaItinerario(item) },
@@ -143,7 +137,6 @@ fun OfferteManagementScreen(
                                                     Icon(Icons.Default.Edit, contentDescription = "Modifica", tint = TravelBlue, modifier = Modifier.size(18.dp))
                                                 }
                                             }
-
                                             IconButton(
                                                 onClick = { viewModel.eliminaItinerario(item.id) },
                                                 modifier = Modifier.size(36.dp).background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(8.dp))
@@ -152,7 +145,6 @@ fun OfferteManagementScreen(
                                             }
                                         }
                                     }
-
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -170,7 +162,6 @@ fun OfferteManagementScreen(
                     }
                 }
             } else {
-                // --- TAB ATTIVITÀ SINGOLE ---
                 if (uiState.attivita.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
                         Text("Nessuna attività presente", color = TravelTextMuted)
@@ -194,12 +185,10 @@ fun OfferteManagementScreen(
                                             .height(140.dp)
                                     ) {
                                         Box(modifier = Modifier.fillMaxSize().background(ImagePlaceholder))
-
                                         Row(
                                             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            // Il tasto modifica compare SOLO se NON è Admin
                                             if (!isAdmin) {
                                                 IconButton(
                                                     onClick = { onModificaAttivita(item) },
@@ -208,7 +197,6 @@ fun OfferteManagementScreen(
                                                     Icon(Icons.Default.Edit, contentDescription = "Modifica", tint = TravelBlue, modifier = Modifier.size(18.dp))
                                                 }
                                             }
-
                                             IconButton(
                                                 onClick = { viewModel.eliminaAttivita(item.id) },
                                                 modifier = Modifier.size(36.dp).background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(8.dp))
@@ -217,7 +205,6 @@ fun OfferteManagementScreen(
                                             }
                                         }
                                     }
-
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,

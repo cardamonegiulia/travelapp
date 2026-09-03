@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -43,10 +42,8 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-
 private fun formatterIso() =
     SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreaAttivitaScreen(
@@ -57,12 +54,10 @@ fun CreaAttivitaScreen(
     val context = LocalContext.current
     val isModifica = attivitaDaModificare != null
     val uiState by viewModel.uiState.collectAsState()
-
     val displayDateFormat = remember {
         SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply { timeZone = TimeZone.getTimeZone("UTC") }
     }
     val isoDateFormat = remember { formatterIso() }
-
     val oggiMillis = remember {
         Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
             set(Calendar.HOUR_OF_DAY, 0)
@@ -71,15 +66,11 @@ fun CreaAttivitaScreen(
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
     }
-
     val fineDefaultMillis = remember { oggiMillis + (30L * 24 * 60 * 60 * 1000) }
-
     var dataInizioMillis by remember { mutableStateOf(oggiMillis) }
     var dataFineMillis by remember { mutableStateOf(fineDefaultMillis) }
-
     var mostraDatePickerInizio by remember { mutableStateOf(false) }
     var mostraDatePickerFine by remember { mutableStateOf(false) }
-
     var titolo by remember { mutableStateOf(attivitaDaModificare?.titolo ?: "") }
     var luogo by remember { mutableStateOf(attivitaDaModificare?.luogo ?: "") }
     var descrizione by remember { mutableStateOf(attivitaDaModificare?.descrizione ?: "") }
@@ -89,7 +80,6 @@ fun CreaAttivitaScreen(
         mutableStateOf(attivitaDaModificare?.durataMinuti?.let { (it / 60.0).toString() } ?: "")
     }
     var immaginiUri by remember { mutableStateOf<List<Uri>>(emptyList()) }
-
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris: List<Uri> ->
@@ -97,21 +87,15 @@ fun CreaAttivitaScreen(
             immaginiUri = (immaginiUri + uris).distinct()
         }
     }
-
     val giorniSettimana = listOf("Lun" to 1, "Mar" to 2, "Mer" to 3, "Gio" to 4, "Ven" to 5, "Sab" to 6, "Dom" to 7)
     var giorniSelezionati by remember { mutableStateOf(setOf(6, 7)) }
-
     val prezzoNumerico = prezzoInput.replace(",", ".").toDoubleOrNull()
     val isPrezzoValido = prezzoNumerico != null && prezzoNumerico > 0.0
-
     val postiNumerici = postiInput.toIntOrNull()
     val isPostiValidi = postiNumerici != null && postiNumerici > 0
-
     val durataOre = durataOreInput.replace(",", ".").toDoubleOrNull()
     val isDurataValida = durataOre != null && durataOre > 0.0
-
     val isDateRangeValido = dataFineMillis >= dataInizioMillis
-
     val isFormValido = titolo.isNotBlank() &&
             luogo.isNotBlank() &&
             isPrezzoValido &&
@@ -119,7 +103,6 @@ fun CreaAttivitaScreen(
             isDurataValida &&
             isDateRangeValido &&
             giorniSelezionati.isNotEmpty()
-
     if (mostraDatePickerInizio) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = dataInizioMillis,
@@ -145,7 +128,6 @@ fun CreaAttivitaScreen(
             DatePicker(state = datePickerState, title = { Text("Seleziona data inizio validità", modifier = Modifier.padding(16.dp)) })
         }
     }
-
     if (mostraDatePickerFine) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = dataFineMillis,
@@ -168,7 +150,6 @@ fun CreaAttivitaScreen(
             DatePicker(state = datePickerState, title = { Text("Seleziona data fine validità", modifier = Modifier.padding(16.dp)) })
         }
     }
-
     LaunchedEffect(uiState.salvataggioCompletato) {
         if (uiState.salvataggioCompletato) {
             Toast.makeText(
@@ -180,13 +161,11 @@ fun CreaAttivitaScreen(
             onBack()
         }
     }
-
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
         }
     }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -221,7 +200,6 @@ fun CreaAttivitaScreen(
                 fontSize = 12.sp,
                 color = TravelTextMuted
             )
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -243,7 +221,6 @@ fun CreaAttivitaScreen(
                         Text("Aggiungi foto", color = TravelTextMuted, fontSize = 12.sp)
                     }
                 }
-
                 if (immaginiUri.isEmpty() && isModifica) {
                     attivitaDaModificare.immagini.forEach { img ->
                         Box(
@@ -260,7 +237,6 @@ fun CreaAttivitaScreen(
                         }
                     }
                 }
-
                 immaginiUri.forEachIndexed { index, uri ->
                     Box(
                         modifier = Modifier
@@ -291,7 +267,6 @@ fun CreaAttivitaScreen(
                     }
                 }
             }
-
             OutlinedTextField(
                 value = titolo,
                 onValueChange = { if (it.length <= 150) titolo = it },
@@ -300,7 +275,6 @@ fun CreaAttivitaScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-
             OutlinedTextField(
                 value = luogo,
                 onValueChange = { if (it.length <= 150) luogo = it },
@@ -309,7 +283,6 @@ fun CreaAttivitaScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-
             OutlinedTextField(
                 value = descrizione,
                 onValueChange = { if (it.length <= 5000) descrizione = it },
@@ -318,7 +291,6 @@ fun CreaAttivitaScreen(
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth()
             )
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -334,7 +306,6 @@ fun CreaAttivitaScreen(
                     modifier = Modifier.weight(1f),
                     isError = prezzoInput.isNotEmpty() && !isPrezzoValido
                 )
-
                 OutlinedTextField(
                     value = postiInput,
                     onValueChange = { input -> if (input.all { it.isDigit() }) postiInput = input },
@@ -344,7 +315,6 @@ fun CreaAttivitaScreen(
                     modifier = Modifier.weight(1f),
                     isError = postiInput.isNotEmpty() && !isPostiValidi
                 )
-
                 OutlinedTextField(
                     value = durataOreInput,
                     onValueChange = { input ->
@@ -357,7 +327,6 @@ fun CreaAttivitaScreen(
                     isError = durataOreInput.isNotEmpty() && !isDurataValida
                 )
             }
-
             Text("GIORNI DISPONIBILI", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = TravelTextMuted)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -389,7 +358,6 @@ fun CreaAttivitaScreen(
                     }
                 }
             }
-
             Text("PERIODO DI VALIDITÀ", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = TravelTextMuted)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -407,7 +375,6 @@ fun CreaAttivitaScreen(
                     },
                     modifier = Modifier.weight(1f).clickable { mostraDatePickerInizio = true }
                 )
-
                 OutlinedTextField(
                     value = displayDateFormat.format(Date(dataFineMillis)),
                     onValueChange = {},
@@ -422,9 +389,7 @@ fun CreaAttivitaScreen(
                     modifier = Modifier.weight(1f).clickable { mostraDatePickerFine = true }
                 )
             }
-
             Spacer(Modifier.height(10.dp))
-
             Button(
                 onClick = {
                     if (isFormValido && !uiState.isSalvataggioInCorso) {

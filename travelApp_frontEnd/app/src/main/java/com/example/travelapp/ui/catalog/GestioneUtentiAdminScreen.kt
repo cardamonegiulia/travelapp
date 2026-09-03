@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.travelapp.ui.theme.*
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GestioneUtentiAdminScreen(
@@ -34,21 +32,18 @@ fun GestioneUtentiAdminScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
-
     LaunchedEffect(uiState.messaggioSuccesso) {
         uiState.messaggioSuccesso?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearFeedback()
         }
     }
-
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             viewModel.clearFeedback()
         }
     }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -75,7 +70,6 @@ fun GestioneUtentiAdminScreen(
                 fontSize = 14.sp,
                 modifier = Modifier.padding(bottom = 14.dp)
             )
-
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = TravelBlue)
@@ -93,7 +87,6 @@ fun GestioneUtentiAdminScreen(
                         val ruoloStr = utente.ruolo.toString().uppercase()
                         val isAdmin = ruoloStr.contains("ADMIN")
                         val isOrganizzatore = ruoloStr.contains("ORGANIZZATORE")
-
                         Card(
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = TravelSurface),
@@ -120,9 +113,7 @@ fun GestioneUtentiAdminScreen(
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
-
                                 Spacer(Modifier.width(12.dp))
-
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = "${utente.nome} ${utente.cognome}",
@@ -131,7 +122,6 @@ fun GestioneUtentiAdminScreen(
                                         color = TravelTextDark
                                     )
                                     Text(text = utente.email, fontSize = 13.sp, color = TravelTextMuted)
-
                                     Spacer(Modifier.height(4.dp))
                                     Surface(
                                         shape = RoundedCornerShape(4.dp),
@@ -154,7 +144,6 @@ fun GestioneUtentiAdminScreen(
                                         )
                                     }
                                 }
-
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     if (!isAdmin) {
                                         IconButton(
@@ -169,7 +158,6 @@ fun GestioneUtentiAdminScreen(
                                             )
                                         }
                                     }
-
                                     IconButton(
                                         onClick = { viewModel.eliminaUtente(utente.id) },
                                         modifier = Modifier.size(36.dp)

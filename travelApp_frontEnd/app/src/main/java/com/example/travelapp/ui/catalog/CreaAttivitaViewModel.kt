@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
@@ -12,25 +11,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
 data class CreaAttivitaUiState(
     val isSalvataggioInCorso: Boolean = false,
     val salvataggioCompletato: Boolean = false,
     val errorMessage: String? = null
 )
-
 class CreaAttivitaViewModel(
     application: android.app.Application
 ) : AndroidViewModel(application) {
-
     private val repository =
         SingolaAttivitaRepository(
             ApiClient.getSingolaAttivitaApi(application)
         )
-
     private val _uiState = MutableStateFlow(CreaAttivitaUiState())
     val uiState: StateFlow<CreaAttivitaUiState> = _uiState.asStateFlow()
-
     fun salvaAttivita(
         context: Context,
         idDaModificare: Long?,
@@ -41,7 +35,6 @@ class CreaAttivitaViewModel(
         immaginiUri: List<Uri>
     ) {
         _uiState.update { it.copy(isSalvataggioInCorso = true, errorMessage = null) }
-
         viewModelScope.launch {
             val result = if (idDaModificare != null) {
                 repository.updateAttivita(idDaModificare, request)
@@ -53,7 +46,6 @@ class CreaAttivitaViewModel(
                     giorni = giorniSettimana.toList().sorted()
                 )
             }
-
             if (result.isSuccess) {
                 val attivitaSalvata = result.getOrNull()
                 if (attivitaSalvata != null && immaginiUri.isNotEmpty()) {
@@ -72,7 +64,6 @@ class CreaAttivitaViewModel(
             }
         }
     }
-
     fun resetStato() {
         _uiState.value = CreaAttivitaUiState()
     }

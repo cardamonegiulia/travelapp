@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +27,6 @@ import com.example.travelapp.ui.components.AuthedAsyncImage
 import com.example.travelapp.ui.components.StelleValutazione
 import com.example.travelapp.ui.theme.WarningBackground
 import com.example.travelapp.ui.theme.WarningYellow
-
 @Composable
 fun ItinerarioCard(
     itinerario: Itinerario,
@@ -47,7 +45,6 @@ fun ItinerarioCard(
         modifier = modifier.fillMaxWidth()
     ) {
         Column {
-
             AuthedAsyncImage(
                 url = itinerario.immagini
                     .firstOrNull()
@@ -64,17 +61,14 @@ fun ItinerarioCard(
                     ),
                 contentScale = ContentScale.Crop
             )
-
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.primaryContainer
@@ -90,7 +84,6 @@ fun ItinerarioCard(
                             fontWeight = FontWeight.Bold
                         )
                     }
-
                     itinerario.prezzoBase?.let { prezzo ->
                         Text(
                             text = "€$prezzo",
@@ -100,20 +93,16 @@ fun ItinerarioCard(
                         )
                     }
                 }
-
                 Spacer(
                     modifier = Modifier.height(8.dp)
                 )
-
                 StelleValutazione(
                     media = itinerario.mediaVoti,
                     numeroRecensioni = itinerario.numeroRecensioni
                 )
-
                 Spacer(
                     modifier = Modifier.height(10.dp)
                 )
-
                 Text(
                     text = itinerario.titolo,
                     style = MaterialTheme.typography.titleMedium,
@@ -121,13 +110,10 @@ fun ItinerarioCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
                 itinerario.descrizione?.let { descrizione ->
-
                     Spacer(
                         modifier = Modifier.height(4.dp)
                     )
-
                     Text(
                         text = descrizione,
                         style = MaterialTheme.typography.bodyMedium,
@@ -136,35 +122,28 @@ fun ItinerarioCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-
                 if (
                     itinerario.destinazionePrincipale != null ||
                     itinerario.durataGiorni != null
                 ) {
-
                     Spacer(
                         modifier = Modifier.height(10.dp)
                     )
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-
                         itinerario.destinazionePrincipale
                             ?.let { destinazione ->
-
                                 Text(
                                     text = "📍 $destinazione",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-
                         itinerario.durataGiorni
                             ?.let { durata ->
-
                                 Text(
                                     text = "📅 $durata giorni",
                                     style = MaterialTheme.typography.bodySmall,
@@ -172,22 +151,17 @@ fun ItinerarioCard(
                                 )
                             }
                     }
-
                     val partenza =
                         dataLeggibile(itinerario.dataInizio)
-
                     val rientro =
                         dataLeggibile(itinerario.dataFine)
-
                     if (
                         partenza != null &&
                         rientro != null
                     ) {
-
                         Spacer(
                             modifier = Modifier.height(4.dp)
                         )
-
                         Text(
                             text = "Dal $partenza al $rientro",
                             style = MaterialTheme.typography.bodySmall,
@@ -195,20 +169,16 @@ fun ItinerarioCard(
                         )
                     }
                 }
-
                 if (!itinerario.dateDisponibili) {
-
                     Spacer(
                         modifier = Modifier.height(10.dp)
                     )
-
                     EtichettaNessunaData()
                 }
             }
         }
     }
 }
-
 @Composable
 fun SingolaAttivitaCard(
     attivita: SingolaAttivita,
@@ -227,7 +197,6 @@ fun SingolaAttivitaCard(
         modifier = modifier.fillMaxWidth()
     ) {
         Column {
-
             AuthedAsyncImage(
                 url = attivita.immagini
                     .firstOrNull()
@@ -244,17 +213,14 @@ fun SingolaAttivitaCard(
                     ),
                 contentScale = ContentScale.Crop
             )
-
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.secondaryContainer
@@ -270,9 +236,7 @@ fun SingolaAttivitaCard(
                             fontWeight = FontWeight.Bold
                         )
                     }
-
                     attivita.prezzo?.let { prezzo ->
-
                         Text(
                             text = "€$prezzo",
                             style = MaterialTheme.typography.titleMedium,
@@ -281,11 +245,9 @@ fun SingolaAttivitaCard(
                         )
                     }
                 }
-
                 Spacer(
                     modifier = Modifier.height(10.dp)
                 )
-
                 Text(
                     text = attivita.titolo,
                     style = MaterialTheme.typography.titleMedium,
@@ -293,13 +255,10 @@ fun SingolaAttivitaCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
                 attivita.descrizione?.let { descrizione ->
-
                     Spacer(
                         modifier = Modifier.height(4.dp)
                     )
-
                     Text(
                         text = descrizione,
                         style = MaterialTheme.typography.bodyMedium,
@@ -308,35 +267,28 @@ fun SingolaAttivitaCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-
                 if (
                     attivita.luogo != null ||
                     attivita.durataMinuti != null
                 ) {
-
                     Spacer(
                         modifier = Modifier.height(10.dp)
                     )
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-
                         attivita.luogo
                             ?.let { luogo ->
-
                                 Text(
                                     text = "📍 $luogo",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-
                         attivita.durataMinuti
                             ?.let { durata ->
-
                                 Text(
                                     text = "⏱️ $durata min",
                                     style = MaterialTheme.typography.bodySmall,
@@ -349,13 +301,6 @@ fun SingolaAttivitaCard(
         }
     }
 }
-
-/**
- * Etichetta "Nessuna data disponibile".
- *
- * È uno stato temporaneo, non una bocciatura dell'itinerario:
- * usa i colori di avviso e non quelli di errore.
- */
 @Composable
 fun EtichettaNessunaData(
     modifier: Modifier = Modifier
