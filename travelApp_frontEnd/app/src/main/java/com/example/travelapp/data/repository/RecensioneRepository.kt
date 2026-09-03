@@ -23,7 +23,6 @@ class RecensioneRepository(
             Result.failure(e)
         }
 
-    /** Le recensioni scritte dall'utente loggato, dalla piu' recente (ordine deciso dal backend). */
     suspend fun getMieRecensioni(): Result<List<Recensione>> =
         try {
             val response = api.getMieRecensioni()
@@ -36,13 +35,6 @@ class RecensioneRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
-
-    /**
-     * La propria recensione su una prenotazione.
-     *
-     * Il 204 non e' un errore: significa "viaggio non ancora recensito", ed e' proprio il
-     * caso in cui il form si apre vuoto.
-     */
     suspend fun getRecensionePrenotazione(prenotazioneId: Long): Result<Recensione?> =
         try {
             val response = api.getRecensionePrenotazione(prenotazioneId)
@@ -123,8 +115,6 @@ class RecensioneRepository(
             Result.failure(e)
         }
 
-    // I codici che il backend usa per le regole della recensione, tradotti in messaggi
-    // comprensibili: il corpo ProblemDetail non e' pensato per essere mostrato cosi' com'e'.
     private fun messaggioErrore(
         codice: Int,
         corpoErrore: String?

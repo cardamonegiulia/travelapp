@@ -7,7 +7,6 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface PagamentoApi {
-
     @POST("api/pagamenti/prenotazioni/{prenotazioneId}/paga")
     suspend fun pagaPrenotazione(
         @Path("prenotazioneId") prenotazioneId: Long

@@ -30,17 +30,6 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
     BigDecimal sumTotalePerOrganizzatore(@Param("organizzatoreId") Long organizzatoreId,
                                          @Param("statoEscluso") StatoPrenotazione statoEscluso);
 
-    // --- Viaggi conclusi / in corso ------------------------------------------------------
-    //
-    // La data di fine non sta sulla prenotazione: sta sulla disponibilita' dell'itinerario
-    // oppure sulla sessione della singola attivita', e ogni prenotazione ne ha valorizzata
-    // esattamente una. Le join sono LEFT di proposito: con la navigazione implicita
-    // (p.disponibilitaItinerario.dataFine) Hibernate genera INNER JOIN e le prenotazioni di
-    // attivita' singole sparirebbero dal risultato.
-    //
-    // Le prenotazioni CANCELLATE non compaiono fra i viaggi conclusi: il viaggio non e' mai
-    // stato fatto, quindi non c'e' niente da recensire.
-
     @Query("""
             select p from Prenotazione p
             left join p.disponibilitaItinerario d
@@ -71,16 +60,6 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
                                                 @Param("statoEscluso") StatoPrenotazione statoEscluso,
                                                 Pageable pageable);
 
-    // --- Vista organizzatore -------------------------------------------------------------
-    //
-    // Chi ha organizzato un itinerario deve poter vedere chi ha comprato ogni sua partenza.
-    // Le prenotazioni cancellate restano fuori: il posto e' tornato libero e quel viaggiatore
-    // non parte.
-
-    // Il viaggiatore e' caricato con la prenotazione perche' nome e cognome finiscono
-    // nella risposta: senza la fetch sarebbe una query per riga.
-    // La count query e' esplicita: quella derivata conterrebbe la join fetch, che in una
-    // "select count" non e' valida.
     @Query(value = """
             select p from Prenotazione p
             join fetch p.viaggiatore
@@ -96,16 +75,8 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
                                                     @Param("statoEscluso") StatoPrenotazione statoEscluso,
                                                     Pageable pageable);
 
-    // Anche una sola prenotazione cancellata basta a bloccare l'eliminazione della
-    // partenza: resta nello storico del viaggiatore e continua a puntare qui.
     boolean existsByDisponibilitaItinerario_Id(Long disponibilitaId);
 
-    /**
-     * Per ogni partenza indicata: id, numero di prenotazioni attive e totale dei
-     * partecipanti. Una sola query per l'intera lista, invece di due per riga.
-     *
-     * @return righe {@code [disponibilitaId, conteggio, partecipanti]}
-     */
     @Query("""
             select p.disponibilitaItinerario.id, count(p), coalesce(sum(p.numeroPartecipanti), 0)
             from Prenotazione p
@@ -116,14 +87,6 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
     List<Object[]> contaPerDisponibilita(@Param("disponibilitaIds") List<Long> disponibilitaIds,
                                          @Param("statoEscluso") StatoPrenotazione statoEscluso);
 
-    /**
-     * Prenotazioni di itinerario la cui data di fine cade in [da, a): usata dal job che
-     * invita a recensire. Solo itinerari, perche' la recensione e' agganciata a un
-     * itinerario e una sessione di attivita' singola non ne ha uno.
-     */
-    // Le join sono "fetch" perche' il job gira fuori da una richiesta HTTP: viaggiatore e
-    // itinerario servono subito dopo, e senza caricarli qui verrebbero risolti a sessione
-    // gia' chiusa.
     @Query("""
             select p from Prenotazione p
             join fetch p.disponibilitaItinerario d

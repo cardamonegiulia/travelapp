@@ -4,13 +4,6 @@ import com.example.travelapp.domain.model.DestinatarioCondivisione
 import com.example.travelapp.domain.model.ListaPreferiti
 import com.example.travelapp.domain.model.VisibilitaLista
 
-/**
- * Lista di preferiti come la restituisce `/api/preferiti`.
- *
- * `visibilita` arriva come stringa e non come enum: Gson, davanti a un valore che non
- * conosce, non solleva un errore ma lascia il campo a null, e in Kotlin un enum non
- * nullable dichiarato tale diventerebbe null di nascosto. Meglio convertirlo a mano.
- */
 data class ListaPreferitiResponseDto(
     val id: Long,
     val nome: String?,
@@ -49,21 +42,14 @@ data class DestinatarioCondivisioneDto(
     )
 }
 
-/** Creazione e modifica di una lista: nome e visibilita', nient'altro. */
 data class ListaPreferitiRequestDto(
     val nome: String,
     val visibilita: String
 )
 
-/** Corpo di `POST .../itinerari`. */
 data class PreferitoItinerarioRequestDto(
     val itinerarioId: Long
 )
-
-/**
- * Corpo di `POST .../condivisioni`: si indica l'utente per email - quella che si conosce
- * di un amico - oppure per id. Il campo non valorizzato resta null e non viene serializzato.
- */
 data class CondivisioneRequestDto(
     val email: String? = null,
     val utenteId: Long? = null

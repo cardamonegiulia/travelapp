@@ -22,10 +22,6 @@ fun PartenzaOrganizzatoreDto.toDomain(): PartenzaOrganizzatore =
         partecipantiTotali = partecipantiTotali
     )
 
-/**
- * La stessa prenotazione letta dal lato di chi vende: qui interessa chi e' il viaggiatore,
- * non se il viaggio e' recensibile.
- */
 fun PrenotazioneDto.toPrenotatoPartenza(): PrenotatoPartenza =
     PrenotatoPartenza(
         prenotazioneId = id,

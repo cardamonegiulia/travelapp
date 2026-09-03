@@ -40,7 +40,6 @@ import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 import com.example.travelapp.ui.util.formattaData
-
 data class ExtraUi(
     val id: Long,
     val nome: String,
@@ -56,7 +55,6 @@ fun PrenotazionePasso1Screen(
     onToggleExtra: (Long, Double) -> Unit,
     onContinua: () -> Unit
 ) {
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -66,28 +64,23 @@ fun PrenotazionePasso1Screen(
                 vertical = 12.dp
             )
     ) {
-
         Text(
             text = "Completa la prenotazione",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
         )
-
         Spacer(
             modifier = Modifier.height(6.dp)
         )
-
         Text(
             text = "Scegli i partecipanti e personalizza la tua esperienza.",
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary
         )
-
         Spacer(
             modifier = Modifier.height(20.dp)
         )
-
         BookingSteps(
             currentStep = 1
         )
@@ -96,7 +89,6 @@ fun PrenotazionePasso1Screen(
             modifier = Modifier.height(20.dp)
         )
 
-        // Dati del viaggio / attività
         if (
             uiState.titolo.isNotBlank() ||
             uiState.luogo.isNotBlank()
@@ -163,7 +155,6 @@ fun PrenotazionePasso1Screen(
             )
         }
 
-        // Partecipanti
         Text(
             text = "Partecipanti",
             style = MaterialTheme.typography.titleMedium,
@@ -267,7 +258,6 @@ fun PrenotazionePasso1Screen(
             }
         }
 
-        // Extra
         if (extraDisponibili.isNotEmpty()) {
 
             Spacer(
@@ -373,12 +363,9 @@ fun PrenotazionePasso1Screen(
                 }
             }
         }
-
         Spacer(
             modifier = Modifier.height(24.dp)
         )
-
-        // Riepilogo prezzi
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
@@ -389,46 +376,38 @@ fun PrenotazionePasso1Screen(
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
-
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-
                 Text(
                     text = "Riepilogo",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
-
                 RigaPrezzo(
                     nome = "Partecipanti (${uiState.numeroPartecipanti})",
                     valore = uiState.prezzoBase
                 )
-
                 RigaPrezzo(
                     nome = "Extra",
                     valore = uiState.prezzoExtra
                 )
-
                 HorizontalDivider(
                     color = DividerColor
                 )
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Text(
                         text = "Totale",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
-
                     Text(
                         text = "€${"%.2f".format(uiState.prezzoTotaleVisualizzato)}",
                         style = MaterialTheme.typography.titleLarge,
@@ -436,7 +415,6 @@ fun PrenotazionePasso1Screen(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-
                 Text(
                     text = "Il prezzo definitivo sarà verificato dal server.",
                     style = MaterialTheme.typography.bodySmall,
@@ -444,11 +422,9 @@ fun PrenotazionePasso1Screen(
                 )
             }
         }
-
         Spacer(
             modifier = Modifier.height(20.dp)
         )
-
         Button(
             onClick = onContinua,
             enabled = !uiState.isLoading && !uiState.extraInCaricamento,
@@ -475,18 +451,15 @@ fun PrenotazionePasso1Screen(
             )
         }
         uiState.errore?.let { errore ->
-
             Spacer(
                 modifier = Modifier.height(10.dp)
             )
-
             Text(
                 text = errore,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error
             )
         }
-
         Spacer(
             modifier = Modifier.height(24.dp)
         )
@@ -498,18 +471,15 @@ private fun RigaPrezzo(
     nome: String,
     valore: Double
 ) {
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-
         Text(
             text = nome,
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary
         )
-
         Text(
             text = "€${"%.2f".format(valore)}",
             style = MaterialTheme.typography.bodyMedium,
@@ -523,7 +493,6 @@ private fun RigaPrezzo(
 private fun BookingSteps(
     currentStep: Int
 ) {
-
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
@@ -571,7 +540,6 @@ private fun StepCircle(
     attivo: Boolean,
     modifier: Modifier = Modifier
 ) {
-
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -602,7 +570,6 @@ private fun StepCircle(
                 )
             }
         }
-
         Spacer(
             modifier = Modifier.height(4.dp)
         )

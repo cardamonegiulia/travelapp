@@ -1,11 +1,15 @@
 package com.example.travelapp.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -250,13 +254,17 @@ fun AppNavGraph(
      * ============================================================
      */
 
+    var mostraConfermaUscita by remember {
+        mutableStateOf(false)
+    }
+
     val onBack: () -> Unit = {
 
         if (
             !navController.popBackStack()
         ) {
 
-            onExitApp()
+            mostraConfermaUscita = true
         }
     }
 
@@ -437,6 +445,17 @@ fun AppNavGraph(
         navBackStackEntry
             ?.destination
             ?.route
+    val siamoAllaRadice =
+        navController.previousBackStackEntry == null
+
+    BackHandler(
+        enabled =
+            siamoAllaRadice &&
+                    !mostraConfermaUscita
+    ) {
+
+        mostraConfermaUscita = true
+    }
 
 
     val isBookingWizard =
@@ -1636,6 +1655,59 @@ fun AppNavGraph(
             }
         }
     }
+    if (mostraConfermaUscita) {
+
+        AlertDialog(
+
+            onDismissRequest = {
+                mostraConfermaUscita = false
+            },
+
+            title = {
+                Text(
+                    text = "Uscire dall'app?"
+                )
+            },
+
+            text = {
+                Text(
+                    text = "Vuoi davvero chiudere TravelApp?"
+                )
+            },
+
+            confirmButton = {
+
+                TextButton(
+                    onClick = {
+
+                        mostraConfermaUscita = false
+
+                        onExitApp()
+                    }
+                ) {
+
+                    Text(
+                        text = "Esci"
+                    )
+                }
+            },
+
+            dismissButton = {
+
+                TextButton(
+                    onClick = {
+                        mostraConfermaUscita = false
+                    }
+                ) {
+
+                    Text(
+                        text = "Annulla"
+                    )
+                }
+            }
+        )
+    }
+
 }
 
 
@@ -1958,13 +2030,6 @@ private fun BookingsRoute(
                 viewModel
                     .annullaPrenotazione()
             },
-
-            /*
-             * IMPORTANTE:
-             *
-             * Manteniamo il pagamento di una
-             * prenotazione rimasta IN_ATTESA.
-             */
             onCompletaPagamento = {
 
                 viewModel
@@ -1981,16 +2046,9 @@ private fun BookingsRoute(
     } else {
 
         BookingsScreen(
-
-            /*
-             * Prenotazioni attuali.
-             */
             prenotazioni =
                 state.prenotazioni,
 
-            /*
-             * Nuova sezione develop.
-             */
             viaggiConclusi =
                 state.viaggiConclusi,
 
@@ -2178,11 +2236,6 @@ private fun MieRecensioniRoute(
         .collectAsState()
 
 
-    /*
-     * Ricarichiamo anche al rientro dal form:
-     * una recensione appena modificata
-     * deve mostrarsi aggiornata.
-     */
     LaunchedEffect(Unit) {
 
         viewModel

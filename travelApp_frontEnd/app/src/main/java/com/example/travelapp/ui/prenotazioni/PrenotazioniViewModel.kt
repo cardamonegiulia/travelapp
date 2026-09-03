@@ -23,13 +23,6 @@ class PrenotazioniViewModel(
 
     val uiState: StateFlow<BookingUiState> =
         _uiState.asStateFlow()
-
-    /*
-     * ============================================================
-     * TOTALE
-     * ============================================================
-     */
-
     private fun ricalcolaTotale() {
 
         val stato =
@@ -59,13 +52,6 @@ class PrenotazioniViewModel(
                 prezzoTotaleVisualizzato = totale
             )
     }
-
-    /*
-     * ============================================================
-     * INIZIALIZZAZIONE BOOKING
-     * ============================================================
-     */
-
     fun inizializzaBooking(
         titolo: String,
         luogo: String,
@@ -77,14 +63,6 @@ class PrenotazioniViewModel(
         dataFine: String? = null,
         postiDisponibili: Int? = null
     ) {
-
-        /*
-         * Creiamo un nuovo stato invece di fare copy
-         * sul booking precedente.
-         *
-         * Così extra, pagamento ed errori della prenotazione
-         * precedente non rimangono nella nuova.
-         */
         _uiState.value =
             BookingUiState(
                 titolo = titolo,
@@ -113,10 +91,6 @@ class PrenotazioniViewModel(
                     postiDisponibili
             )
 
-        /*
-         * Gli extra esistono soltanto per un itinerario.
-         * Le singole attività non devono effettuare questa chiamata.
-         */
         if (itinerarioId != null) {
             caricaExtra(
                 itinerarioId
@@ -137,13 +111,6 @@ class PrenotazioniViewModel(
                 errore = null
             )
     }
-
-    /*
-     * ============================================================
-     * PARTECIPANTI
-     * ============================================================
-     */
-
     fun incrementaPartecipanti() {
 
         val stato =
@@ -152,10 +119,6 @@ class PrenotazioniViewModel(
         val massimo =
             stato.postiDisponibili
 
-        /*
-         * Non permettiamo alla UI di superare
-         * i posti della partenza/sessione scelta.
-         */
         if (
             massimo != null &&
             stato.numeroPartecipanti >= massimo
@@ -187,13 +150,6 @@ class PrenotazioniViewModel(
             ricalcolaTotale()
         }
     }
-
-    /*
-     * ============================================================
-     * EXTRA
-     * ============================================================
-     */
-
     fun toggleExtra(
         attivitaId: Long,
         prezzoUnitario: Double
@@ -229,13 +185,6 @@ class PrenotazioniViewModel(
 
         ricalcolaTotale()
     }
-
-    /*
-     * ============================================================
-     * CREAZIONE PRENOTAZIONE
-     * ============================================================
-     */
-
     fun creaPrenotazione() {
 
         if (_uiState.value.isLoading) {
@@ -244,13 +193,6 @@ class PrenotazioniViewModel(
 
         val stato =
             _uiState.value
-
-        /*
-         * Deve essere valorizzato esattamente uno fra:
-         *
-         * - disponibilitaItinerarioId
-         * - sessioneSingolaAttivitaId
-         */
         if (
             (stato.disponibilitaItinerarioId == null) ==
             (stato.sessioneSingolaAttivitaId == null)
@@ -317,13 +259,6 @@ class PrenotazioniViewModel(
             }
         }
     }
-
-    /*
-     * ============================================================
-     * PAGAMENTO
-     * ============================================================
-     */
-
     fun pagaPrenotazione() {
 
         if (_uiState.value.isLoading) {
@@ -393,13 +328,6 @@ class PrenotazioniViewModel(
                     metodo
             )
     }
-
-    /*
-     * ============================================================
-     * CARICAMENTO EXTRA
-     * ============================================================
-     */
-
     private fun caricaExtra(
         itinerarioId: Long
     ) {
@@ -418,14 +346,6 @@ class PrenotazioniViewModel(
                         itinerarioId
                     )
 
-            /*
-             * L'utente potrebbe aver aperto un'altra
-             * prenotazione mentre questa richiesta era
-             * ancora in corso.
-             *
-             * In quel caso non aggiorniamo il nuovo booking
-             * con gli extra del precedente.
-             */
             if (
                 _uiState.value.itinerarioId !=
                 itinerarioId
@@ -479,17 +399,6 @@ class PrenotazioniViewModel(
             }
         }
     }
-
-    /*
-     * ============================================================
-     * ERRORI HTTP
-     * ============================================================
-     */
-
-    /**
-     * Traduce gli errori Retrofit in messaggi
-     * comprensibili per l'utente.
-     */
     private fun messaggioErrore(
         e: Exception,
         ripiego: String

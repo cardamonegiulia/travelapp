@@ -15,10 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-/**
- * Le due schede della sezione prenotazioni.
- */
 enum class SchedaPrenotazioni {
     ATTUALI,
     CONCLUSI
@@ -65,12 +61,6 @@ class BookingsViewModel(
         caricaPrenotazioni()
     }
 
-    /**
-     * Carica sia le prenotazioni attuali/future
-     * sia i viaggi conclusi.
-     *
-     * La divisione viene effettuata dal backend.
-     */
     fun caricaPrenotazioni() {
 
         viewModelScope.launch {
@@ -115,10 +105,6 @@ class BookingsViewModel(
 
         aggiornaNotifiche()
     }
-
-    /**
-     * Aggiorna il numero di notifiche non lette.
-     */
     fun aggiornaNotifiche() {
 
         viewModelScope.launch {
@@ -136,9 +122,6 @@ class BookingsViewModel(
         }
     }
 
-    /**
-     * Cambia fra prenotazioni attuali e viaggi conclusi.
-     */
     fun selezionaScheda(
         scheda: SchedaPrenotazioni
     ) {
@@ -152,9 +135,7 @@ class BookingsViewModel(
         }
     }
 
-    /**
-     * Apre il dettaglio di una prenotazione.
-     */
+
     fun selezionaPrenotazione(
         prenotazione: Prenotazione
     ) {
@@ -167,10 +148,6 @@ class BookingsViewModel(
             )
         }
     }
-
-    /**
-     * Chiude il dettaglio.
-     */
     fun chiudiDettaglio() {
 
         _uiState.update {
@@ -180,10 +157,6 @@ class BookingsViewModel(
             )
         }
     }
-
-    /**
-     * Annulla la prenotazione selezionata.
-     */
     fun annullaPrenotazione() {
 
         val prenotazione =
@@ -262,10 +235,6 @@ class BookingsViewModel(
         }
     }
 
-    /**
-     * Completa il pagamento di una prenotazione
-     * rimasta IN_ATTESA.
-     */
     fun completaPagamento() {
 
         val prenotazione =
@@ -310,17 +279,6 @@ class BookingsViewModel(
                     .pagaPrenotazione(
                         prenotazione.id
                     )
-
-                /*
-                 * Rileggiamo la prenotazione
-                 * direttamente dal backend.
-                 *
-                 * In questo modo recuperiamo gli stati
-                 * aggiornati:
-                 *
-                 * Prenotazione -> CONFERMATA
-                 * Pagamento    -> COMPLETATO
-                 */
                 val aggiornata =
                     repository
                         .getPrenotazione(

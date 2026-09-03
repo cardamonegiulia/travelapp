@@ -16,7 +16,6 @@ data class NotificaDto(
 ) {
     fun toDomain(): Notifica = Notifica(
         id = id,
-        // un tipo aggiunto lato server dopo il rilascio dell'app non deve far crashare l'elenco
         tipo = when (tipo) {
             "INVITO_RECENSIONE" -> TipoNotifica.INVITO_RECENSIONE
             else -> TipoNotifica.SCONOSCIUTO

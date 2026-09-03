@@ -32,7 +32,7 @@ public class PagamentoService {
     private final PrenotazioneRepository prenotazioneRepository;
     private final UtenteService utenteService;
 
-    public Pagamento creaPagamento(
+    public void creaPagamento(
             Prenotazione prenotazione,
             BigDecimal prezzoTotale) {
 
@@ -42,15 +42,11 @@ public class PagamentoService {
                 .stato(StatoPagamento.IN_ATTESA)
                 .build();
 
-        return pagamentoRepository.save(pagamento);
+        pagamentoRepository.save(pagamento);
     }
-
 
     @Transactional
     public Pagamento pagaPrenotazione(Long prenotazioneId) {
-
-        // Recupero la prenotazione controllando anche che appartenga
-        // all'utente autenticato. L'admin può invece accedere a tutte.
         Prenotazione prenotazione;
 
         if (utenteService.isAdmin()) {
@@ -78,7 +74,6 @@ public class PagamentoService {
                     );
         }
 
-        // Recupero il pagamento associato alla prenotazione.
         Pagamento pagamento = pagamentoRepository
                 .findByPrenotazioneId(prenotazioneId)
                 .orElseThrow(() ->
@@ -87,7 +82,6 @@ public class PagamentoService {
                         )
                 );
 
-        // Una prenotazione cancellata non può essere pagata.
         if (prenotazione.getStato() == StatoPrenotazione.CANCELLATA) {
             throw new StatoPrenotazioneNonValidoException(
                     "Non puoi pagare una prenotazione cancellata: "
@@ -95,24 +89,19 @@ public class PagamentoService {
             );
         }
 
-        // Il pagamento può essere completato solo se è ancora in attesa.
         if (pagamento.getStato() != StatoPagamento.IN_ATTESA) {
             throw new StatoPagamentoNonValidoException(
                     "Il pagamento non può essere completato dallo stato "
                             + pagamento.getStato()
             );
         }
-
-        // Completo il pagamento.
         pagamento.setStato(StatoPagamento.COMPLETATO);
         pagamento.setDataPagamento(LocalDateTime.now());
 
-        // Il pagamento completato conferma anche la prenotazione.
         prenotazione.setStato(StatoPrenotazione.CONFERMATA);
 
         prenotazioneRepository.save(prenotazione);
 
-        // Il service del pagamento restituisce il pagamento aggiornato.
         return pagamentoRepository.save(pagamento);
     }
 

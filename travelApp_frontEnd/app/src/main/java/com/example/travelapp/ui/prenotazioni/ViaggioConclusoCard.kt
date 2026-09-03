@@ -35,14 +35,6 @@ import com.example.travelapp.ui.theme.SuccessGreen
 import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
-
-/**
- * Card di un viaggio gia' fatto.
- *
- * L'azione cambia a seconda di cosa dice il server: "Lascia una recensione" finche' il
- * viaggio e' recensibile, "Modifica la tua recensione" quando c'e' gia'. Nessuna delle due
- * compare per una prenotazione di attivita' singola, che non ha un itinerario da recensire.
- */
 @Composable
 fun ViaggioConclusoCard(
     prenotazione: Prenotazione,
@@ -120,9 +112,6 @@ fun ViaggioConclusoCard(
                 )
             }
 
-            // Solo i viaggi con itinerario sono recensibili: per un'attivita' singola non
-            // c'e' un itinerario a cui agganciare la recensione, e il server lo dice gia'
-            // tramite "recensibile"/"recensioneId".
             if (prenotazione.recensibile || prenotazione.recensioneId != null) {
                 Spacer(Modifier.height(14.dp))
 

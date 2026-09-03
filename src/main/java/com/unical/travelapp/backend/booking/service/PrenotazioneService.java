@@ -113,8 +113,6 @@ public class PrenotazioneService {
         sessione.setPostiDisponibili(calcolaPostiResidui(sessione.getPostiDisponibili(),numeroPartecipanti));
     }
 
-    // Oltre il termine fissato dall'organizzatore - o, se non ne ha fissato uno, oltre la
-    // partenza - la disponibilita' non e' piu' prenotabile.
     private void controllaTerminePrenotazioni(DisponibilitaItinerario disp) {
         LocalDateTime termine = disp.getDataLimitePrenotazione() != null
                 ? disp.getDataLimitePrenotazione()
@@ -400,42 +398,18 @@ public class PrenotazioneService {
         );
     }
 
-    /**
-     * I viaggi dell'utente gia' conclusi: data di fine passata e prenotazione non cancellata.
-     *
-     * <p>E' la lista da cui si lascia una recensione, quindi le cancellate restano fuori:
-     * quel viaggio non e' mai stato fatto.
-     */
     public Page<Prenotazione> getMieConcluse(Pageable pageable) {
         Long utenteId = utenteService.getUtenteSessione().getId();
         return prenotazioneRepo.findConcluseByViaggiatore(
                 utenteId, LocalDateTime.now(), StatoPrenotazione.CANCELLATA, pageable);
     }
 
-    /** Tutto il resto: viaggi in corso, futuri e prenotazioni cancellate. */
     public Page<Prenotazione> getMieAttuali(Pageable pageable) {
         Long utenteId = utenteService.getUtenteSessione().getId();
         return prenotazioneRepo.findAttualiByViaggiatore(
                 utenteId, LocalDateTime.now(), StatoPrenotazione.CANCELLATA, pageable);
     }
 
-    /*
-     * ============================================================
-     * VISTA ORGANIZZATORE
-     * ============================================================
-     *
-     * L'organizzatore vede le partenze del proprio itinerario e, per ognuna, chi si e'
-     * prenotato. Un ADMIN puo' guardare qualsiasi itinerario; chiunque altro solo i propri.
-     */
-
-    /**
-     * Le partenze ancora da fare di un itinerario, dalla piu' vicina, con quante
-     * prenotazioni ha raccolto ognuna.
-     *
-     * <p>Le partenze gia' concluse restano fuori: qui si guarda chi sta per partire, non
-     * lo storico. Una partenza in corso e' ancora "da fare", quindi il confronto e' sulla
-     * data di fine (o su quella di inizio, se la fine non e' valorizzata).
-     */
     public List<PartenzaOrganizzatoreDto> getPartenzeFuture(Long itinerarioId) {
         verificaAccessoItinerario(itinerarioId);
 
@@ -472,7 +446,6 @@ public class PrenotazioneService {
                 .toList();
     }
 
-    /** Chi si e' prenotato su una partenza. Le cancellate non compaiono: nessuno parte. */
     public Page<Prenotazione> getPrenotazioniPerPartenza(Long disponibilitaId, Pageable pageable) {
         DisponibilitaItinerario disponibilita = recuperaDisponibilita(disponibilitaId);
         verificaAccessoItinerario(
@@ -482,14 +455,6 @@ public class PrenotazioneService {
                 disponibilitaId, StatoPrenotazione.CANCELLATA, pageable);
     }
 
-    /**
-     * Elimina una partenza dell'itinerario.
-     *
-     * <p>Si rifiuta se qualcuno l'ha prenotata: annullare il viaggio a chi l'ha comprato non
-     * e' una cancellazione di calendario, e va fatto prima sulle singole prenotazioni. Anche
-     * una prenotazione gia' cancellata blocca l'operazione, perche' resta nello storico del
-     * viaggiatore e continua a riferirsi a questa partenza.
-     */
     @Transactional
     public void eliminaPartenza(Long disponibilitaId) {
         DisponibilitaItinerario disponibilita = recuperaDisponibilita(disponibilitaId);
@@ -502,12 +467,10 @@ public class PrenotazioneService {
                     "Non puoi eliminare una partenza che ha gia' delle prenotazioni");
         }
 
-        // Tolta anche dalla collezione del padre: e' in cascade, e lasciarcela dentro la
-        // farebbe risalvare al flush subito dopo averla cancellata.
-        if (itinerario != null && itinerario.getDisponibilita() != null) {
-            itinerario.getDisponibilita().remove(disponibilita);
+        if (itinerario.getDisponibilita() != null) { itinerario
+                    .getDisponibilita()
+                    .remove(disponibilita);
         }
-
         disponibilitaItinerarioRepository.delete(disponibilita);
     }
 
@@ -547,8 +510,6 @@ public class PrenotazioneService {
 
         Long richiedenteId = utenteService.getUtenteSessione().getId();
 
-        // Un itinerario di un altro organizzatore e' un 404 e non un 403: chi non lo ha
-        // creato non deve nemmeno sapere che esiste.
         itinerarioRepository.findByIdAndOrganizzatore_Id(itinerarioId, richiedenteId)
                 .orElseThrow(() -> new ItinerarioNonTrovatoException(
                         "Itinerario non trovato: " + itinerarioId));

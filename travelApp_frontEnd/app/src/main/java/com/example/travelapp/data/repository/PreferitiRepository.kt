@@ -9,13 +9,6 @@ import com.example.travelapp.domain.model.ListaPreferiti
 import com.example.travelapp.domain.model.VisibilitaLista
 import retrofit2.Response
 
-/**
- * Accesso alle liste di preferiti.
- *
- * Gli errori tornano come [Result] con un messaggio gia' leggibile: le regole di accesso
- * del backend arrivano qui come codici HTTP (403 "non e' tua", 404 "non esiste o non la
- * puoi vedere") e tradurle una volta sola evita che ogni schermata se le reinventi.
- */
 class PreferitiRepository(
     private val api: PreferitiApi
 ) {
@@ -56,13 +49,12 @@ class PreferitiRepository(
             api.rimuoviItinerario(listaId, itinerarioId)
         }
 
-    /** Salvataggio rapido nella lista predefinita "I miei preferiti". */
     suspend fun aggiungiAiPreferiti(itinerarioId: Long): Result<ListaPreferiti> =
         lista("Errore nel salvataggio fra i preferiti") {
             api.aggiungiAiPreferiti(PreferitoItinerarioRequestDto(itinerarioId))
         }
 
-    /** Toglie l'itinerario da tutte le liste dell'utente. */
+
     suspend fun rimuoviDaiPreferiti(itinerarioId: Long): Result<Unit> =
         vuoto("Errore nella rimozione dai preferiti") { api.rimuoviDaiPreferiti(itinerarioId) }
 
@@ -80,8 +72,6 @@ class PreferitiRepository(
         lista("Errore nella revoca della condivisione") {
             api.revocaCondivisione(listaId, utenteId)
         }
-
-    // --- supporto ---------------------------------------------------------------------
 
     private suspend fun elenco(
         errore: String,
