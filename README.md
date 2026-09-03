@@ -1,6 +1,6 @@
 # TravelApp
 
-Progetto universitario (Università della Calabria) composto da un **backend Spring Boot** e da
+Progetto universitario composto da un **backend Spring Boot** e da
 un'**app Android nativa in Kotlin/Jetpack Compose**, con autenticazione delegata a **Keycloak**
 (OAuth2 / OpenID Connect, Authorization Code + PKCE).
 
@@ -8,6 +8,37 @@ L'applicazione permette di pubblicare e prenotare **viaggi organizzati** (itiner
 tappe e partenze) e **singole attività** (escursioni con sessioni a data e ora), gestendo l'intero
 ciclo: catalogo → prenotazione → pagamento → viaggio concluso → recensione.
 
+membri del gruppo e i loro contributi:
+
+- Alessandro Curcio: 
+- occupato del lato experience:
+  - fatta la sezione degli itinerari preferiti, con le liste private e quelle condivise.
+  - messa l'opzione di poter lasciare commenti e recensioni sui viaggi fatti.
+  - fatto il caricamento delle immagini, dall'upload al salvataggio su disco.
+  - curato il lato sicurezza: validazione dei JWT, rate limiting, HTTPS e controllo sul tipo delle immagini caricate.
+  - lato frontend fatto un po' di tutto: soprattutto la sezione preferiti, ma anche aggiustamenti alle parti dei colleghi in explore, booking, profile e lato organizzatore.
+
+
+- Alessandro Giancarelli:
+  - Per quanto riguarda il mio contributo al progetto, mi sono occupato principalmente della parte relativa alle prenotazioni e ai pagamenti.
+Backend:
+Ho lavorato sulla gestione della prenotazione di itinerari e attività singole, sulla gestione del numero di partecipanti, degli eventuali extra, del calcolo del prezzo totale e dell’aggiornamento dei posti disponibili. Mi sono occupato inoltre della gestione degli stati della prenotazione e del pagamento, compresa la possibilità di completare in un secondo momento un pagamento rimasto in attesa e di annullare una prenotazione, con il relativo ripristino dei posti, aggiunto anche una scadenza di 15 minuti per i pagamenti non completati: una volta superato il tempo disponibile, la prenotazione viene annullata automaticamente, il pagamento passa allo stato annullato e i posti prenotati vengono nuovamente resi disponibili. Il pagamento, per alcune limitazioni legate al progetto, è stato simulato e non collegato a un vero servizio di pagamento esterno.
+Frontend:
+Lato applicazione mi sono occupato delle schermate relative al flusso di prenotazione e pagamento, della selezione dei partecipanti, degli extra e dei diversi metodi di pagamento simulati. Ho inoltre gestito la visualizzazione delle prenotazioni effettuate, la possibilità di completare un pagamento in attesa e il countdown relativo alla scadenza del pagamento.
+Ho anche sistemato alcuni aspetti della navigazione tra le schermate e fatto varie verifiche e integrazioni con il lavoro degli altri membri del gruppo quando necessario.
+
+
+- Giulia Cardamone:
+  - Nell'ambito del progetto ho contribuito principalmente alla gestione degli utenti e all'autenticazione, occupandomi sia della parte backend che dell'applicazione Android.
+Per quanto riguarda il backend, ho collaborato alla realizzazione delle funzionalità di base relative all'utente, quali la creazione, la lettura, la modifica e la cancellazione dei dati, effettuando inoltre i relativi test tramite Postman. Ho partecipato all'integrazione con Keycloak per la gestione del login e della sicurezza, occupandomi anche della sincronizzazione dei dati tra Keycloak e il database. Ho contribuito inoltre alla configurazione dell'ambiente Docker, per semplificare l'avvio del progetto, e alla stesura della documentazione delle API tramite Swagger.
+Per quanto riguarda l'applicazione Android, mi sono occupata delle schermate di login, registrazione con scelta del ruolo, cambio password e cambio tema, oltre alla risoluzione di alcune problematiche relative al login, al logout e al reindirizzamento tra le schermate. Ho curato infine una configurazione che, in fase di test su dispositivo fisico via USB, collega automaticamente le porte del computer a quelle del telefono, rendendo backend, Keycloak e servizio email raggiungibili senza operazioni manuali. 
+
+
+- Alessia Sica:
+  - Mi sono occupata dello sviluppo del modulo catalogo e della gestione dei viaggi, sia lato backend che frontend:
+    Backend: Ho gestito la parte relativa a itinerari e singole attività, creando la struttura del database, la logica di gestione delle offerte e delle partenze/disponibilità, e i relativi endpoint REST usati dall'applicazione.
+    Frontend: Ho sviluppato le schermate dell'app Android in Jetpack Compose per la visualizzazione del catalogo e i dettagli dei viaggi, oltre ai flussi dedicati all'organizzatore per visualizzare, inserire e gestire le proprie offerte.
+    ho gestito anche la parte dell’admin e la sua rispettiva schermata.
 ---
 
 ## Indice
@@ -21,7 +52,6 @@ ciclo: catalogo → prenotazione → pagamento → viaggio concluso → recensio
 7. [Come creare un utente ADMIN](#7-come-creare-un-utente-admin)
 8. [Esecuzione dei test](#8-esecuzione-dei-test)
 9. [Struttura del repository](#9-struttura-del-repository)
-10. [Problemi frequenti](#10-problemi-frequenti)
 
 ---
 
@@ -152,56 +182,19 @@ cd travelapp
 
 ### Passo 2 — creare il file `.env`
 
-Il file `.env` **non è versionato**, perché contiene credenziali. Si parte dal modello:
+variabili d'ambiente da inserire:
+```declarative
+DB_URL=jdbc:postgresql://ep-dry-sun-aleh5jne-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode\=require&channel_binding\=require&allowPublicKeyRetrival\=true
+DB_USERNAME=neondb_owner
+DB_PASSWORD=npg_ChMeBZA7tH5l
 
-```bash
-cp .env.example .env
+APP_STORAGE_IMMAGINI_TIPO=s3
+APP_STORAGE_S3_ACCESS_KEY_ID=df90fe40cb6a138225572c391f36b466
+APP_STORAGE_S3_BUCKET=travelapp-photo
+APP_STORAGE_S3_ENDPOINT=https://aec065ac79464c5fc64737616603dae3.r2.cloudflarestorage.com
+APP_STORAGE_S3_SECRET_ACCESS_KEY=623145e4298aae19c2bdedcf401cec7025d0e226f43b6e2b608315440763ac3d
 ```
 
-```powershell
-# Windows PowerShell
-Copy-Item .env.example .env
-```
-
-Vanno poi compilate almeno le tre variabili del database, che **non hanno un valore predefinito**:
-senza di esse il backend non parte.
-
-```properties
-DB_URL=jdbc:postgresql://<host>:5432/<database>?sslmode=require
-DB_USERNAME=<utente>
-DB_PASSWORD=<password>
-```
-
-**Se non si dispone di un database**, il modo più rapido è aggiungere un PostgreSQL locale al
-`docker-compose.yml`, in coda alla sezione `services:`:
-
-```yaml
-  postgres:
-    image: postgres:16
-    container_name: travelapp-postgres
-    environment:
-      POSTGRES_DB: travelapp
-      POSTGRES_USER: travelapp
-      POSTGRES_PASSWORD: travelapp
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-```
-
-aggiungendo `postgres_data:` sotto la sezione `volumes:` in fondo allo stesso file. Nel `.env`:
-
-```properties
-DB_URL=jdbc:postgresql://travelapp-postgres:5432/travelapp
-DB_USERNAME=travelapp
-DB_PASSWORD=travelapp
-```
-
-Lo schema delle tabelle viene creato automaticamente da Hibernate al primo avvio: non ci sono
-script SQL da eseguire a mano.
-
-> Se il backend parte prima che PostgreSQL sia pronto, il container esce con un errore di
-> connessione: è sufficiente `docker compose restart backend`.
 
 ### Passo 3 — primo avvio
 
@@ -388,24 +381,4 @@ travelapp/
 
 ---
 
-## 10. Problemi frequenti
 
-| Sintomo | Causa e rimedio |
-|---|---|
-| Il container `backend` esce subito | `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` mancanti, oppure database irraggiungibile. Controllare con `docker compose logs backend`. |
-| La registrazione risponde `503` | `KEYCLOAK_ADMIN_CLIENT_SECRET` mancante o non aggiornato: vedi il [passo 4](#passo-4--client-secret-della-registrazione-obbligatorio-per-potersi-registrare). |
-| Tutte le chiamate API rispondono `401 invalid_token` | L'`issuer` del token non coincide con quello atteso: succede quando `KEYCLOAK_PUBLIC_URL` (`.env`) e `keycloak.base.url` (`local.properties`) non sono lo stesso indirizzo. |
-| Dopo il login l'app resta sulla richiesta di verifica email | La mail è su Mailpit: <http://localhost:8025>. |
-| Il telefono fisico non raggiunge i servizi | Verificare che `adb devices` mostri un solo dispositivo — con più device `adb reverse` non viene applicato — oppure passare all'IP di rete come descritto al [§5 passo 2](#passo-2--configurare-gli-indirizzi-solo-se-serve). |
-| Le immagini caricate danno `404` | Con lo storage su filesystem i byte restano sul disco di chi le ha caricate: se il database è condiviso fra più macchine, le copertine altrui non si vedono. Per condividerle davvero serve lo storage S3 (`APP_STORAGE_IMMAGINI_TIPO=s3`). |
-| Il ruolo appena assegnato non ha effetto | I ruoli viaggiano nel token: serve un nuovo login. |
-| Ambiente da azzerare | `docker compose down -v` cancella anche utenti, credenziali e sessioni di Keycloak; il realm viene poi reimportato da zero e il client secret del passo 4 va riletto. |
-
----
-
-## Documentazione aggiuntiva
-
-- [`docs/SECURITY.md`](docs/SECURITY.md) — modello di sicurezza e scelte adottate
-- [`docs/keycloak-setup.md`](docs/keycloak-setup.md) — configurazione del realm, passo per passo
-- [`docs/security-inventory.md`](docs/security-inventory.md) — inventario dei controlli
-- [`docs/security-test-report.md`](docs/security-test-report.md) — esito dei test di sicurezza
