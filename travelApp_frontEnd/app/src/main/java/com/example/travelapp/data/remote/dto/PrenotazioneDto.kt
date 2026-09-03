@@ -22,14 +22,11 @@ data class PrenotazioneDto(
     val titolo: String,
     val luogo: String,
 
-    // Periodo del viaggio prenotato.
     val dataInizioViaggio: String? = null,
     val dataFineViaggio: String? = null,
 
-    // Presente solo per prenotazioni di itinerari.
     val itinerarioId: Long? = null,
 
-    // Informazioni calcolate dal backend.
     val conclusa: Boolean = false,
     val recensibile: Boolean = false,
     val recensioneId: Long? = null

@@ -10,15 +10,6 @@ import com.example.travelapp.domain.model.PrenotatoPartenza
 import org.json.JSONObject
 import java.math.BigDecimal
 
-/**
- * Repository per la gestione delle prenotazioni.
- *
- * Centralizza:
- * - recupero delle prenotazioni dell'utente;
- * - dettaglio prenotazione;
- * - creazione e annullamento;
- * - recupero dei saldi per organizzatore e amministratore.
- */
 class PrenotazioneRepository(
     private val api: PrenotazioneApi
 ) {
@@ -30,15 +21,12 @@ class PrenotazioneRepository(
             .map { it.toDomain() }
     }
 
-    /** Viaggi in corso, futuri e prenotazioni cancellate. */
     suspend fun getPrenotazioniAttuali(): List<Prenotazione> {
         return api
             .getMiePrenotazioniAttuali()
             .content
             .map { it.toDomain() }
     }
-
-    /** Viaggi gia' conclusi: la lista da cui si lascia una recensione. */
     suspend fun getViaggiConclusi(): List<Prenotazione> {
         return api
             .getMieiViaggiConclusi()
@@ -70,11 +58,6 @@ class PrenotazioneRepository(
             .toDomain()
     }
 
-    /**
-     * Partenze ancora da fare di un proprio itinerario.
-     *
-     * Il filtro sulle date lo applica il backend: qui non si scarta nulla.
-     */
     suspend fun getPartenzeItinerario(
         itinerarioId: Long
     ): List<PartenzaOrganizzatore> {
@@ -82,8 +65,6 @@ class PrenotazioneRepository(
             .getPartenzeItinerario(itinerarioId)
             .map { it.toDomain() }
     }
-
-    /** Viaggiatori prenotati su una partenza. */
     suspend fun getPrenotatiPartenza(
         disponibilitaId: Long
     ): List<PrenotatoPartenza> {
@@ -93,12 +74,6 @@ class PrenotazioneRepository(
             .map { it.toPrenotatoPartenza() }
     }
 
-    /**
-     * Elimina una partenza del proprio itinerario.
-     *
-     * Il rifiuto piu' probabile e' il 409 su una partenza gia' venduta: il motivo lo
-     * spiega il backend, quindi si usa il suo messaggio invece di inventarne uno.
-     */
     suspend fun eliminaPartenza(
         disponibilitaId: Long
     ): Result<Unit> =
@@ -149,11 +124,6 @@ class PrenotazioneRepository(
         }
     }
 
-    /**
-     * Saldo complessivo della piattaforma.
-     *
-     * Destinato alle funzionalità amministrative.
-     */
     suspend fun getSaldoTotaleGlobale(): Result<BigDecimal> =
         try {
             val response =
@@ -180,9 +150,6 @@ class PrenotazioneRepository(
             Result.failure(e)
         }
 
-    /**
-     * Saldo relativo all'organizzatore autenticato.
-     */
     suspend fun getSaldoOrganizzatore(): Result<BigDecimal> =
         try {
             val response =

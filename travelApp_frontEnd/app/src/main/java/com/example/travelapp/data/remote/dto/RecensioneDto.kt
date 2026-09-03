@@ -2,12 +2,6 @@ package com.example.travelapp.data.remote.dto
 
 import com.example.travelapp.domain.model.Recensione
 
-/**
- * Recensione cosi' come la restituisce il backend.
- *
- * L'autore arriva gia' come nome e cognome: l'app non ha (e non deve avere) modo di
- * risalire all'anagrafica completa di chi ha scritto la recensione.
- */
 data class RecensioneResponseDto(
     val id: Long,
     val prenotazioneId: Long?,
@@ -36,14 +30,12 @@ data class RecensioneResponseDto(
     )
 }
 
-/** Creazione: si recensisce una prenotazione conclusa, il commento e' facoltativo. */
+
 data class CreaRecensioneDto(
     val prenotazioneId: Long,
     val votazione: Int,
     val comm: String?
 )
-
-/** Modifica della propria recensione: cambiano solo stelle e commento. */
 data class AggiornaRecensioneDto(
     val votazione: Int,
     val comm: String?

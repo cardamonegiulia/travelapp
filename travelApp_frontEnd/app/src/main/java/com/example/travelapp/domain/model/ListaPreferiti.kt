@@ -1,12 +1,6 @@
 package com.example.travelapp.domain.model
 
-/**
- * Visibilita' di una lista di preferiti.
- *
- * Rispecchia l'enum del backend. [SCONOSCIUTA] non esiste lato server: e' il ripiego per
- * un valore che questa versione dell'app non conosce ancora, cosi' un backend piu' nuovo
- * non fa crashare la schermata.
- */
+
 enum class VisibilitaLista {
     PRIVATA,
     CONDIVISA,

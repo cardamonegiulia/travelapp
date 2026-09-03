@@ -12,12 +12,6 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 
-/**
- * Liste di itinerari preferiti: quelle dell'utente (private o condivise) e quelle che
- * altri hanno condiviso con lui.
- *
- * Il proprietario non compare mai nei parametri: lo ricava il backend dal token.
- */
 interface PreferitiApi {
 
     @GET("api/preferiti")

@@ -7,11 +7,9 @@ import com.example.travelapp.domain.model.Pagamento
 class PagamentoRepository(
     private val api: PagamentoApi
 ) {
-
     suspend fun pagaPrenotazione(prenotazioneId: Long): Pagamento {
         return api.pagaPrenotazione(prenotazioneId).toDomain()
     }
-
     suspend fun getMieiPagamenti(): List<Pagamento> {
         return api.getMieiPagamenti()
             .content

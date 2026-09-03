@@ -15,14 +15,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-/**
- * Configurazione centralizzata del client HTTP.
- *
- * Gestisce:
- * - base URL del backend, letta dalla configurazione locale a build time;
- * - timeout;
- * - API REST autenticate tramite JWT.
- */
+
 object ApiClient {
 
     /**

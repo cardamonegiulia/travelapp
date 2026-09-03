@@ -2,12 +2,6 @@ package com.example.travelapp.data.remote.dto
 
 import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.domain.model.Utente
-
-/**
- * Risposta JSON del profilo utente (`UtenteResponseDto` lato backend).
- *
- * Il `keycloakId` non c'è di proposito: il backend non lo espone mai.
- */
 data class UtenteResponseDto(
     val id: Long,
     val nome: String?,
@@ -30,17 +24,12 @@ data class UtenteResponseDto(
     )
 }
 
-/** Corpo di `PUT /api/utenti/{id}` per aggiornare solo il tema. */
 data class AggiornaTemaDto(
     val tema: String
 )
-
-/** Corpo di `POST /api/utenti/me/password` (`CambioPasswordRequest` lato backend). */
 data class CambioPasswordDto(
     val nuovaPassword: String
 )
-
-/** Metadati di un'immagine (`ImmagineResponse` lato backend). */
 data class ImmagineDto(
     val id: Long,
     val url: String,
