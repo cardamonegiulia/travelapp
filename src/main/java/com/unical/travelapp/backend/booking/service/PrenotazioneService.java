@@ -47,11 +47,36 @@ public class PrenotazioneService {
     private final SessioneSingolaAttivitaRepository sessioneSingolaAttivitaRepository;
     private final UtenteService utenteService;
     private final PagamentoService pagamentoService;
+    public static final long MINUTI_SCADENZA_PAGAMENTO = 15;
 
     private void verificaEsistenzaUtente(Long id) {
         if (!utenteRepository.existsById(id)) {
             throw new UtenteNonTrovatoException(
                     "Utente non trovato: " + id
+            );
+        }
+    }
+    private void restituisciPosti(Prenotazione prenotazione) {
+
+        if (prenotazione.getDisponibilitaItinerario() != null) {
+
+            DisponibilitaItinerario disp =
+                    prenotazione.getDisponibilitaItinerario();
+
+            disp.setPostiDisponibili(
+                    disp.getPostiDisponibili()
+                            + prenotazione.getNumeroPartecipanti()
+            );
+        }
+
+        if (prenotazione.getSessioneSingolaAttivita() != null) {
+
+            SessioneSingolaAttivita sessione =
+                    prenotazione.getSessioneSingolaAttivita();
+
+            sessione.setPostiDisponibili(
+                    sessione.getPostiDisponibili()
+                            + prenotazione.getNumeroPartecipanti()
             );
         }
     }
@@ -268,8 +293,11 @@ public class PrenotazioneService {
             prezzoTotale = prezzoBase.add(prezzoExtra);
 
         } else {
-            sessioneSingolaAttivita =
-                    recuperaSingolaAttivita(req.getSessioneSingolaAttivitaId());
+            sessioneSingolaAttivita = recuperaSingolaAttivita(req.getSessioneSingolaAttivitaId());
+
+            controllaSessionePrenotabile(
+                    sessioneSingolaAttivita
+            );
 
             controllaEScalaPostiSessione(
                     sessioneSingolaAttivita,
@@ -363,28 +391,45 @@ public class PrenotazioneService {
             );
         }
 
-        if (prenotazione.getDisponibilitaItinerario() != null) {
-            DisponibilitaItinerario disp =
-                    prenotazione.getDisponibilitaItinerario();
-
-            disp.setPostiDisponibili(
-                    disp.getPostiDisponibili()
-                            + prenotazione.getNumeroPartecipanti()
-            );
-        }
-        if (prenotazione.getSessioneSingolaAttivita() != null) {
-            SessioneSingolaAttivita sessione =
-                    prenotazione.getSessioneSingolaAttivita();
-
-            sessione.setPostiDisponibili(
-                    sessione.getPostiDisponibili()
-                            + prenotazione.getNumeroPartecipanti()
-            );
-        }
-
+        restituisciPosti(prenotazione);
         pagamentoService.gestisciPagamentoAnnullamento(prenotazioneId);
         prenotazione.setStato(StatoPrenotazione.CANCELLATA);
         return prenotazioneRepo.save(prenotazione);
+    }
+
+    @Transactional
+    public void annullaPrenotazioneScaduta(
+            Long prenotazioneId,
+            LocalDateTime limite) {
+
+        Prenotazione prenotazione =
+                prenotazioneRepo
+                        .findById(prenotazioneId)
+                        .orElse(null);
+
+        if (prenotazione == null) {
+            return;
+        }
+
+        if (prenotazione.getStato() != StatoPrenotazione.IN_ATTESA) {
+            return;
+        }
+
+        if (prenotazione.getDataPrenotazione() == null ||
+                prenotazione.getDataPrenotazione().isAfter(limite)) {
+            return;
+        }
+
+        restituisciPosti(prenotazione);
+
+        pagamentoService
+                .gestisciPagamentoAnnullamento(prenotazioneId);
+
+        prenotazione.setStato(
+                StatoPrenotazione.CANCELLATA
+        );
+
+        prenotazioneRepo.save(prenotazione);
     }
 
     public Page<Prenotazione> getMiePrenotazioni(Pageable pageable) {
@@ -513,6 +558,24 @@ public class PrenotazioneService {
         itinerarioRepository.findByIdAndOrganizzatore_Id(itinerarioId, richiedenteId)
                 .orElseThrow(() -> new ItinerarioNonTrovatoException(
                         "Itinerario non trovato: " + itinerarioId));
+    }
+
+    private void controllaSessionePrenotabile(
+            SessioneSingolaAttivita sessione) {
+
+        if (sessione.getDataInizio() == null ||
+                !sessione.getDataInizio().isAfter(LocalDateTime.now())) {
+
+            throw new RichiestaPrenotazioneNonValidaException(
+                    "La sessione selezionata non è più prenotabile"
+            );
+        }
+
+        if (!"ATTIVA".equalsIgnoreCase(sessione.getStato())) {
+            throw new RichiestaPrenotazioneNonValidaException(
+                    "La sessione selezionata non è attiva"
+            );
+        }
     }
 
     public BigDecimal getSaldoTotaleGlobale() {

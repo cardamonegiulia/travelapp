@@ -39,4 +39,6 @@ public class PrenotazioneResponseDto {
     private boolean conclusa;
     private boolean recensibile;
     private Long recensioneId;
+    private Long secondiRimanentiPagamento;
+
 }

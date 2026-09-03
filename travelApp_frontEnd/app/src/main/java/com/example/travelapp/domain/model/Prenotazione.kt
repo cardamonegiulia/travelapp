@@ -15,7 +15,8 @@ data class Prenotazione(
     val itinerarioId: Long? = null,
     val conclusa: Boolean = false,
     val recensibile: Boolean = false,
-    val recensioneId: Long? = null
+    val recensioneId: Long? = null,
+    val secondiRimanentiPagamento: Long = 0L,
 ) {
     val dataInizio: String?
         get() = dataInizioViaggio
