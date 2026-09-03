@@ -54,6 +54,49 @@ class DisponibilitaEsposteTest extends SecurityIntegrationTestBase {
     }
 
     @Test
+    void lePartenzeConcluseNonCompaionoFraLeDisponibilita() throws Exception {
+        Itinerario itinerario = itinerario(organizzatore);
+        disponibilitaConclusa(itinerario, 10);
+        DisponibilitaItinerario futura = disponibilita(itinerario, 10);
+
+        // una data che non si puo' piu' prenotare non arriva affatto: la scheda del
+        // viaggiatore proponeva altrimenti partenze di viaggi gia' conclusi
+        mockMvc.perform(get("/api/itinerari/" + itinerario.getId() + "/disponibilita")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(futura.getId().intValue()));
+    }
+
+    @Test
+    void unaPartenzaColTermineDiPrenotazioneScadutoNonCompare() throws Exception {
+        Itinerario itinerario = itinerario(organizzatore);
+        DisponibilitaItinerario partenza = disponibilita(itinerario, 12);
+        // il viaggio deve ancora partire, ma le prenotazioni si sono chiuse ieri
+        partenza.setDataLimitePrenotazione(LocalDateTime.now().minusDays(1));
+        disponibilitaRepository.save(partenza);
+
+        mockMvc.perform(get("/api/itinerari/" + itinerario.getId() + "/disponibilita")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void unaPartenzaEsauritaRestaInElenco() throws Exception {
+        Itinerario itinerario = itinerario(organizzatore);
+        DisponibilitaItinerario esaurita = disponibilita(itinerario, 0);
+
+        // "esaurito" non e' "concluso": i posti possono tornare liberi, la data resta
+        mockMvc.perform(get("/api/itinerari/" + itinerario.getId() + "/disponibilita")
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(esaurita.getId().intValue()))
+                .andExpect(jsonPath("$[0].postiDisponibili").value(0));
+    }
+
+    @Test
     void leSessioniDiUnAttivitaArrivanoConDateEPosti() throws Exception {
         SessioneSingolaAttivita sessione = sessione(organizzatore, 8);
 

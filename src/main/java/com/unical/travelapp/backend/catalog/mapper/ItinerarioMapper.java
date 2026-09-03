@@ -299,6 +299,12 @@ public class ItinerarioMapper {
                         )
                 );
     }
+    /**
+     * La partenza da mostrare in scheda: la piu' vicina fra quelle ancora prenotabili.
+     *
+     * <p>Le partenze gia' concluse non contano: se restassero, la scheda continuerebbe a
+     * esibire le date di un viaggio che nessuno puo' piu' comprare.
+     */
     private Optional<DisponibilitaItinerario> primaDisponibilita(
             Itinerario itinerario
     ) {
@@ -308,6 +314,8 @@ public class ItinerarioMapper {
         ) {
             return Optional.empty();
         }
+        LocalDateTime adesso =
+                LocalDateTime.now();
         return itinerario
                 .getDisponibilita()
                 .stream()
@@ -315,6 +323,12 @@ public class ItinerarioMapper {
                         disponibilita ->
                                 disponibilita.getDataInizio()
                                         != null
+                )
+                .filter(
+                        disponibilita ->
+                                disponibilita.prenotabileAl(
+                                        adesso
+                                )
                 )
                 .min(
                         Comparator.comparing(
@@ -336,19 +350,10 @@ public class ItinerarioMapper {
         return itinerario
                 .getDisponibilita()
                 .stream()
-                .anyMatch(periodo -> {
-                    LocalDateTime termine =
-                            periodo
-                                    .getDataLimitePrenotazione()
-                                    != null
-                                    ? periodo
-                                    .getDataLimitePrenotazione()
-                                    : periodo
-                                    .getDataInizio();
-                    return termine != null
-                            && !termine.isBefore(
-                            adesso
-                    );
-                });
+                .anyMatch(periodo ->
+                        periodo.prenotabileAl(
+                                adesso
+                        )
+                );
     }
 }

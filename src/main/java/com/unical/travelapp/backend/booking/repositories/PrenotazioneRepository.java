@@ -23,10 +23,17 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
     @Query("SELECT COALESCE(SUM(p.prezzoTotale), 0) FROM Prenotazione p WHERE p.stato <> :statoEscluso")
     BigDecimal sumTotaleGlobale(@Param("statoEscluso") StatoPrenotazione statoEscluso);
 
-    @Query("SELECT COALESCE(SUM(p.prezzoTotale), 0) FROM Prenotazione p " +
-            "WHERE p.stato <> :statoEscluso AND (" +
-            "p.disponibilitaItinerario.itinerario.organizzatore.id = :organizzatoreId OR " +
-            "p.sessioneSingolaAttivita.singolaAttivita.organizzatore.id = :organizzatoreId)")
+    @Query("""
+            select coalesce(sum(p.prezzoTotale), 0) from Prenotazione p
+            left join p.disponibilitaItinerario d
+            left join d.itinerario i
+            left join i.organizzatore oi
+            left join p.sessioneSingolaAttivita s
+            left join s.singolaAttivita a
+            left join a.organizzatore oa
+            where p.stato <> :statoEscluso
+              and (oi.id = :organizzatoreId or oa.id = :organizzatoreId)
+            """)
     BigDecimal sumTotalePerOrganizzatore(@Param("organizzatoreId") Long organizzatoreId,
                                          @Param("statoEscluso") StatoPrenotazione statoEscluso);
 

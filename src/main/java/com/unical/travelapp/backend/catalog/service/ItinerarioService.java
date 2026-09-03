@@ -20,7 +20,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,11 +44,25 @@ public class ItinerarioService {
     public Optional<Itinerario> getItinerarioById(Long id) {
         return itinerarioRepository.findById(id);
     }
+    /**
+     * Le partenze che il viaggiatore puo' ancora prenotare, dalla piu' vicina.
+     *
+     * <p>Quelle il cui termine e' passato non vengono restituite affatto: una data che non
+     * si puo' piu' comprare non e' un'opzione disabilitata, e' un'opzione che non c'e' piu',
+     * e lasciarla in scheda faceva sembrare ancora in vendita viaggi gia' conclusi. Le
+     * partenze esaurite restano invece nell'elenco: i posti possono tornare liberi.
+     */
     public List<DisponibilitaItinerario> getDisponibilitaByItinerarioId(Long itinerarioId) {
         if (!itinerarioRepository.existsById(itinerarioId)) {
             throw new ItinerarioNonTrovatoException("Itinerario non trovato: " + itinerarioId);
         }
-        return disponibilitaRepository.findByItinerario_Id(itinerarioId);
+        LocalDateTime adesso = LocalDateTime.now();
+        return disponibilitaRepository.findByItinerario_Id(itinerarioId)
+                .stream()
+                .filter(partenza -> partenza.prenotabileAl(adesso))
+                .sorted(Comparator.comparing(DisponibilitaItinerario::getDataInizio,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
     }
     public List<AttivitaExtraDTO> getAttivitaExtra(Long itinerarioId) {
         if (!itinerarioRepository.existsById(itinerarioId)) {

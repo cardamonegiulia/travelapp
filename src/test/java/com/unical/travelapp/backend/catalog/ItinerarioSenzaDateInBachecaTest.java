@@ -61,6 +61,37 @@ class ItinerarioSenzaDateInBachecaTest extends SecurityIntegrationTestBase {
     }
 
     @Test
+    void leDateDiUnaPartenzaConclusaSparisconoDallaScheda() throws Exception {
+        Itinerario itinerario = itinerario(organizzatore);
+        disponibilitaConclusa(itinerario, 10);
+
+        // la scheda non deve piu' esibire il periodo di un viaggio gia' finito: senza
+        // partenze prenotabili non ha date da mostrare, solo l'etichetta che lo dice
+        mockMvc.perform(get("/api/itinerari/" + itinerario.getId())
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dateDisponibili").value(false))
+                .andExpect(jsonPath("$.dataInizio").doesNotExist())
+                .andExpect(jsonPath("$.dataFine").doesNotExist());
+    }
+
+    @Test
+    void laSchedaMostraLaPrimaPartenzaPrenotabileNonQuellaConclusa() throws Exception {
+        Itinerario itinerario = itinerario(organizzatore);
+        disponibilitaConclusa(itinerario, 10);
+        DisponibilitaItinerario futura = disponibilita(itinerario, 10);
+
+        mockMvc.perform(get("/api/itinerari/" + itinerario.getId())
+                        .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dateDisponibili").value(true))
+                .andExpect(jsonPath("$.dataInizio")
+                        .value(futura.getDataInizio().toLocalDate().toString()))
+                .andExpect(jsonPath("$.dataFine")
+                        .value(futura.getDataFine().toLocalDate().toString()));
+    }
+
+    @Test
     void unaNuovaPartenzaRiportaLItinerarioFraQuelliPrenotabili() throws Exception {
         Itinerario itinerario = itinerario(organizzatore);
         disponibilitaConclusa(itinerario, 10);

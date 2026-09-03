@@ -4,6 +4,7 @@ import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.remote.dto.DisponibilitaItinerarioResponseDto
 import com.example.travelapp.data.remote.dto.SessioneAttivitaResponseDto
 import com.example.travelapp.data.remote.dto.isPrenotabile
+import com.example.travelapp.data.remote.dto.prenotazioniAperte
 import com.example.travelapp.data.repository.ItinerarioRepository
 import com.example.travelapp.data.repository.PreferitiRepository
 import com.example.travelapp.data.repository.RecensioneRepository
@@ -78,10 +79,15 @@ class DetailViewModel(
                         itinerarioId
                     )
             if (result.isSuccess) {
+                // Il server manda gia' solo le partenze ancora prenotabili; il filtro qui
+                // e' una rete di sicurezza: una data il cui termine e' passato non deve
+                // comparire in scheda, nemmeno disabilitata.
                 val list =
                     result.getOrDefault(
                         emptyList()
-                    )
+                    ).filter { disponibilita ->
+                        disponibilita.prenotazioniAperte()
+                    }
                 _uiState.update {
                     it.copy(
                         isLoading = false,

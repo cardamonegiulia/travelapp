@@ -39,7 +39,6 @@ import com.example.travelapp.data.remote.dto.DisponibilitaItinerarioResponseDto
 import com.example.travelapp.data.remote.dto.SessioneAttivitaResponseDto
 import com.example.travelapp.data.remote.dto.dataLeggibile
 import com.example.travelapp.data.remote.dto.isPrenotabile
-import com.example.travelapp.data.remote.dto.prenotazioniAperte
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.ListaPreferiti
 import com.example.travelapp.domain.model.Recensione
@@ -375,8 +374,6 @@ fun ItinerarioDetailScreen(
                         ) { disp ->
                             val isSelected =
                                 uiState.idSelezionato == disp.id
-                            val aperte =
-                                disp.prenotazioniAperte()
                             val termine =
                                 dataLeggibile(
                                     disp.dataLimitePrenotazione
@@ -393,8 +390,6 @@ fun ItinerarioDetailScreen(
                                     },
                                 nota =
                                     when {
-                                        !aperte ->
-                                            "Prenotazioni chiuse"
                                         disp.postiDisponibili <= 0 ->
                                             "Esaurito"
                                         termine != null ->
