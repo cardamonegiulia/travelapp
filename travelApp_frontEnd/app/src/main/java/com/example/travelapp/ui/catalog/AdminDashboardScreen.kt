@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -26,21 +25,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-
 class AdminDashboardViewModel(
     application: Application
 ) : AndroidViewModel(application) {
-
     private val repo = PrenotazioneRepository(
         ApiClient.getPrenotazioneApi(application)
     )
     private val _saldo = MutableStateFlow<BigDecimal?>(null)
     val saldo: StateFlow<BigDecimal?> = _saldo.asStateFlow()
-
     init {
         caricaSaldo()
     }
-
     fun caricaSaldo() {
         viewModelScope.launch {
             val result = repo.getSaldoTotaleGlobale()
@@ -48,7 +43,6 @@ class AdminDashboardViewModel(
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
@@ -59,7 +53,6 @@ fun AdminDashboardScreen(
     viewModel: AdminDashboardViewModel = viewModel()
 ) {
     val saldo by viewModel.saldo.collectAsState()
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -85,7 +78,6 @@ fun AdminDashboardScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Card Saldo Globale
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = TravelBlue),
@@ -102,10 +94,7 @@ fun AdminDashboardScreen(
                     )
                 }
             }
-
             Text("Gestione Globale", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TravelTextDark)
-
-            // Card Offerte Globali
             Card(
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(containerColor = TravelSurface),
@@ -125,8 +114,6 @@ fun AdminDashboardScreen(
                     }
                 }
             }
-
-            // Card Utenti
             Card(
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(containerColor = TravelSurface),

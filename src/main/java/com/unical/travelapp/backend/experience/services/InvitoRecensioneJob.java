@@ -7,92 +7,160 @@ import com.unical.travelapp.backend.catalog.entity.Itinerario;
 import com.unical.travelapp.backend.experience.repository.RecensioneRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Job giornaliero che invita a recensire i viaggi conclusi il giorno prima.
- *
- * <p>E' idempotente per costruzione: prima di creare l'invito controlla che per quella
- * prenotazione non ne esista gia' uno e che l'utente non abbia gia' scritto la recensione.
- * Se il job gira due volte - stessa giornata, riavvio, esecuzione manuale - la seconda
- * volta non crea nulla.
- *
- * <p>La finestra e' l'intera giornata di ieri, mezzanotte inclusa ed esclusa il giorno
- * dopo: un viaggio che finisce alle 23:30 e uno che finisce alle 00:05 dello stesso giorno
- * ricevono l'invito insieme.
- */
+
 @Component
 public class InvitoRecensioneJob {
 
-    private static final Logger log = LoggerFactory.getLogger(InvitoRecensioneJob.class);
+    private static final Logger log =
+            LoggerFactory.getLogger(InvitoRecensioneJob.class);
 
     private final PrenotazioneRepository prenotazioneRepository;
     private final RecensioneRepository recensioneRepository;
     private final NotificaService notificaService;
+    private final ZoneId zonaNotifiche;
 
-    public InvitoRecensioneJob(PrenotazioneRepository prenotazioneRepository,
-                               RecensioneRepository recensioneRepository,
-                               NotificaService notificaService) {
+    public InvitoRecensioneJob(
+            PrenotazioneRepository prenotazioneRepository,
+            RecensioneRepository recensioneRepository,
+            NotificaService notificaService,
+            @Value("${app.notifiche.invito-recensione.zona:Europe/Rome}")
+            String zonaNotifiche
+    ) {
         this.prenotazioneRepository = prenotazioneRepository;
         this.recensioneRepository = recensioneRepository;
         this.notificaService = notificaService;
+        this.zonaNotifiche = ZoneId.of(zonaNotifiche);
     }
 
-    /**
-     * Esecuzione programmata: una volta al giorno, sui viaggi finiti ieri.
-     *
-     * <p>Cadenza e fuso orario sono configurabili; il default e' le 9 del mattino, quando
-     * la notifica ha piu' probabilita' di essere vista di una creata nel cuore della notte.
-     */
-    @Scheduled(cron = "${app.notifiche.invito-recensione.cron:0 0 9 * * *}",
-            zone = "${app.notifiche.invito-recensione.zona:Europe/Rome}")
+
+    @Scheduled(
+            cron = "${app.notifiche.invito-recensione.cron:0 0 9 * * *}",
+            zone = "${app.notifiche.invito-recensione.zona:Europe/Rome}"
+    )
     @Transactional
-    public void invitaARecensireIViaggiConclusiIeri() {
-        int creati = generaInvitiPerViaggiConclusiIl(LocalDate.now().minusDays(1));
-        log.info("Inviti a recensire generati: {}", creati);
+    public void generaInvitiRecensioneProgrammato() {
+
+        int creati = generaInvitiMancantiFinoAIeri();
+
+        log.info(
+                "Inviti a recensire generati dal job programmato: {}",
+                creati
+        );
     }
 
-    /**
-     * Genera gli inviti per i viaggi conclusi nel giorno indicato.
-     *
-     * @return quante notifiche sono state create davvero (le gia' presenti non contano)
-     */
+
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void recuperaInvitiMancantiAllAvvio() {
+
+        int creati = generaInvitiMancantiFinoAIeri();
+
+        log.info(
+                "Recupero notifiche all'avvio completato. Inviti generati: {}",
+                creati
+        );
+    }
+
+
+    @Transactional
+    public int generaInvitiMancantiFinoAIeri() {
+
+        LocalDate oggi = LocalDate.now(zonaNotifiche);
+
+        LocalDateTime inizioOggi =
+                oggi.atStartOfDay();
+
+        List<Prenotazione> concluse =
+                prenotazioneRepository.findItinerariConclusiPrimaDi(
+                        inizioOggi,
+                        StatoPrenotazione.CANCELLATA
+                );
+
+        return generaInviti(concluse);
+    }
+
     @Transactional
     public int generaInvitiPerViaggiConclusiIl(LocalDate giorno) {
-        LocalDateTime da = giorno.atStartOfDay();
-        LocalDateTime a = giorno.plusDays(1).atStartOfDay();
 
-        List<Prenotazione> concluse = prenotazioneRepository.findItinerariConclusiTra(
-                da, a, StatoPrenotazione.CANCELLATA);
+        LocalDateTime da =
+                giorno.atStartOfDay();
 
-        if (concluse.isEmpty()) {
+        LocalDateTime a =
+                giorno.plusDays(1).atStartOfDay();
+
+        List<Prenotazione> concluse =
+                prenotazioneRepository.findItinerariConclusiTra(
+                        da,
+                        a,
+                        StatoPrenotazione.CANCELLATA
+                );
+
+        return generaInviti(concluse);
+    }
+
+    private int generaInviti(List<Prenotazione> concluse) {
+
+        if (concluse == null || concluse.isEmpty()) {
             return 0;
         }
 
-        // Chi ha gia' recensito non va invitato: una sola query per tutte le prenotazioni
-        // della giornata, invece di una per riga.
-        Set<Long> giaRecensite = new HashSet<>(recensioneRepository
-                .findByPrenotazione_IdIn(concluse.stream().map(Prenotazione::getId).toList())
-                .stream()
-                .map(recensione -> recensione.getPrenotazione().getId())
-                .toList());
+        List<Long> prenotazioneIds =
+                concluse.stream()
+                        .map(Prenotazione::getId)
+                        .toList();
+
+        Set<Long> giaRecensite =
+                new HashSet<>(
+                        recensioneRepository
+                                .findByPrenotazione_IdIn(prenotazioneIds)
+                                .stream()
+                                .map(recensione ->
+                                        recensione
+                                                .getPrenotazione()
+                                                .getId()
+                                )
+                                .toList()
+                );
 
         int creati = 0;
+
         for (Prenotazione prenotazione : concluse) {
+
             if (giaRecensite.contains(prenotazione.getId())) {
                 continue;
             }
 
-            Itinerario itinerario = prenotazione.getDisponibilitaItinerario().getItinerario();
-            if (notificaService.creaInvitoRecensione(prenotazione, itinerario)) {
+            if (prenotazione.getDisponibilitaItinerario() == null) {
+                continue;
+            }
+
+            Itinerario itinerario =
+                    prenotazione
+                            .getDisponibilitaItinerario()
+                            .getItinerario();
+
+            if (itinerario == null) {
+                continue;
+            }
+
+            if (notificaService.creaInvitoRecensione(
+                    prenotazione,
+                    itinerario
+            )) {
                 creati++;
             }
         }

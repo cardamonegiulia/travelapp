@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,25 +9,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
 data class GestioneUtentiUiState(
     val isLoading: Boolean = false,
     val utenti: List<Utente> = emptyList(),
     val messaggioSuccesso: String? = null,
     val errorMessage: String? = null
 )
-
 class GestioneUtentiViewModel(application: Application) : AndroidViewModel(application) {
-
     private val repository = UtenteRepository(application.applicationContext)
-
     private val _uiState = MutableStateFlow(GestioneUtentiUiState())
     val uiState: StateFlow<GestioneUtentiUiState> = _uiState.asStateFlow()
-
     init {
         caricaUtenti()
     }
-
     fun caricaUtenti() {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
         viewModelScope.launch {
@@ -40,7 +33,6 @@ class GestioneUtentiViewModel(application: Application) : AndroidViewModel(appli
             }
         }
     }
-
     fun promuoviAdAdmin(id: Long) {
         viewModelScope.launch {
             val result = repository.promuoviAdAdmin(id)
@@ -59,7 +51,6 @@ class GestioneUtentiViewModel(application: Application) : AndroidViewModel(appli
             }
         }
     }
-
     fun eliminaUtente(id: Long) {
         viewModelScope.launch {
             val result = repository.eliminaUtente(id)
@@ -75,7 +66,6 @@ class GestioneUtentiViewModel(application: Application) : AndroidViewModel(appli
             }
         }
     }
-
     fun clearFeedback() {
         _uiState.update { it.copy(messaggioSuccesso = null, errorMessage = null) }
     }

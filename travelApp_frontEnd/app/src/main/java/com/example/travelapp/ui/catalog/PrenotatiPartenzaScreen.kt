@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,12 +42,6 @@ import com.example.travelapp.ui.theme.WarningBackground
 import com.example.travelapp.ui.theme.WarningYellow
 import com.example.travelapp.ui.util.formattaData
 import com.example.travelapp.ui.util.formattaIntervalloDate
-
-/**
- * Chi ha comprato una partenza: nome, quante persone porta e a che punto e' il pagamento.
- *
- * Le prenotazioni cancellate non compaiono, perche' quei posti sono tornati liberi.
- */
 @Composable
 fun PrenotatiPartenzaScreen(
     state: PrenotatiUiState,
@@ -56,7 +49,6 @@ fun PrenotatiPartenzaScreen(
     onRiprova: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-
     Scaffold(
         modifier = modifier,
         containerColor = BackgroundLavender,
@@ -68,9 +60,7 @@ fun PrenotatiPartenzaScreen(
             )
         }
     ) { innerPadding ->
-
         when {
-
             state.isLoading -> {
                 Box(
                     modifier = Modifier
@@ -81,7 +71,6 @@ fun PrenotatiPartenzaScreen(
                     CircularProgressIndicator()
                 }
             }
-
             state.errore != null -> {
                 MessaggioErrore(
                     titolo = "Impossibile caricare i prenotati",
@@ -90,7 +79,6 @@ fun PrenotatiPartenzaScreen(
                     modifier = Modifier.padding(innerPadding)
                 )
             }
-
             else -> {
                 LazyColumn(
                     modifier = Modifier
@@ -99,13 +87,11 @@ fun PrenotatiPartenzaScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-
                     state.partenza?.let { partenza ->
                         item {
                             RiepilogoPartenza(partenza)
                         }
                     }
-
                     if (state.prenotati.isEmpty()) {
                         item {
                             Text(
@@ -128,30 +114,23 @@ fun PrenotatiPartenzaScreen(
         }
     }
 }
-
-
 @Composable
 private fun RiepilogoPartenza(
     partenza: PartenzaOrganizzatore
 ) {
-
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = TravelBlue),
         modifier = Modifier.fillMaxWidth()
     ) {
-
         Column(modifier = Modifier.padding(16.dp)) {
-
             Text(
                 text = formattaIntervalloDate(partenza.dataInizio, partenza.dataFine),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
-
             Spacer(Modifier.height(6.dp))
-
             Text(
                 text = etichettaPrenotazioni(partenza.numeroPrenotazioni) +
                         " · ${partenza.partecipantiTotali} partecipanti",
@@ -161,27 +140,21 @@ private fun RiepilogoPartenza(
         }
     }
 }
-
-
 @Composable
 private fun PrenotatoCard(
     prenotato: PrenotatoPartenza
 ) {
-
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
         elevation = CardDefaults.cardElevation(2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-
         Column(modifier = Modifier.padding(16.dp)) {
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
-
                 Text(
                     text = prenotato.nomeCompleto,
                     style = MaterialTheme.typography.titleMedium,
@@ -189,7 +162,6 @@ private fun PrenotatoCard(
                     color = TextPrimary,
                     modifier = Modifier.weight(1f)
                 )
-
                 Text(
                     text = "€ %.2f".format(prenotato.prezzoTotale),
                     style = MaterialTheme.typography.titleMedium,
@@ -197,26 +169,20 @@ private fun PrenotatoCard(
                     color = TravelBlue
                 )
             }
-
             Spacer(Modifier.height(8.dp))
-
             Text(
                 text = etichettaPartecipanti(prenotato.numeroPartecipanti) +
                         " · prenotato il ${formattaData(prenotato.dataPrenotazione)}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary
             )
-
             Spacer(Modifier.height(10.dp))
-
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-
                 Badge(
                     testo = testoStatoPrenotazione(prenotato.statoPrenotazione),
                     coloreSfondo = sfondoStatoPrenotazione(prenotato.statoPrenotazione),
                     coloreTesto = testoColoreStatoPrenotazione(prenotato.statoPrenotazione)
                 )
-
                 prenotato.statoPagamento?.let { stato ->
                     Badge(
                         testo = testoStatoPagamento(stato),
@@ -228,15 +194,12 @@ private fun PrenotatoCard(
         }
     }
 }
-
-
 @Composable
 private fun Badge(
     testo: String,
     coloreSfondo: Color,
     coloreTesto: Color
 ) {
-
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = coloreSfondo
@@ -250,41 +213,28 @@ private fun Badge(
         )
     }
 }
-
-
 private fun etichettaPartecipanti(numero: Int): String =
     if (numero == 1) "1 partecipante" else "$numero partecipanti"
-
-
-/*
- * Gli stessi colori usati dalla card delle prenotazioni lato viaggiatore: lo stato di una
- * prenotazione deve leggersi allo stesso modo da entrambe le parti.
- */
-
 private val VerdeChiaro = Color(0xFFE8F5EC)
 private val RossoChiaro = Color(0xFFFFEAEA)
-
 private fun testoStatoPrenotazione(stato: StatoPrenotazione): String =
     when (stato) {
         StatoPrenotazione.CONFERMATA -> "CONFERMATA"
         StatoPrenotazione.IN_ATTESA -> "IN ATTESA"
         StatoPrenotazione.CANCELLATA -> "CANCELLATA"
     }
-
 private fun sfondoStatoPrenotazione(stato: StatoPrenotazione): Color =
     when (stato) {
         StatoPrenotazione.CONFERMATA -> VerdeChiaro
         StatoPrenotazione.IN_ATTESA -> WarningBackground
         StatoPrenotazione.CANCELLATA -> RossoChiaro
     }
-
 private fun testoColoreStatoPrenotazione(stato: StatoPrenotazione): Color =
     when (stato) {
         StatoPrenotazione.CONFERMATA -> SuccessGreen
         StatoPrenotazione.IN_ATTESA -> WarningYellow
         StatoPrenotazione.CANCELLATA -> ErrorRed
     }
-
 private fun testoStatoPagamento(stato: StatoPagamento): String =
     when (stato) {
         StatoPagamento.COMPLETATO -> "PAGATO"
@@ -293,7 +243,6 @@ private fun testoStatoPagamento(stato: StatoPagamento): String =
         StatoPagamento.RIMBORSATO -> "RIMBORSATO"
         StatoPagamento.ANNULLATO -> "PAGAMENTO ANNULLATO"
     }
-
 private fun sfondoStatoPagamento(stato: StatoPagamento): Color =
     when (stato) {
         StatoPagamento.COMPLETATO -> VerdeChiaro
@@ -301,7 +250,6 @@ private fun sfondoStatoPagamento(stato: StatoPagamento): Color =
         StatoPagamento.FALLITO, StatoPagamento.ANNULLATO -> RossoChiaro
         StatoPagamento.RIMBORSATO -> VerdeChiaro
     }
-
 private fun testoColoreStatoPagamento(stato: StatoPagamento): Color =
     when (stato) {
         StatoPagamento.COMPLETATO -> SuccessGreen

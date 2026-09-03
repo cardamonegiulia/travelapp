@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import android.app.Application
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -38,22 +37,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-
 class OrganizzatoreHomeViewModel(
     application: Application
 ) : AndroidViewModel(application) {
-
     private val repo = PrenotazioneRepository(
         ApiClient.getPrenotazioneApi(application)
     )
-
     private val _saldo = MutableStateFlow<BigDecimal?>(null)
     val saldo: StateFlow<BigDecimal?> = _saldo.asStateFlow()
-
     init {
         caricaSaldo()
     }
-
     fun caricaSaldo() {
         viewModelScope.launch {
             val result = repo.getSaldoOrganizzatore()
@@ -61,7 +55,6 @@ class OrganizzatoreHomeViewModel(
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrganizzatoreHomeScreen(
@@ -78,21 +71,17 @@ fun OrganizzatoreHomeScreen(
     val context = LocalContext.current
     val saldo by homeViewModel.saldo.collectAsState()
     val uiState by offerteViewModel.uiState.collectAsState()
-
     var selectedTab by remember { mutableIntStateOf(0) }
-
     LaunchedEffect(Unit) {
         offerteViewModel.caricaOfferte(soloMie = true)
         homeViewModel.caricaSaldo()
     }
-
     LaunchedEffect(uiState.feedbackMessage) {
         uiState.feedbackMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             offerteViewModel.clearFeedback()
         }
     }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -146,7 +135,6 @@ fun OrganizzatoreHomeScreen(
                             fontWeight = FontWeight.Bold
                         )
                     }
-
                     Button(
                         onClick = onCreaAttivita,
                         modifier = Modifier
@@ -199,7 +187,6 @@ fun OrganizzatoreHomeScreen(
                     )
                 }
             }
-
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = TravelSurface,
@@ -226,7 +213,6 @@ fun OrganizzatoreHomeScreen(
                     }
                 )
             }
-
             if (uiState.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -258,8 +244,6 @@ fun OrganizzatoreHomeScreen(
                             uiState.itinerari,
                             key = { it.id }
                         ) { item ->
-                            // Tutta la card apre l'elenco delle partenze: le icone di
-                            // modifica ed elimina restano cliccabili per conto loro.
                             Card(
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = TravelSurface),
@@ -282,7 +266,6 @@ fun OrganizzatoreHomeScreen(
                                                 .background(ImagePlaceholder),
                                             contentScale = ContentScale.Crop
                                         )
-
                                         Row(
                                             modifier = Modifier
                                                 .align(Alignment.TopEnd)
@@ -304,7 +287,6 @@ fun OrganizzatoreHomeScreen(
                                                     modifier = Modifier.size(18.dp)
                                                 )
                                             }
-
                                             FilledIconButton(
                                                 onClick = { offerteViewModel.eliminaItinerario(item.id) },
                                                 colors = IconButtonDefaults.filledIconButtonColors(
@@ -322,7 +304,6 @@ fun OrganizzatoreHomeScreen(
                                             }
                                         }
                                     }
-
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -343,7 +324,6 @@ fun OrganizzatoreHomeScreen(
                                                 fontSize = 12.sp
                                             )
                                         }
-
                                         Text(
                                             text = "€${item.prezzoBase ?: "0"}",
                                             fontWeight = FontWeight.Bold,
@@ -351,7 +331,6 @@ fun OrganizzatoreHomeScreen(
                                             color = TravelBlue
                                         )
                                     }
-
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -368,7 +347,6 @@ fun OrganizzatoreHomeScreen(
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.SemiBold
                                         )
-
                                         Icon(
                                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                             contentDescription = null,
@@ -425,7 +403,6 @@ fun OrganizzatoreHomeScreen(
                                                 .background(ImagePlaceholder),
                                             contentScale = ContentScale.Crop
                                         )
-
                                         Row(
                                             modifier = Modifier
                                                 .align(Alignment.TopEnd)
@@ -447,7 +424,6 @@ fun OrganizzatoreHomeScreen(
                                                     modifier = Modifier.size(18.dp)
                                                 )
                                             }
-
                                             FilledIconButton(
                                                 onClick = { offerteViewModel.eliminaAttivita(item.id) },
                                                 colors = IconButtonDefaults.filledIconButtonColors(
@@ -465,7 +441,6 @@ fun OrganizzatoreHomeScreen(
                                             }
                                         }
                                     }
-
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -486,7 +461,6 @@ fun OrganizzatoreHomeScreen(
                                                 fontSize = 12.sp
                                             )
                                         }
-
                                         Text(
                                             text = "€${item.prezzo ?: "0"}",
                                             fontWeight = FontWeight.Bold,

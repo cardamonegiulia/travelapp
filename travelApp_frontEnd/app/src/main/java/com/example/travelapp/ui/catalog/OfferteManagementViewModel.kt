@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,8 +12,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-
 data class OfferteUiState(
     val isLoading: Boolean = false,
     val itinerari: List<Itinerario> = emptyList(),
@@ -22,92 +19,59 @@ data class OfferteUiState(
     val feedbackMessage: String? = null,
     val errorMessage: String? = null
 )
-
-
 class OfferteManagementViewModel(
     application: Application
 ) : AndroidViewModel(application) {
-
-    /*
-     * Tutte le API passano dal client autenticato.
-     * Il Context serve perché il Bearer token è salvato
-     * nel DataStore dell'applicazione.
-     */
     private val itinerarioRepository =
         ItinerarioRepository(
             ApiClient.getItinerarioApi(application)
         )
-
     private val attivitaRepository =
         SingolaAttivitaRepository(
             ApiClient.getSingolaAttivitaApi(application)
         )
-
     private val utenteApi =
         ApiClient.getUtenteApi(application)
-
-
     private val _uiState =
         MutableStateFlow(
             OfferteUiState()
         )
-
     val uiState: StateFlow<OfferteUiState> =
         _uiState.asStateFlow()
-
-
     fun caricaOfferte(
         soloMie: Boolean = false
     ) {
-
         _uiState.update {
             it.copy(
                 isLoading = true,
                 errorMessage = null
             )
         }
-
         viewModelScope.launch {
-
             val resItinerari =
                 itinerarioRepository
                     .getAllItinerari()
-
             val resAttivita =
                 attivitaRepository
                     .getAllAttivita()
-
-
             var listaItinerari =
                 resItinerari
                     .getOrDefault(
                         emptyList()
                     )
-
             var listaAttivita =
                 resAttivita
                     .getOrDefault(
                         emptyList()
                     )
-
-
             if (soloMie) {
-
-                /*
-                 * Recuperiamo l'utente autenticato.
-                 *
-                 * L'organizzatore viene identificato
-                 * dal JWT tramite /api/utenti/me.
-                 */
                 val profiloRes =
                     runCatching {
                         utenteApi
                             .sincronizzaProfilo()
                     }
-
                 val risposta =
                     profiloRes.getOrNull()
-
                 val mioId =
                     if (
                         risposta?.isSuccessful == true
@@ -118,16 +82,12 @@ class OfferteManagementViewModel(
                     } else {
                         null
                     }
-
-
                 if (mioId != null) {
-
                     listaItinerari =
                         listaItinerari.filter {
                             it.organizzatoreId ==
                                     mioId
                         }
-
                     listaAttivita =
                         listaAttivita.filter {
                             it.organizzatoreId ==
@@ -135,10 +95,7 @@ class OfferteManagementViewModel(
                         }
                 }
             }
-
-
             _uiState.update {
-
                 it.copy(
                     isLoading = false,
                     itinerari =
@@ -149,38 +106,27 @@ class OfferteManagementViewModel(
             }
         }
     }
-
-
     fun eliminaItinerario(
         id: Long
     ) {
-
         viewModelScope.launch {
-
             val result =
                 itinerarioRepository
                     .deleteItinerario(id)
-
             if (result.isSuccess) {
-
                 _uiState.update { state ->
-
                     state.copy(
                         itinerari =
                             state.itinerari
                                 .filterNot {
                                     it.id == id
                                 },
-
                         feedbackMessage =
                             "Itinerario eliminato con successo"
                     )
                 }
-
             } else {
-
                 _uiState.update {
-
                     it.copy(
                         errorMessage =
                             "Errore eliminazione itinerario"
@@ -189,38 +135,27 @@ class OfferteManagementViewModel(
             }
         }
     }
-
-
     fun eliminaAttivita(
         id: Long
     ) {
-
         viewModelScope.launch {
-
             val result =
                 attivitaRepository
                     .deleteAttivita(id)
-
             if (result.isSuccess) {
-
                 _uiState.update { state ->
-
                     state.copy(
                         attivita =
                             state.attivita
                                 .filterNot {
                                     it.id == id
                                 },
-
                         feedbackMessage =
                             "Attività eliminata con successo"
                     )
                 }
-
             } else {
-
                 _uiState.update {
-
                     it.copy(
                         errorMessage =
                             "Errore eliminazione attività"
@@ -229,12 +164,8 @@ class OfferteManagementViewModel(
             }
         }
     }
-
-
     fun clearFeedback() {
-
         _uiState.update {
-
             it.copy(
                 feedbackMessage = null,
                 errorMessage = null
