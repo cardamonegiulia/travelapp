@@ -5,12 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
-/**
- * Utente con cui condividere una lista. Si indica per id oppure per email: dall'app si
- * conosce l'email di un amico, non il suo id interno.
- *
- * <p>Uno dei due basta; se ci sono entrambi vince l'id.
- */
+
 @Data
 public class CondivisioneRequest {
 

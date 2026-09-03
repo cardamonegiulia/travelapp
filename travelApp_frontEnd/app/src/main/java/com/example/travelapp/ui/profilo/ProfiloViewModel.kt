@@ -31,13 +31,7 @@ class ProfiloViewModel(
         caricaProfilo()
     }
 
-    /*
-     * Recupera prima i dati disponibili nel JWT
-     * e successivamente il profilo completo dal backend.
-     *
-     * I dati del backend restano la fonte autorevole
-     * per id, foto profilo e tema.
-     */
+
     fun caricaProfilo() {
 
         _state.update {
@@ -49,9 +43,7 @@ class ProfiloViewModel(
 
         viewModelScope.launch {
 
-            /*
-             * Fallback locale dal token.
-             */
+
             GestoreSessione
                 .datiUtenteDalToken(
                     getApplication()
@@ -63,9 +55,7 @@ class ProfiloViewModel(
                     }
                 }
 
-            /*
-             * Profilo reale dal backend.
-             */
+
             repository
                 .caricaProfilo()
                 .onSuccess { utente ->
@@ -82,10 +72,6 @@ class ProfiloViewModel(
                 }
                 .onFailure { errore ->
 
-                    /*
-                     * Se il backend fallisce manteniamo
-                     * comunque i dati recuperati dal token.
-                     */
                     val datiToken =
                         GestoreSessione
                             .datiUtenteDalToken(
@@ -120,11 +106,6 @@ class ProfiloViewModel(
         }
     }
 
-    /*
-     * ============================================================
-     * FOTO PROFILO
-     * ============================================================
-     */
 
     fun cambiaFotoProfilo(
         uri: Uri
@@ -229,11 +210,6 @@ class ProfiloViewModel(
         }
     }
 
-    /*
-     * ============================================================
-     * DARK MODE
-     * ============================================================
-     */
 
     fun cambiaTemaScuro(
         attivo: Boolean
@@ -245,9 +221,7 @@ class ProfiloViewModel(
         val id =
             _state.value.id
 
-        /*
-         * Aggiornamento immediato della UI.
-         */
+
         _state.update {
 
             it.copy(
@@ -256,10 +230,7 @@ class ProfiloViewModel(
             )
         }
 
-        /*
-         * Se il backend non ci ha ancora restituito
-         * l'id dell'utente non possiamo salvare il tema.
-         */
+
         if (id == null) {
             return
         }
@@ -272,10 +243,6 @@ class ProfiloViewModel(
                     attivo
                 )
                 .onFailure {
-
-                    /*
-                     * Rollback in caso di errore.
-                     */
                     _state.update {
 
                         it.copy(
@@ -287,12 +254,6 @@ class ProfiloViewModel(
         }
     }
 
-    /*
-     * ============================================================
-     * MESSAGGI
-     * ============================================================
-     */
-
     fun messaggioMostrato() {
 
         _state.update {
@@ -303,12 +264,6 @@ class ProfiloViewModel(
             )
         }
     }
-
-    /*
-     * ============================================================
-     * MAPPING PROFILO BACKEND
-     * ============================================================
-     */
 
     private fun ProfiloUiState.conProfilo(
         utente: Utente
@@ -338,16 +293,6 @@ class ProfiloViewModel(
                 )
                 ?: isDarkModeEnabled
     )
-
-    /*
-     * ============================================================
-     * MAPPING JWT
-     * ============================================================
-     *
-     * Il token non contiene foto o tema.
-     * Questi campi rimangono quindi invariati fino
-     * alla risposta del backend.
-     */
 
     private fun ProfiloUiState.conToken(
         dati: DatiToken

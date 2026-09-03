@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
-// DTO di request minimale: al client serve solo indicare quale itinerario aggiungere/rimuovere
+
 @Data
 public class PreferitoItinerarioRequest {
 

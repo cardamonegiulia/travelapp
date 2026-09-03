@@ -11,12 +11,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Stato del form recensione.
- *
- * [votazione] parte da 0, cioe' "non ancora scelta": e' obbligatoria, quindi finche' resta
- * cosi' il salvataggio e' disabilitato. Il commento invece puo' restare vuoto.
- */
 data class RecensioneUiState(
     val prenotazioneId: Long? = null,
     val titoloViaggio: String = "",
@@ -41,12 +35,6 @@ class RecensioneViewModel @JvmOverloads constructor(
     private val _uiState = MutableStateFlow(RecensioneUiState())
     val uiState: StateFlow<RecensioneUiState> = _uiState.asStateFlow()
 
-    /**
-     * Prepara il form per un viaggio concluso.
-     *
-     * Se una recensione c'e' gia' la carica: da qui si modifica la propria, non se ne crea
-     * una seconda (il backend rifiuterebbe comunque il duplicato).
-     */
     fun apri(prenotazioneId: Long, titoloViaggio: String) {
         _uiState.value = RecensioneUiState(
             prenotazioneId = prenotazioneId,
@@ -64,8 +52,6 @@ class RecensioneViewModel @JvmOverloads constructor(
                     recensioneEsistenteId = esistente?.id,
                     votazione = esistente?.votazione ?: 0,
                     commento = esistente?.commento.orEmpty(),
-                    // se la lettura fallisce il form resta usabile: al massimo il salvataggio
-                    // dira' che la recensione esiste gia'
                     errore = null
                 )
             }
@@ -128,7 +114,7 @@ class RecensioneViewModel @JvmOverloads constructor(
         }
     }
 
-    /** Da chiamare dopo aver navigato via, cosi' il form non riparte come "gia' salvato". */
+
     fun reset() {
         _uiState.value = RecensioneUiState()
     }

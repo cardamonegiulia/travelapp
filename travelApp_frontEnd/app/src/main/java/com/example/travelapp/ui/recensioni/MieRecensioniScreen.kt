@@ -45,12 +45,7 @@ import com.example.travelapp.ui.util.formattaData
 
 private const val STELLE_MASSIME = 5
 
-/**
- * Elenco delle recensioni scritte dall'utente.
- *
- * Presentazionale: riceve lo stato gia' pronto e rimanda in su il tocco su una recensione,
- * che porta al form di modifica (la stessa schermata con cui era stata scritta).
- */
+
 @Composable
 fun MieRecensioniScreen(
     recensioni: List<Recensione>,
@@ -182,7 +177,7 @@ private fun MiaRecensioneCard(
     modifier: Modifier = Modifier
 ) {
 
-    // Senza prenotazione non c'e' niente da riaprire: il form di modifica parte da li'.
+
     val modificabile = recensione.prenotazioneId != null
 
     Card(
@@ -276,7 +271,7 @@ private fun MiaRecensioneCard(
 }
 
 
-/** Le stelle di una singola recensione: quante ne ha date l'utente, su cinque. */
+
 @Composable
 private fun StelleVoto(
     voto: Int,

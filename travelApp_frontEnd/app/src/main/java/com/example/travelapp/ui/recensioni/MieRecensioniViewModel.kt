@@ -12,12 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Stato dell'elenco "Le mie recensioni".
- *
- * [recensioni] vuoto con [isLoading] a false e nessun [errore] e' il caso "non ho ancora
- * recensito niente": la schermata lo distingue da un errore di rete.
- */
+
 data class MieRecensioniUiState(
     val recensioni: List<Recensione> = emptyList(),
     val isLoading: Boolean = false,
@@ -33,8 +28,6 @@ class MieRecensioniViewModel @JvmOverloads constructor(
     private val _uiState = MutableStateFlow(MieRecensioniUiState())
     val uiState: StateFlow<MieRecensioniUiState> = _uiState.asStateFlow()
 
-    // Nessun caricamento nell'init: la schermata lo chiede all'ingresso, cosi' rientrando
-    // dal form di modifica l'elenco si aggiorna invece di mostrare la versione vecchia.
     fun caricaRecensioni() {
         _uiState.update { it.copy(isLoading = true, errore = null) }
 

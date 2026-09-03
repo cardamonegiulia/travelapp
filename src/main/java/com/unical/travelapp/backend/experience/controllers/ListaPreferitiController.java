@@ -24,13 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Liste di itinerari preferiti del viaggiatore: private, oppure condivise con utenti
- * specifici.
- *
- * <p>Nessun endpoint accetta l'id del proprietario dal client: e' sempre l'utente del
- * token. Chi puo' leggere o modificare una lista lo decide {@link ListaPreferitiService}.
- */
+
 @RestController
 @RequestMapping("/api/preferiti")
 @Tag(name = "Gestione Preferiti", description = "Liste di itinerari preferiti, private o condivise con utenti specifici")
@@ -43,7 +37,6 @@ public class ListaPreferitiController {
         this.service = service;
     }
 
-    // --- elenchi ----------------------------------------------------------------------
 
     @GetMapping
     @Operation(
@@ -89,7 +82,6 @@ public class ListaPreferitiController {
         return ResponseEntity.ok(service.getLista(listaId));
     }
 
-    // --- ciclo di vita della lista ----------------------------------------------------
 
     @PostMapping
     @Operation(
@@ -139,7 +131,6 @@ public class ListaPreferitiController {
         return ResponseEntity.noContent().build();
     }
 
-    // --- itinerari dentro una lista ---------------------------------------------------
 
     @PostMapping("/{listaId}/itinerari")
     @Operation(
@@ -175,10 +166,6 @@ public class ListaPreferitiController {
         return ResponseEntity.ok(service.rimuoviItinerario(listaId, itinerarioId));
     }
 
-    // --- scorciatoia "cuore" ----------------------------------------------------------
-    // Il gesto rapido sulla scheda di un itinerario non può fermarsi a chiedere in quale
-    // lista salvare: queste due rotte lavorano sulla lista predefinita "I miei preferiti",
-    // che viene creata privata alla prima occorrenza.
 
     @PostMapping("/itinerari")
     @Operation(
@@ -214,7 +201,6 @@ public class ListaPreferitiController {
         return ResponseEntity.noContent().build();
     }
 
-    // --- condivisione -----------------------------------------------------------------
 
     @PostMapping("/{listaId}/condivisioni")
     @Operation(

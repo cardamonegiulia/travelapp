@@ -13,21 +13,13 @@ import java.util.Optional;
 @Repository
 public interface ListaPreferitiRepository extends JpaRepository<ListaPreferiti, Long> {
 
-    /** Tutte le liste di cui l'utente e' proprietario, dalla piu' recente. */
     List<ListaPreferiti> findByUtenteOrderByIdDesc(Utente utente);
 
-    /** La lista "I miei preferiti" creata implicitamente, se esiste gia'. */
     Optional<ListaPreferiti> findFirstByUtenteAndNome(Utente utente, String nome);
 
     boolean existsByUtenteAndNomeIgnoreCase(Utente utente, String nome);
 
-    /**
-     * Le liste che ALTRI utenti hanno condiviso con {@code destinatario}.
-     *
-     * <p>Il filtro sulla visibilita' e' ridondante rispetto all'invariante mantenuta dal
-     * service (una lista privata non ha destinatari), ma e' la garanzia che una riga
-     * rimasta indietro non renda comunque leggibile una lista tornata privata.
-     */
+
     @Query("""
             select l from ListaPreferiti l
             join l.destinatari d

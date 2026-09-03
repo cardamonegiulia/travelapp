@@ -13,16 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Stato della schermata "Preferiti": le liste dell'utente e quelle condivise con lui.
- *
- * E' un `AndroidViewModel` perche' le API sotto `/api` viaggiano tutte sul client
- * autenticato, e per leggere il token dal DataStore serve un Context.
- *
- * `@JvmOverloads` non e' decorativo: la factory di default di `viewModel()` cerca per
- * reflection un costruttore che prenda il solo `Application`, e i parametri con valore di
- * default in Kotlin non ne generano uno.
- */
+
 class PreferitiViewModel @JvmOverloads constructor(
     application: Application,
     private val repository: PreferitiRepository =
@@ -36,12 +27,6 @@ class PreferitiViewModel @JvmOverloads constructor(
         carica()
     }
 
-    /**
-     * Ricarica entrambe le sezioni.
-     *
-     * Le due chiamate sono indipendenti e vengono valutate separatamente: se il backend
-     * risponde su una sola, mostrare comunque quella e' meglio che svuotare la schermata.
-     */
     fun carica() {
         _state.update { it.copy(isLoading = true, errore = null) }
         viewModelScope.launch {
@@ -63,9 +48,7 @@ class PreferitiViewModel @JvmOverloads constructor(
         _state.update { it.copy(sezione = sezione, errore = null) }
     }
 
-    // --- dettaglio --------------------------------------------------------------------
 
-    /** Apre il dettaglio: gli itinerari non stanno negli elenchi, vanno chiesti al backend. */
     fun apriLista(listaId: Long) {
         _state.update { it.copy(operazioneInCorso = true, errore = null) }
         viewModelScope.launch {
@@ -84,7 +67,6 @@ class PreferitiViewModel @JvmOverloads constructor(
         _state.update { it.copy(listaAperta = null, errore = null) }
     }
 
-    // --- ciclo di vita delle liste ----------------------------------------------------
 
     fun creaLista(nome: String, visibilita: VisibilitaLista) {
         if (nome.isBlank()) {
@@ -94,12 +76,7 @@ class PreferitiViewModel @JvmOverloads constructor(
         esegui("Lista creata") { repository.creaLista(nome.trim(), visibilita).map { } }
     }
 
-    /**
-     * Passa da privata a condivisa e viceversa.
-     *
-     * Tornare privata revoca ogni accesso: e' un'operazione che il backend esegue in un
-     * colpo solo, qui basta ricaricare per vedere i destinatari spariti.
-     */
+
     fun cambiaVisibilita(lista: ListaPreferiti, visibilita: VisibilitaLista) {
         val messaggio = if (visibilita == VisibilitaLista.PRIVATA) {
             "Lista tornata privata: le condivisioni sono state revocate"
@@ -116,7 +93,7 @@ class PreferitiViewModel @JvmOverloads constructor(
         esegui("Lista eliminata") { repository.eliminaLista(listaId) }
     }
 
-    // --- contenuto e condivisioni -----------------------------------------------------
+
 
     fun rimuoviItinerario(listaId: Long, itinerarioId: Long) {
         esegui("Itinerario rimosso", listaId) {
@@ -144,15 +121,7 @@ class PreferitiViewModel @JvmOverloads constructor(
         _state.update { it.copy(messaggio = null, errore = null) }
     }
 
-    // --- supporto ---------------------------------------------------------------------
 
-    /**
-     * Esegue un'operazione di scrittura e riallinea lo stato al backend.
-     *
-     * Il ricalcolo passa sempre da una nuova lettura invece di aggiornare la copia locale:
-     * una modifica alla visibilita' cambia anche cosa vedono le altre sezioni, e ricostruire
-     * a mano quelle conseguenze e' il modo piu' rapido per farle divergere.
-     */
     private fun esegui(
         messaggio: String,
         listaDaRicaricare: Long? = null,

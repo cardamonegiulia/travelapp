@@ -6,10 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-/**
- * Creazione o modifica di una lista di preferiti: il client decide solo nome e
- * visibilita'. Il proprietario e' sempre l'utente del token, mai un campo del payload.
- */
+
 @Data
 public class ListaPreferitiRequest {
 
@@ -18,8 +15,6 @@ public class ListaPreferitiRequest {
     @Schema(description = "Nome della lista", example = "Viaggi d'estate")
     private String nome;
 
-    // Opzionale: una lista nasce privata se non viene detto altro, cosi' la scelta piu'
-    // riservata e' anche quella di default.
     @Schema(description = "PRIVATA (default) oppure CONDIVISA", example = "PRIVATA")
     private VisibilitaListaPreferiti visibilita;
 

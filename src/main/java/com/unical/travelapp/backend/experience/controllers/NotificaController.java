@@ -17,12 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Notifiche in-app dell'utente autenticato.
- *
- * <p>Non esiste un endpoint "notifiche di un altro utente", nemmeno per gli ADMIN: il
- * destinatario e' sempre quello del token.
- */
+
 @RestController
 @RequestMapping("/api/notifiche")
 @Tag(name = "Notifiche", description = "Notifiche in-app dell'utente autenticato")

@@ -67,8 +67,7 @@ import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 
-// [onPasswordCambiata] deve riportare al login, non solo tornare indietro: a salvataggio
-// riuscito il backend chiude tutte le sessioni.
+
 @Composable
 fun CambiaPasswordScreen(
     onBack: () -> Unit,

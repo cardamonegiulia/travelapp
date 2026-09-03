@@ -38,12 +38,7 @@ import com.example.travelapp.ui.theme.TravelOrange
 
 private const val MAX_CARATTERI_COMMENTO = 2000
 
-/**
- * Form della recensione di un viaggio concluso.
- *
- * Presentazionale: riceve lo stato e rimanda in su ogni interazione, cosi' resta usabile
- * sia per la creazione sia per la modifica della propria recensione.
- */
+
 @Composable
 fun RecensioneScreen(
     uiState: RecensioneUiState,

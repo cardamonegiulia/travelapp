@@ -43,12 +43,7 @@ import com.example.travelapp.ui.theme.ErrorRed
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 
-/**
- * Sezione prenotazioni, divisa in due schede.
- *
- * "Prenotazioni" resta quello che era; "Viaggi conclusi" e' la lista da cui si lascia una
- * recensione. La divisione arriva dal server: qui non si guardano le date.
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingsScreen(
@@ -298,8 +293,6 @@ private fun StatoVuoto(
                 color = TextPrimary,
                 textAlign = TextAlign.Center
             )
-            // textAlign, non solo l'allineamento della Column: quello centra il blocco di
-            // testo, ma su piu' righe le righe stesse resterebbero allineate a sinistra
             Text(
                 text = testo,
                 style = MaterialTheme.typography.bodyMedium,

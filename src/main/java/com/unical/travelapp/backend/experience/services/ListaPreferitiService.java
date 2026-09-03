@@ -22,22 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Liste di itinerari preferiti del viaggiatore.
- *
- * <p>Ogni viaggiatore puo' averne quante ne vuole. Le regole di accesso stanno qui e non
- * nel controller perche' valgono per ogni via d'ingresso:
- * <ul>
- *   <li>una lista PRIVATA la vede solo il proprietario;</li>
- *   <li>una lista CONDIVISA la leggono i soli utenti che il proprietario ha aggiunto ai
- *       destinatari, uno per uno: non esiste una lista visibile a tutti;</li>
- *   <li>modificarla - nome, visibilita', itinerari, condivisioni - resta sempre e solo del
- *       proprietario.</li>
- * </ul>
- *
- * <p>Una lista che il richiedente non puo' nemmeno leggere risponde 404, non 403: un 403
- * confermerebbe che quell'id esiste e che appartiene a qualcuno.
- */
 @Service
 public class ListaPreferitiService {
 
@@ -62,30 +46,23 @@ public class ListaPreferitiService {
         this.auditLogger = auditLogger;
     }
 
-    // --- lettura ----------------------------------------------------------------------
-
-    /** Le liste di cui l'utente di sessione e' proprietario, private e condivise insieme. */
     @Transactional(readOnly = true)
     public List<ListaPreferitiDTO> getMieListe() {
         Utente utente = utenteCorrente();
         return mapper.toRiepiloghi(repo.findByUtenteOrderByIdDesc(utente), utente);
     }
 
-    /** Le liste che altri utenti hanno condiviso con l'utente di sessione. */
     @Transactional(readOnly = true)
     public List<ListaPreferitiDTO> getListeCondiviseConMe() {
         Utente utente = utenteCorrente();
         return mapper.toRiepiloghi(repo.findCondiviseCon(utente), utente);
     }
 
-    /** Dettaglio di una lista, con i suoi itinerari. Proprietario o destinatario. */
     @Transactional(readOnly = true)
     public ListaPreferitiDTO getLista(Long listaId) {
         Utente utente = utenteCorrente();
         return mapper.toDettaglio(caricaLeggibile(listaId, utente), utente);
     }
-
-    // --- ciclo di vita della lista ----------------------------------------------------
 
     @Transactional
     public ListaPreferitiDTO creaLista(ListaPreferitiRequest request) {
@@ -103,13 +80,6 @@ public class ListaPreferitiService {
         return mapper.toDettaglio(salvata, utente);
     }
 
-    /**
-     * Rinomina la lista e/o ne cambia la visibilita'.
-     *
-     * <p>Riportarla a PRIVATA revoca in blocco tutte le condivisioni: e' l'unico modo di
-     * mantenere vera l'invariante "una lista privata non ha destinatari", e quindi di
-     * garantire che dopo l'operazione nessun altro utente possa piu' leggerla.
-     */
     @Transactional
     public ListaPreferitiDTO aggiornaLista(Long listaId, ListaPreferitiRequest request) {
         Utente utente = utenteCorrente();
@@ -142,7 +112,6 @@ public class ListaPreferitiService {
         auditLogger.success("LISTA_PREFERITI_ELIMINATA", "listaPreferiti", String.valueOf(listaId));
     }
 
-    // --- itinerari dentro una lista ---------------------------------------------------
 
     @Transactional
     public ListaPreferitiDTO aggiungiItinerario(Long listaId, Long itinerarioId) {
@@ -162,13 +131,6 @@ public class ListaPreferitiService {
         return mapper.toDettaglio(repo.save(lista), utente);
     }
 
-    /**
-     * Salva un itinerario senza scegliere una lista: finisce nella lista predefinita
-     * "I miei preferiti", creata alla prima occorrenza e privata.
-     *
-     * <p>Serve al gesto rapido - il cuore sulla scheda di un itinerario - che non puo'
-     * fermarsi a chiedere in quale lista salvare.
-     */
     @Transactional
     public ListaPreferitiDTO aggiungiAllaListaPredefinita(Long itinerarioId) {
         Utente utente = utenteCorrente();
@@ -185,13 +147,7 @@ public class ListaPreferitiService {
         return mapper.toDettaglio(inserisci(lista, itinerarioId), utente);
     }
 
-    /**
-     * Toglie un itinerario da TUTTE le liste dell'utente.
-     *
-     * <p>E' la controparte del gesto rapido: chi spegne il cuore su un itinerario si
-     * aspetta di non trovarselo piu' fra i preferiti, non di doverlo cercare lista per
-     * lista. Le liste altrui, comprese quelle condivise con lui, non vengono toccate.
-     */
+
     @Transactional
     public void rimuoviDaTutteLeMieListe(Long itinerarioId) {
         Utente utente = utenteCorrente();
@@ -206,12 +162,6 @@ public class ListaPreferitiService {
         }
     }
 
-    // --- condivisione con utenti specifici --------------------------------------------
-
-    /**
-     * Da' accesso in lettura a un utente specifico. Condividere rende la lista CONDIVISA:
-     * non avrebbe senso una lista dichiarata privata che pero' qualcun altro puo' aprire.
-     */
     @Transactional
     public ListaPreferitiDTO condividiCon(Long listaId, CondivisioneRequest request) {
         Utente utente = utenteCorrente();
@@ -235,7 +185,7 @@ public class ListaPreferitiService {
         return mapper.toDettaglio(salvata, utente);
     }
 
-    /** Revoca l'accesso a un destinatario. La visibilita' dichiarata della lista non cambia. */
+
     @Transactional
     public ListaPreferitiDTO revocaCondivisione(Long listaId, Long utenteId) {
         Utente utente = utenteCorrente();
@@ -249,20 +199,16 @@ public class ListaPreferitiService {
         return mapper.toDettaglio(salvata, utente);
     }
 
-    // --- supporto ---------------------------------------------------------------------
-
     private Utente utenteCorrente() {
         Utente utente = utenteService.getUtenteSessione();
         if (utente == null) {
-            // Le rotte sono tutte autenticate: se qui manca l'utente non e' un caso da
-            // ignorare in silenzio (com'era prima, con l'operazione che spariva senza
-            // errore ne' effetto), e' una richiesta da respingere.
+
             throw new AccessDeniedException("utente della sessione non disponibile");
         }
         return utente;
     }
 
-    /** Carica la lista solo se il richiedente puo' leggerla, altrimenti 404. */
+
     private ListaPreferiti caricaLeggibile(Long listaId, Utente utente) {
         ListaPreferiti lista = repo.findById(listaId)
                 .orElseThrow(() -> new ListaPreferitiNonTrovata("lista dei preferiti non trovata"));
@@ -273,12 +219,6 @@ public class ListaPreferitiService {
         return lista;
     }
 
-    /**
-     * Carica la lista solo se il richiedente puo' modificarla.
-     *
-     * <p>Un destinatario riceve 403 e non 404: la lista la vede gia', nascondergliela non
-     * proteggerebbe nulla e gli farebbe solo credere che sia stata cancellata.
-     */
     private ListaPreferiti caricaModificabile(Long listaId, Utente utente) {
         ListaPreferiti lista = caricaLeggibile(listaId, utente);
 

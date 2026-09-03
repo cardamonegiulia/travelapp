@@ -68,12 +68,7 @@ public class RecensioneService {
     }
 
 
-    /**
-     * Le recensioni scritte dall'utente del token, dalla piu' recente.
-     *
-     * <p>Nessun id nell'URL: si leggono sempre e solo le proprie, cosi' la sezione
-     * "Le mie recensioni" del profilo non puo' diventare un modo per sfogliare quelle altrui.
-     */
+
     public Page<RecensioneResponse> getMieRecensioni(Pageable pageable) {
         Utente utente = utenteService.getUtenteSessione();
         return repo.findByUtente_Id(utente.getId(), pageable).map(this::toResponse);
@@ -89,13 +84,6 @@ public class RecensioneService {
     }
 
 
-    /**
-     * Media e conteggio per un gruppo di itinerari, in una sola query.
-     *
-     * <p>Gli itinerari senza recensioni sono comunque presenti nella mappa, con
-     * {@link ValutazioneMediaDTO#NESSUNA}: chi la usa non deve gestire il caso "chiave
-     * assente" per distinguere "nessun voto" da "itinerario sconosciuto".
-     */
     public Map<Long, ValutazioneMediaDTO> getValutazioni(Collection<Long> itinerarioIds) {
         Map<Long, ValutazioneMediaDTO> valutazioni = new HashMap<>();
         if (itinerarioIds == null || itinerarioIds.isEmpty()) {
@@ -118,7 +106,6 @@ public class RecensioneService {
     }
 
 
-    /** Id della recensione gia' scritta, per ciascuna delle prenotazioni indicate. */
     public Map<Long, Long> getRecensioniPerPrenotazioni(Collection<Long> prenotazioneIds) {
         if (prenotazioneIds == null || prenotazioneIds.isEmpty()) {
             return Map.of();
@@ -129,7 +116,6 @@ public class RecensioneService {
     }
 
 
-    /** La recensione lasciata su una prenotazione, visibile solo a chi l'ha prenotata (o a un ADMIN). */
     public Optional<RecensioneResponse> getRecensionePerPrenotazione(Long prenotazioneId) {
         Prenotazione prenotazione = prenotazioneRepository.findById(prenotazioneId)
                 .orElseThrow(() -> new PrenotazioneNonTrovata("Prenotazione non trovata"));
@@ -149,23 +135,19 @@ public class RecensioneService {
                 .findById(dto.getPrenotazioneId())
                 .orElseThrow(() -> new PrenotazioneNonTrovata("Prenotazione non trovata"));
 
-        // 1. solo chi ha prenotato quel viaggio puo' recensirlo
+
         if (!prenotazione.getViaggiatore().getId().equals(utente.getId())) {
             throw new AccessDeniedException("Non autorizzato a recensire questa prenotazione");
         }
 
-        // 2. e solo dopo che il viaggio si e' concluso
         verificaViaggioConcluso(prenotazione);
 
-        // 3. una sola recensione per prenotazione: la seconda si fa modificando la prima
         if (repo.existsByPrenotazione(prenotazione)) {
             throw new IllegalStateException("Hai gia' recensito questa prenotazione");
         }
 
         Itinerario itinerario = itinerarioDellaPrenotazione(prenotazione);
 
-        // L'itinerario nel payload e' facoltativo, ma se c'e' deve essere quello giusto:
-        // altrimenti la recensione di un viaggio finirebbe sotto un itinerario diverso.
         if (dto.getItinerarioId() != null && !dto.getItinerarioId().equals(itinerario.getId())) {
             throw new IllegalArgumentException("L'itinerario indicato non corrisponde alla prenotazione");
         }
@@ -179,19 +161,12 @@ public class RecensioneService {
 
         Long id = repo.save(recensione).getId();
 
-        // L'invito a recensire ha esaurito il suo scopo: non deve restare fra le notifiche
         notificaService.rimuoviInvitoRecensione(prenotazione.getId());
 
         return id;
     }
 
 
-    /**
-     * Modifica voto e commento di una recensione gia' scritta.
-     *
-     * <p>Solo l'autore: e' la sua opinione. Un ADMIN puo' cancellarla (moderazione), non
-     * riscriverla.
-     */
     @Transactional
     public RecensioneResponse aggiornaRecensione(Long id, AggiornaRecensioneRequest dto) {
         Recensione recensione = repo.findById(id)
@@ -219,8 +194,6 @@ public class RecensioneService {
             throw new AccessDeniedException("Non autorizzato a eliminare questa recensione");
         }
 
-        // prima le foto: se sparisse solo la recensione, i file resterebbero sullo storage
-        // senza che nessuno possa piu' raggiungerli per cancellarli
         immagineService.eliminaTutte(recensione.getImmagini());
         recensione.getImmagini().clear();
 
@@ -228,9 +201,6 @@ public class RecensioneService {
     }
 
 
-    // --- Foto allegate alla recensione ---------------------------------------------------
-
-    /** Allega una foto alla recensione. Consentito all'autore e, per moderazione, agli admin. */
     @Transactional
     public ImmagineResponse aggiungiImmagine(Long recensioneId, MultipartFile file) {
         Recensione recensione = recensioneModificabile(recensioneId);
@@ -255,8 +225,6 @@ public class RecensioneService {
     public void rimuoviImmagine(Long recensioneId, Long immagineId) {
         Recensione recensione = recensioneModificabile(recensioneId);
 
-        // l'immagine deve appartenere proprio a questa recensione: senza questo controllo
-        // l'autore di una recensione potrebbe cancellare le foto di quelle altrui
         Immagine immagine = recensione.getImmagini().stream()
                 .filter(i -> i.getId().equals(immagineId))
                 .findFirst()
@@ -270,12 +238,6 @@ public class RecensioneService {
     }
 
 
-    // --- Regole condivise ----------------------------------------------------------------
-
-    /**
-     * Vero quando il viaggio prenotato e' finito: la data di fine (della partenza scelta o
-     * della sessione) e' passata e la prenotazione non e' stata cancellata.
-     */
     public static boolean viaggioConcluso(Prenotazione prenotazione, LocalDateTime adesso) {
         if (prenotazione.getStato() == StatoPrenotazione.CANCELLATA) {
             return false;
@@ -284,7 +246,7 @@ public class RecensioneService {
         return fine != null && fine.isBefore(adesso);
     }
 
-    /** Data di fine del viaggio prenotato, qualunque sia il tipo di prenotazione. */
+
     public static LocalDateTime dataFine(Prenotazione prenotazione) {
         if (prenotazione.getDisponibilitaItinerario() != null) {
             return prenotazione.getDisponibilitaItinerario().getDataFine();
@@ -295,7 +257,7 @@ public class RecensioneService {
         return null;
     }
 
-    /** Itinerario di una prenotazione, se ne ha uno (le attivita' singole non lo hanno). */
+
     public static Optional<Itinerario> itinerarioDi(Prenotazione prenotazione) {
         return Optional.ofNullable(prenotazione.getDisponibilitaItinerario())
                 .map(disponibilita -> disponibilita.getItinerario());
@@ -329,9 +291,6 @@ public class RecensioneService {
     }
 
 
-    // Recensione su cui il chiamante puo' intervenire. Come deleteRecensione risponde 403 e
-    // non 404: l'id della recensione e' pubblico (compare nell'elenco di un itinerario),
-    // quindi qui non c'e' nessuna esistenza da nascondere.
     private Recensione recensioneModificabile(Long id) {
         Recensione recensione = repo.findById(id)
                 .orElseThrow(() -> new RecensioneNonTrovata("Recensione non trovata con id: " + id));

@@ -73,17 +73,6 @@ import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 
-/**
- * Schermata "Preferiti": non piu' un unico elenco di viaggi, ma le LISTE del viaggiatore.
- *
- * Le liste sono di due tipi, come da specifica: private, visibili solo a chi le ha create,
- * e condivise, accessibili ai soli utenti scelti uno per uno. La schermata le tiene
- * separate in due sezioni - "Le mie liste" e "Condivise con me" - perche' sono cose
- * diverse: le prime si modificano, le seconde si consultano soltanto.
- *
- * Resta presentazionale: lo stato arriva da [PreferitiUiState] e ogni interazione viene
- * notificata verso l'alto, senza conoscere navigazione ne' ViewModel.
- */
 @Composable
 fun FavoritesScreen(
     state: PreferitiUiState,
@@ -106,7 +95,6 @@ fun FavoritesScreen(
     Scaffold(
         modifier = modifier,
         containerColor = BackgroundLavender,
-        // Gli inset di sistema sono gia' gestiti dallo Scaffold che ospita il NavHost.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             AppTopBar(
@@ -150,7 +138,6 @@ fun FavoritesScreen(
     }
 }
 
-// --- elenco delle liste ---------------------------------------------------------------
 
 @Composable
 private fun ElencoListe(
@@ -229,7 +216,7 @@ private fun ElencoListe(
     }
 }
 
-/** Riga di una lista: nome, badge della visibilita' e conteggio degli itinerari. */
+
 @Composable
 private fun CardLista(
     lista: ListaPreferiti,
@@ -267,7 +254,7 @@ private fun CardLista(
     }
 }
 
-/** "3 itinerari · condivisa con 2 persone", oppure il proprietario se la lista e' altrui. */
+
 private fun sottotitoloLista(lista: ListaPreferiti): String {
     val itinerari = when (lista.numeroItinerari) {
         0 -> "nessun itinerario"
@@ -318,7 +305,6 @@ private fun BadgeVisibilita(lista: ListaPreferiti, modifier: Modifier = Modifier
     }
 }
 
-// --- dettaglio di una lista -----------------------------------------------------------
 
 @Composable
 private fun DettaglioLista(
@@ -417,7 +403,6 @@ private fun DettaglioLista(
                 trip = itinerario.toFavoriteTrip(),
                 onToggleFavorite = { itinerarioId -> onRemoveTrip(lista.id, itinerarioId) },
                 onClick = onTripClick,
-                // Una lista condivisa CON l'utente e' in sola lettura: niente cuore.
                 showFavoriteBadge = lista.proprietaria
             )
         }
@@ -548,7 +533,6 @@ private fun RigaDestinatario(
     }
 }
 
-// --- dialoghi ---------------------------------------------------------------------------
 
 @Composable
 private fun DialogoNuovaLista(
@@ -658,10 +642,6 @@ private fun DialogoCondivisione(
     )
 }
 
-/**
- * Colori dei campi nei dialoghi. Il bordo di default segue `colorScheme.outline`, che qui
- * e' il grigio dei separatori: sul tema chiaro il rettangolo del campo risultava invisibile.
- */
 @Composable
 private fun campoColori() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = PrimaryBlue,
@@ -673,7 +653,6 @@ private fun campoColori() = OutlinedTextFieldDefaults.colors(
     unfocusedTextColor = TextPrimary
 )
 
-// --- pezzi comuni -----------------------------------------------------------------------
 
 @Composable
 private fun SelettoreSezione(
@@ -721,7 +700,6 @@ private fun PillSelezionabile(
     }
 }
 
-/** Esito dell'ultima operazione, in cima alla schermata. */
 @Composable
 private fun Avvisi(
     messaggio: String?,
@@ -773,7 +751,6 @@ private fun Itinerario.toFavoriteTrip(): FavoriteTrip = FavoriteTrip(
     priceFrom = prezzoBase?.toInt() ?: 0
 )
 
-// --- anteprime --------------------------------------------------------------------------
 
 /** Dati segnaposto per le anteprime: a runtime lo stato arriva dal PreferitiViewModel. */
 internal val sampleListePreferiti = listOf(

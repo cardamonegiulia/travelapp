@@ -8,13 +8,7 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Una lista di itinerari preferiti come viene restituita al client.
- *
- * <p>Vale sia per le liste dell'utente sia per quelle che qualcun altro ha condiviso con
- * lui: {@link #proprietaria} dice da che parte si trova chi sta leggendo, cosi' il client
- * sa se mostrare o meno i comandi di modifica.
- */
+
 @Data
 @Schema(description = "Lista di itinerari preferiti, privata o condivisa con utenti specifici")
 public class ListaPreferitiDTO {
@@ -42,9 +36,6 @@ public class ListaPreferitiDTO {
     @Schema(description = "Itinerari salvati. Valorizzato solo nel dettaglio della lista")
     private List<ItinerarioDTO> itinerari = new ArrayList<>();
 
-    // Chi puo' vedere con quali utenti una lista e' condivisa e' il proprietario, e basta:
-    // il mapper lascia questa lista vuota per i destinatari, che non devono sapere chi
-    // altro legge la stessa lista.
     @Schema(description = "Utenti con cui la lista e' condivisa. Visibile solo al proprietario")
     private List<UtenteCondivisioneDTO> destinatari = new ArrayList<>();
 }

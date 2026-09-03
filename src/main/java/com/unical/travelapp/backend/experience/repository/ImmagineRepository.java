@@ -9,6 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ImmagineRepository extends JpaRepository<Immagine, Long> {
 
-    // immagini caricate da un utente (paginato: nessuna collection senza paginazione)
     Page<Immagine> findByProprietario_Id(Long proprietarioId, Pageable pageable);
 }

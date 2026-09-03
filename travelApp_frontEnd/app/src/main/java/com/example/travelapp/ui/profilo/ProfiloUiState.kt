@@ -2,17 +2,10 @@ package com.example.travelapp.ui.profilo
 
 import com.example.travelapp.domain.model.Utente
 
-/**
- * Stato completo della schermata Profilo.
- */
+
 data class ProfiloUiState(
 
-    /*
-     * ID dell'utente recuperato dal backend.
-     *
-     * Serve anche per salvare preferenze come
-     * il tema chiaro/scuro.
-     */
+
     val id: Long? = null,
 
     val isLoading: Boolean = false,
@@ -23,11 +16,6 @@ data class ProfiloUiState(
 
     val email: String = "",
 
-    /*
-     * VIAGGIATORE
-     * ORGANIZZATORE
-     * ADMIN
-     */
     val ruolo: String = "VIAGGIATORE",
 
     val avatarUrl: String? = null,

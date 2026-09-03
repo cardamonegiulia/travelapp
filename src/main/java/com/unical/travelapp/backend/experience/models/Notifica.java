@@ -21,17 +21,7 @@ import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-/**
- * Notifica in-app destinata a un singolo utente.
- *
- * <p>Unica infrastruttura di notifica del progetto: i nuovi tipi si aggiungono a
- * {@link TipoNotifica} e riusano questa tabella invece di crearne una propria.
- *
- * <p>{@link #prenotazione} e {@link #itinerario} sono i riferimenti su cui il client
- * costruisce l'azione diretta (per l'invito a recensire: aprire il form della recensione).
- * Sono nullable perche' non tutti i tipi di notifica riguardano una prenotazione, e hanno
- * ON DELETE CASCADE: cancellata la prenotazione, la notifica che la nomina non ha piu' senso.
- */
+
 @Entity
 @Data
 @EqualsAndHashCode(callSuper = false)
