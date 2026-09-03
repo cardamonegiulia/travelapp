@@ -100,5 +100,16 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
             @Param("primaDi") LocalDateTime primaDi,
             @Param("statoEscluso") StatoPrenotazione statoEscluso
     );
+
+    @Query("""
+        select p.id
+        from Prenotazione p
+        where p.stato = :stato
+          and p.dataPrenotazione <= :limite
+        """)
+    List<Long> findIdsPrenotazioniScadute(
+            @Param("stato") StatoPrenotazione stato,
+            @Param("limite") LocalDateTime limite
+    );
 }
 

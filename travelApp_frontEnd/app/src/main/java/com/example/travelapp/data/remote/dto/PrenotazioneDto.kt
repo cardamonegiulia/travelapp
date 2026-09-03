@@ -29,7 +29,9 @@ data class PrenotazioneDto(
 
     val conclusa: Boolean = false,
     val recensibile: Boolean = false,
-    val recensioneId: Long? = null
+    val recensioneId: Long? = null,
+
+    val secondiRimanentiPagamento: Long = 0L,
 )
 
 fun PrenotazioneDto.toDomain(): Prenotazione {
@@ -50,6 +52,8 @@ fun PrenotazioneDto.toDomain(): Prenotazione {
         itinerarioId = itinerarioId,
         conclusa = conclusa,
         recensibile = recensibile,
-        recensioneId = recensioneId
+        recensioneId = recensioneId,
+
+        secondiRimanentiPagamento = secondiRimanentiPagamento
     )
 }

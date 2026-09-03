@@ -153,7 +153,6 @@ fun AppNavGraph(
     val coroutineScope =
         rememberCoroutineScope()
 
-
     val bookingViewModel: PrenotazioniViewModel =
         viewModel(
             factory =
@@ -167,13 +166,12 @@ fun AppNavGraph(
         .uiState
         .collectAsState()
 
-
     val bookingsViewModel: BookingsViewModel =
         viewModel()
 
-
     val partenzeViewModel: PartenzeOrganizzatoreViewModel =
         viewModel()
+
 
     val profiloState by
     profiloViewModel
@@ -192,6 +190,7 @@ fun AppNavGraph(
             onLogout()
         }
     }
+
 
     var mostraConfermaUscita by remember {
         mutableStateOf(false)
@@ -222,6 +221,7 @@ fun AppNavGraph(
         }
     }
 
+
     val ruoloStr =
         profiloState.ruolo
             ?.toString()
@@ -237,6 +237,7 @@ fun AppNavGraph(
         ruoloStr.contains(
             "ORGANIZZATORE"
         )
+
 
     var itinerarioSelezionato by remember {
         mutableStateOf<Itinerario?>(
@@ -280,6 +281,7 @@ fun AppNavGraph(
         )
     }
 
+
     LaunchedEffect(
         profiloState.ruolo
     ) {
@@ -321,6 +323,7 @@ fun AppNavGraph(
             }
         }
     }
+
 
     val navBackStackEntry by
     navController
@@ -383,8 +386,12 @@ fun AppNavGraph(
             ) {
 
                 AppBottomBar(
-                    navController =
-                        navController
+                    navController = navController,
+                    onDestinationSelected = { destination ->
+                        if (destination == AppDestination.Bookings) {
+                            bookingsViewModel.chiudiDettaglio()
+                        }
+                    }
                 )
             }
         }
@@ -591,6 +598,7 @@ fun AppNavGraph(
                 )
             }
 
+
             composable(
                 CatalogRoutes
                     .PRENOTATI_PARTENZA
@@ -750,6 +758,7 @@ fun AppNavGraph(
                     )
                 }
             }
+
 
             composable(
                 EsperienzaRoutes
@@ -1117,6 +1126,7 @@ fun AppNavGraph(
                 )
             }
 
+
             navigation(
 
                 startDestination =
@@ -1198,6 +1208,7 @@ fun AppNavGraph(
                         }
                     )
                 }
+
 
                 composable(
                     AppDestination
@@ -1575,16 +1586,18 @@ private fun BookingsRoute(
     onRecensisci: (Prenotazione) -> Unit = {},
     onNotifiche: () -> Unit = {}
 ) {
-
     val state by
     viewModel
         .uiState
         .collectAsState()
 
+    val prenotazioneSelezionata = state.prenotazioneSelezionata
 
-    val prenotazioneSelezionata =
-        state
-            .prenotazioneSelezionata
+    BackHandler(
+        enabled = prenotazioneSelezionata != null
+    ) {
+        viewModel.chiudiDettaglio()
+    }
 
 
     LaunchedEffect(Unit) {
@@ -1592,7 +1605,6 @@ private fun BookingsRoute(
         viewModel
             .aggiornaNotifiche()
     }
-
 
     if (
         prenotazioneSelezionata != null

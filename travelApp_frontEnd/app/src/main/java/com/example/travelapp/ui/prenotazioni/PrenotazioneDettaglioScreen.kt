@@ -19,6 +19,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +35,15 @@ import com.example.travelapp.ui.theme.SurfaceWhite
 import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 import com.example.travelapp.ui.util.formattaData
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.mutableStateOf
+
+
+
+
+
 
 @Composable
 fun PrenotazioneDettaglioScreen(
@@ -44,13 +55,45 @@ fun PrenotazioneDettaglioScreen(
     errore: String? = null
 ) {
 
+
     val annullabile =
         !prenotazione.conclusa &&
                 prenotazione.statoPrenotazione != StatoPrenotazione.CANCELLATA
 
-    val pagamentoInAttesa =
-        prenotazione.statoPrenotazione == StatoPrenotazione.IN_ATTESA && prenotazione.statoPagamento == StatoPagamento.IN_ATTESA
+    val pagamentoDaCompletare =
+        !prenotazione.conclusa &&
+                prenotazione.statoPrenotazione == StatoPrenotazione.IN_ATTESA &&
+                prenotazione.statoPagamento == StatoPagamento.IN_ATTESA
 
+    var secondiRimanenti by remember(
+        prenotazione.id,
+        prenotazione.secondiRimanentiPagamento
+    ) {
+        mutableStateOf(
+            prenotazione.secondiRimanentiPagamento
+        )
+    }
+
+    LaunchedEffect(
+        prenotazione.id,
+        pagamentoDaCompletare,
+        prenotazione.secondiRimanentiPagamento
+    ) {
+        while (
+            pagamentoDaCompletare &&
+            secondiRimanenti > 0
+        ) {
+            delay(1000L)
+
+            secondiRimanenti =
+                (secondiRimanenti - 1)
+                    .coerceAtLeast(0L)
+        }
+    }
+
+    val pagamentoInAttesa =
+        pagamentoDaCompletare &&
+                secondiRimanenti > 0
     Scaffold(
         containerColor = BackgroundLavender,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -179,6 +222,34 @@ fun PrenotazioneDettaglioScreen(
                     modifier = Modifier.height(8.dp)
                 )
             }
+            if (pagamentoDaCompletare) {
+
+                if (secondiRimanenti > 0) {
+
+                    val minuti =
+                        secondiRimanenti / 60
+
+                    val secondi =
+                        secondiRimanenti % 60
+
+                    Text(
+                        text = "Tempo per completare il pagamento: %02d:%02d"
+                            .format(minuti, secondi),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                } else {
+
+                    Text(
+                        text = "Tempo per il pagamento scaduto",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
 
             if (pagamentoInAttesa) {
 
@@ -233,6 +304,7 @@ fun PrenotazioneDettaglioScreen(
         }
     }
 }
+
 
 @Composable
 private fun DettaglioRiga(

@@ -29,7 +29,8 @@ import com.example.travelapp.ui.theme.SurfaceWhite
 @Composable
 fun AppBottomBar(
     navController: NavController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDestinationSelected: (AppDestination) -> Unit = {}
 ) {
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = currentBackStackEntry?.destination
@@ -43,7 +44,9 @@ fun AppBottomBar(
             val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
             NavigationBarItem(
                 selected = selected,
-                onClick = { navController.navigateToTopLevel(destination) },
+                onClick = {
+                    onDestinationSelected(destination)
+                    navController.navigateToTopLevel(destination) },
                 icon = {
                     Box(
                         contentAlignment = Alignment.Center,
@@ -95,7 +98,6 @@ private fun NavController.navigateToTopLevel(
         popUpTo(startDestination.id) {
             saveState = false
         }
-
         launchSingleTop = true
         restoreState = false
     }

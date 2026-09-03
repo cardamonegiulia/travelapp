@@ -27,4 +27,6 @@ public class PagamentoResponseDto {
     private StatoPrenotazione statoPrenotazione;
 
     private LocalDateTime dataPagamento;
+
+    private Long secondiRimanentiPagamento;
 }

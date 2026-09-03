@@ -45,6 +45,43 @@ public class PagamentoService {
         pagamentoRepository.save(pagamento);
     }
 
+    private boolean viaggioIniziato(Prenotazione prenotazione) {
+        LocalDateTime dataInizio = null;
+
+        if (prenotazione.getDisponibilitaItinerario() != null) {
+            dataInizio = prenotazione
+                    .getDisponibilitaItinerario()
+                    .getDataInizio();
+
+        } else if (prenotazione.getSessioneSingolaAttivita() != null) {
+            dataInizio = prenotazione
+                    .getSessioneSingolaAttivita()
+                    .getDataInizio();
+        }
+
+        return dataInizio != null &&
+                !LocalDateTime.now().isBefore(dataInizio);
+    }
+
+    private boolean pagamentoScaduto(
+            Prenotazione prenotazione) {
+
+        if (prenotazione.getDataPrenotazione() == null) {
+            return false;
+        }
+
+        LocalDateTime scadenza =
+                prenotazione
+                        .getDataPrenotazione()
+                        .plusMinutes(
+                                PrenotazioneService
+                                        .MINUTI_SCADENZA_PAGAMENTO
+                        );
+
+        return !LocalDateTime.now()
+                .isBefore(scadenza);
+    }
+
     @Transactional
     public Pagamento pagaPrenotazione(Long prenotazioneId) {
         Prenotazione prenotazione;
@@ -86,6 +123,18 @@ public class PagamentoService {
             throw new StatoPrenotazioneNonValidoException(
                     "Non puoi pagare una prenotazione cancellata: "
                             + prenotazioneId
+            );
+        }
+
+        if (viaggioIniziato(prenotazione)) {
+            throw new StatoPrenotazioneNonValidoException(
+                    "Non puoi pagare una prenotazione relativa a un viaggio già iniziato"
+            );
+        }
+
+        if (pagamentoScaduto(prenotazione)) {
+            throw new StatoPrenotazioneNonValidoException(
+                    "Il tempo disponibile per completare il pagamento è scaduto"
             );
         }
 
