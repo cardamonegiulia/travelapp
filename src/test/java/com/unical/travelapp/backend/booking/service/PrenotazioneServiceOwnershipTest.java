@@ -54,7 +54,6 @@ class PrenotazioneServiceOwnershipTest {
     void unUtenteNonAdminNonPuoLeggereLaPrenotazioneDiUnAltro() {
         when(utenteService.isAdmin()).thenReturn(false);
         when(utenteService.getUtenteSessione()).thenReturn(utente(1L));
-        // la prenotazione richiesta appartiene a un altro utente: la query ownership-filtrata non la trova
         when(prenotazioneRepo.findByIdAndViaggiatoreId(10L, 1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service().getPrenotazioneById(10L))

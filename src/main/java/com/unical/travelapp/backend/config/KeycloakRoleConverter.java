@@ -11,9 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// JwtGrantedAuthoritiesConverter standard legge solo claim "piatti": non risolve
-// realm_access.roles (oggetto annidato), quindi serve un converter dedicato che
-// legga sia i ruoli realm sia i ruoli client Keycloak.
 public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
 
     private final String resourceClientId;

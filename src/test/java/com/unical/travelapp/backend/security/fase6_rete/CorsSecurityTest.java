@@ -13,15 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 
-/**
- * Fase 6 - CORS.
- *
- * <p>Una allow-list sbagliata trasforma ogni sito web in un client dell'API con il browser
- * della vittima. I due errori classici: riflettere l'Origin ricevuto, e combinare
- * {@code allowCredentials=true} con una lista permissiva.
- *
- * <p>Allow-list del profilo di test: https://app.travelapp.test e http://localhost:3000.
- */
 class CorsSecurityTest extends SecurityIntegrationTestBase {
 
     private static final String ORIGINE_AMMESSA = "https://app.travelapp.test";
@@ -143,8 +134,6 @@ class CorsSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void ilPreflightNonRichiedeAutenticazioneMaNonEspoDati() throws Exception {
-        // il preflight e' per definizione senza credenziali: deve rispondere agli header
-        // CORS ma non restituire alcun dato applicativo
         MvcResult risultato = mockMvc.perform(options("/api/utenti")
                         .header("Origin", ORIGINE_AMMESSA)
                         .header("Access-Control-Request-Method", "GET"))

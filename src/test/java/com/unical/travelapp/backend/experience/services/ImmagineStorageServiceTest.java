@@ -21,8 +21,6 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Test delle validazioni dell'upload: nessun contesto Spring, il service si costruisce a
-// mano perche' prende solo tre valori di configurazione.
 @DisplayName("ImmagineStorageService: validazioni e scrittura su storage")
 class ImmagineStorageServiceTest {
 
@@ -49,7 +47,6 @@ class ImmagineStorageServiceTest {
         assertThat(archiviata.contentType()).isEqualTo("image/png");
         assertThat(archiviata.larghezza()).isEqualTo(200);
         assertThat(archiviata.altezza()).isEqualTo(100);
-        // percorso "aaaa/mm/<uuid>.png": del nome scelto dall'utente non resta traccia
         assertThat(archiviata.percorsoRelativo())
                 .matches("\\d{4}/\\d{2}/[0-9a-f-]{36}\\.png")
                 .doesNotContain("vacanza");
@@ -83,7 +80,6 @@ class ImmagineStorageServiceTest {
     @Test
     @DisplayName("un file oltre la dimensione massima viene rifiutato prima di toccare il disco")
     void rifiutaFileTroppoGrande() throws IOException {
-        // service con limite di 100 byte: qualunque PNG valido lo supera
         ImmagineStorageService storageStretto =
                 new ImmagineStorageService(new ArchivioFilesystem(cartellaStorage.toString()), 100, 10000);
         MultipartFile file = file("grande.png", "png", immagine(200, 200, "png"));
@@ -99,7 +95,6 @@ class ImmagineStorageServiceTest {
     @Test
     @DisplayName("un'estensione fuori dall'allow-list viene rifiutata")
     void rifiutaEstensioneNonAmmessa() throws IOException {
-        // contenuto perfettamente valido, ma estensione non ammessa
         MultipartFile file = file("script.gif", "image/gif", immagine(10, 10, "png"));
 
         assertThatThrownBy(() -> storage.salva(file))
@@ -111,8 +106,6 @@ class ImmagineStorageServiceTest {
     @Test
     @DisplayName("un eseguibile rinominato .jpg viene rifiutato: conta il contenuto, non il nome")
     void rifiutaEseguibileMascherato() {
-        // "MZ": firma di un eseguibile Windows. Estensione e Content-Type dichiarano
-        // un'immagine, ma i byte no.
         byte[] eseguibile = new byte[]{'M', 'Z', (byte) 0x90, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04};
         MultipartFile file = file("innocua.jpg", "image/jpeg", eseguibile);
 
@@ -189,8 +182,6 @@ class ImmagineStorageServiceTest {
         return new MockMultipartFile("file", nome, contentType, contenuto);
     }
 
-    // immagine reale generata al volo: cosi' i byte hanno la firma e l'header corretti del
-    // formato, senza dover versionare file binari di prova
     private byte[] immagine(int larghezza, int altezza, String formato) throws IOException {
         BufferedImage immagine = new BufferedImage(larghezza, altezza,
                 "jpg".equals(formato) ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB);

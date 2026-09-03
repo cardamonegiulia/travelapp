@@ -17,10 +17,6 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-// Audit log applicativo per le operazioni critiche: logger dedicato ("AUDIT"), separato
-// dal log applicativo (vedi logback-spring.xml, scrive su file proprio). Non logga MAI il
-// token JWT completo, password o header Authorization: solo subject/username estratti dal
-// token gia' validato.
 @Component
 public class AuditLogger {
 

@@ -27,13 +27,6 @@ import kotlin.math.roundToInt
 
 private const val STELLE_MASSIME = 5
 
-/**
- * Stelle in sola lettura.
- *
- * Con [media] nulla non disegna zero stelle piene ma la dicitura "Nessuna recensione":
- * zero non e' un voto assegnabile, e cinque stelle vuote si leggerebbero come una
- * stroncatura invece che come un'assenza di giudizi.
- */
 @Composable
 fun StelleValutazione(
     media: Double?,
@@ -83,12 +76,6 @@ fun StelleValutazione(
     }
 }
 
-/**
- * Selettore a stelle del form recensione.
- *
- * [valore] a 0 significa "non ancora scelto": e' lo stato iniziale, e il pulsante di invio
- * resta disabilitato finche' resta tale, perche' la valutazione e' obbligatoria.
- */
 @Composable
 fun SelettoreStelle(
     valore: Int,

@@ -19,13 +19,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 2 - excessive data exposure (OWASP API3:2023).
- *
- * <p>Le asserzioni sono sul JSON prodotto, non sull'oggetto Java: e' quello che il client
- * riceve davvero. I DTO di risposta non devono contenere campi interni ne' dati di utenti
- * diversi dal richiedente.
- */
 class NessunDatoSensibileNelleRisposteTest extends SecurityIntegrationTestBase {
 
     private static final List<String> CAMPI_MAI_ESPOSTI = List.of(

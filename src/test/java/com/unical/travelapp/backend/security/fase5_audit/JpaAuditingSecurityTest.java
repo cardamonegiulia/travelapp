@@ -18,20 +18,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 5 - JPA Auditing: chi ha creato o modificato una riga.
- *
- * <p>Il valore di {@code creatoDa} deve venire dal claim {@code sub} del token, mai dal
- * client: se fosse influenzabile dall'esterno l'audit trail sarebbe falsificabile e quindi
- * inutile come prova.
- */
 class JpaAuditingSecurityTest extends SecurityIntegrationTestBase {
 
-    /**
-     * Da quando l'aggiornamento del profilo viene propagato all'IdP, una PUT su
-     * {@code /api/utenti} passa anche da qui. Non e' l'oggetto di questi test: si sostituisce
-     * con un mock perche' il profilo "test" punta di proposito a un Keycloak irraggiungibile.
-     */
     @MockitoBean
     private KeycloakAdminClient keycloakAdminClient;
 
@@ -148,8 +136,6 @@ class JpaAuditingSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void leEntitaDiDominioEreditanoTutteITracciamentoDiAudit() {
-        // se una nuova entita' dimenticasse di estendere Auditable non avrebbe traccia di
-        // chi l'ha creata: qui si verifica che le entita' esistenti la abbiano
         assertThat(com.unical.travelapp.backend.common.audit.Auditable.class)
                 .isAssignableFrom(com.unical.travelapp.backend.identity.entity.Utente.class)
                 .isAssignableFrom(com.unical.travelapp.backend.booking.entity.Prenotazione.class)

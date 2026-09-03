@@ -124,8 +124,6 @@ public class ImmagineService {
         if (immagini == null || immagini.isEmpty()) {
             return;
         }
-        // copia: i chiamanti passano la collection gestita da Hibernate, che non va
-        // modificata mentre la si sta percorrendo
         List.copyOf(immagini).forEach(this::eliminaEntita);
     }
 

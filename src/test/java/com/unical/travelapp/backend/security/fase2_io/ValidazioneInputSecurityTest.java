@@ -19,12 +19,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 2 - bean validation sui DTO di request.
- *
- * <p>Ogni violazione deve produrre 400 con un ProblemDetail che elenca i campi in errore
- * senza esporre nomi di classe, package o dettagli del framework.
- */
 class ValidazioneInputSecurityTest extends SecurityIntegrationTestBase {
 
     private Utente organizzatore;

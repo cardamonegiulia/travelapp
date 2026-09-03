@@ -17,24 +17,12 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-/**
- * Sessione ottenuta da Keycloak: oltre all'access token conserviamo il
- * refresh token e l'istante di scadenza, indispensabili per restare
- * autenticati dopo la chiusura dell'app.
- */
 data class SessioneKeycloak(
     val accessToken: String,
     val refreshToken: String?,
     val scadenzaMs: Long?
 )
 
-/**
- * Esito del rinnovo tramite refresh token.
- *
- * Distinguiamo un rifiuto di Keycloak (refresh token scaduto o revocato:
- * l'utente deve rifare il login) da un problema di rete temporaneo, che non
- * deve buttare fuori l'utente.
- */
 sealed class EsitoRinnovo {
 
     data class Successo(
@@ -50,12 +38,6 @@ object KeycloakManager {
 
     private const val CLIENT_ID = "travelapp-android"
 
-    /**
-     * Indirizzo di Keycloak iniettato a build time da local.properties.
-     *
-     * In questo modo ogni sviluppatore può usare localhost,
-     * adb reverse, emulatore o IP LAN senza modificare il sorgente.
-     */
     private val KEYCLOAK_BASE =
         BuildConfig.KEYCLOAK_BASE_URL
             .trimEnd('/') +
@@ -64,10 +46,6 @@ object KeycloakManager {
     private val TOKEN_ENDPOINT =
         "$KEYCLOAK_BASE/protocol/openid-connect/token"
 
-    /**
-     * Deve coincidere con una Valid Redirect URI
-     * configurata nel client travelapp-android.
-     */
     private const val REDIRECT_URI =
         "com.example.travelapp:/oauth2redirect"
 
@@ -81,9 +59,6 @@ object KeycloakManager {
             )
         )
 
-    /**
-     * Permette l'uso di Keycloak via HTTP durante lo sviluppo locale.
-     */
     private val appAuthConfig =
         AppAuthConfiguration.Builder()
             .setConnectionBuilder(
@@ -91,11 +66,6 @@ object KeycloakManager {
             )
             .build()
 
-    /**
-     * Client dedicato al solo rinnovo del token: non passa
-     * dall'InterceptorAutenticazione, altrimenti si rientrerebbe
-     * nel rinnovo mentre lo si sta già eseguendo.
-     */
     private val httpRinnovo by lazy {
         OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
@@ -103,21 +73,8 @@ object KeycloakManager {
             .build()
     }
 
-    /**
-     * Manteniamo una sola istanza attiva alla volta.
-     */
     private var authService: AuthorizationService? = null
 
-    /**
-     * Crea l'intent per il login Keycloak.
-     *
-     * loginHint:
-     * precompila username/email quando disponibile.
-     *
-     * forzaLogin:
-     * forza Keycloak a mostrare nuovamente la schermata di login
-     * invece di riutilizzare automaticamente una sessione precedente.
-     */
     fun creaIntentLogin(
         context: Context,
         loginHint: String? = null,
@@ -145,9 +102,6 @@ object KeycloakManager {
                     "openid",
                     "profile",
                     "email",
-                    // Chiede un refresh token offline: sopravvive alla
-                    // scadenza della sessione SSO (30 minuti di inattività)
-                    // e permette di restare loggati tra un avvio e l'altro.
                     "offline_access"
                 )
 
@@ -246,18 +200,6 @@ object KeycloakManager {
         }
     }
 
-    /**
-     * Rinnova l'access token a partire dal refresh token.
-     *
-     * È una chiamata HTTP sincrona verso il token endpoint: viene invocata
-     * da thread di background (interceptor OkHttp o coroutine su IO), quindi
-     * non passiamo da AppAuth, che consegnerebbe il risultato sul main thread
-     * e bloccherebbe l'interceptor in attesa di se stesso.
-     *
-     * Se Keycloak rifiuta il refresh token l'utente deve rifare il login;
-     * se invece la rete non è raggiungibile la sessione resta valida e si
-     * riproverà alla richiesta successiva.
-     */
     fun rinnovaAccessToken(
         refreshToken: String
     ): EsitoRinnovo {
@@ -278,9 +220,6 @@ object KeycloakManager {
             httpRinnovo.newCall(richiesta).execute().use { risposta ->
 
                 if (!risposta.isSuccessful) {
-                    // 400/401: refresh token scaduto o revocato.
-                    // Qualsiasi altro codice è un problema del server,
-                    // quindi vale come errore temporaneo.
                     return if (risposta.code in 400..401) {
                         EsitoRinnovo.Rifiutato
                     } else {
@@ -319,13 +258,6 @@ object KeycloakManager {
         }
     }
 
-    /**
-     * Invalida la sessione lato Keycloak.
-     *
-     * Al logout non basta cancellare i token dal dispositivo: il refresh
-     * token offline resterebbe valido per giorni. Chiamata sincrona, da
-     * eseguire su un thread di background.
-     */
     fun revocaSessione(refreshToken: String) {
 
         try {
@@ -343,17 +275,9 @@ object KeycloakManager {
             httpRinnovo.newCall(richiesta).execute().close()
 
         } catch (e: Exception) {
-            // Il logout locale avviene comunque: se il server non è
-            // raggiungibile non ha senso bloccare l'utente nell'app.
         }
     }
 
-    /**
-     * Ricava il ruolo applicativo dal JWT.
-     *
-     * La lettura vera è in [LettoreToken], che guarda realm_access.roles
-     * invece di cercare il nome del ruolo nel testo del token.
-     */
     fun estraiRuolo(
         accessToken: String
     ): String = LettoreToken.ruolo(accessToken)

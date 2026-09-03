@@ -21,7 +21,7 @@ public class Immagine extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Schema(description = "ID generato automaticamente", example = "123")
     private Long id;
-    
+
     @Column(name = "percorso_relativo", nullable = false, unique = true, length = 200)
     @Schema(description = "percorso del file sullo storage, relativo alla cartella base",
             example = "2026/08/9f1c2c3e-1f2a-4c9b-8f0a-2b1d4e5f6a7b.jpg")

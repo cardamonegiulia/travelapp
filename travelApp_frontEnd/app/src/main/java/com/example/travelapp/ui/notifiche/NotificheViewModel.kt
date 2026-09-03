@@ -59,12 +59,6 @@ class NotificheViewModel @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Solo il contatore, per il campanello.
-     *
-     * E' una chiamata molto piu' leggera dell'elenco completo, quindi si puo' rifare a ogni
-     * ritorno sulla schermata senza pesare.
-     */
     fun aggiornaContatore() {
         viewModelScope.launch {
             repository.contaNonLette().onSuccess { quante ->
@@ -73,10 +67,6 @@ class NotificheViewModel @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Segna la notifica come letta (in locale subito, cosi' l'elenco non "salta" mentre si
-     * naviga verso il form della recensione).
-     */
     fun segnaLetta(notifica: Notifica) {
         if (notifica.letta) return
 

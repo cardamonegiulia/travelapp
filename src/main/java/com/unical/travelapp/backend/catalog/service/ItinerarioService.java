@@ -44,14 +44,6 @@ public class ItinerarioService {
     public Optional<Itinerario> getItinerarioById(Long id) {
         return itinerarioRepository.findById(id);
     }
-    /**
-     * Le partenze che il viaggiatore puo' ancora prenotare, dalla piu' vicina.
-     *
-     * <p>Quelle il cui termine e' passato non vengono restituite affatto: una data che non
-     * si puo' piu' comprare non e' un'opzione disabilitata, e' un'opzione che non c'e' piu',
-     * e lasciarla in scheda faceva sembrare ancora in vendita viaggi gia' conclusi. Le
-     * partenze esaurite restano invece nell'elenco: i posti possono tornare liberi.
-     */
     public List<DisponibilitaItinerario> getDisponibilitaByItinerarioId(Long itinerarioId) {
         if (!itinerarioRepository.existsById(itinerarioId)) {
             throw new ItinerarioNonTrovatoException("Itinerario non trovato: " + itinerarioId);

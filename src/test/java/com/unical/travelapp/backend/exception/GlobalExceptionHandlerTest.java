@@ -15,10 +15,6 @@ import org.springframework.security.access.AccessDeniedException;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
-// Verifica che il GlobalExceptionHandler risponda in formato RFC 7807 (ProblemDetail),
-// propaghi il traceId dall'MDC, e non esponga mai il messaggio grezzo di un'eccezione
-// generica o di una violazione di integrita' dei dati (potrebbe contenere nomi di
-// tabella/colonna/constraint).
 class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler(Mockito.mock(AuditLogger.class));

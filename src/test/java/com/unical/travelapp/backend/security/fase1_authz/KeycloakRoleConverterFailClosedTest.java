@@ -14,13 +14,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
-/**
- * Fase 1 - il converter dei ruoli deve essere fail-closed.
- *
- * <p>Claim assente, nullo, di tipo sbagliato o vuoto non devono ne' far esplodere la catena
- * di filtri (un'eccezione qui diventerebbe un 500 su ogni richiesta) ne' concedere authority.
- * Nessun claim controllato dal client deve poter diventare un privilegio.
- */
 class KeycloakRoleConverterFailClosedTest {
 
     private final KeycloakRoleConverter converter = new KeycloakRoleConverter("travelapp-backend");
@@ -108,9 +101,6 @@ class KeycloakRoleConverterFailClosedTest {
 
     @Test
     void ilClaimScopeNonDiventaMaiUnaAuthority() {
-        // il converter di default di Spring trasformerebbe "scope" in SCOPE_*: qui non deve
-        // accadere, altrimenti uno scope richiesto dal client sarebbe un canale di
-        // escalation parallelo ai ruoli.
         Jwt jwt = tokenBase()
                 .claim("scope", "openid profile email write:viaggi admin")
                 .claim("scp", List.of("admin", "write:viaggi"))

@@ -11,21 +11,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Riallineamento del campo {@code utenti.ruolo} al ruolo realm del token, su
- * {@code POST /api/utenti/me}.
- *
- * <p>Il ruolo che conta per l'autorizzazione e' sempre quello del token; la colonna locale
- * e' una copia per il frontend. Questi test coprono il momento in cui le due divergono:
- * un amministratore cambia il ruolo su Keycloak e l'utente rientra nell'app.
- */
 class SincronizzazioneRuoloTest extends SecurityIntegrationTestBase {
 
     @Test
     void unaPromozioneFattaSuKeycloakArrivaAlRecordLocale() throws Exception {
         Utente esistente = utente(SUB_UTENTE_A, Ruolo.VIAGGIATORE);
 
-        // stesso subject, ma ora il token porta ORGANIZZATORE: e' la promozione fatta in console
         mockMvc.perform(post("/api/utenti/me")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "ORGANIZZATORE")))
                 .andExpect(status().isOk())
@@ -40,8 +31,6 @@ class SincronizzazioneRuoloTest extends SecurityIntegrationTestBase {
     void unTokenSenzaRuoliApplicativiNonDeclassaLUtente() throws Exception {
         Utente organizzatore = utente(SUB_ORGANIZZATORE, Ruolo.ORGANIZZATORE);
 
-        // nessun ruolo nel token: e' il sintomo di un client scope configurato male,
-        // non la prova che l'utente sia stato degradato a VIAGGIATORE
         mockMvc.perform(post("/api/utenti/me")
                         .with(TestJwt.senzaRuoli(SUB_ORGANIZZATORE)))
                 .andExpect(status().isOk())
@@ -56,7 +45,6 @@ class SincronizzazioneRuoloTest extends SecurityIntegrationTestBase {
     void ancheUnDeclassamentoEsplicitoViaggiaVersoIlRecordLocale() throws Exception {
         Utente esistente = utente(SUB_UTENTE_B, Ruolo.ORGANIZZATORE);
 
-        // qui il ruolo c'e' ed e' VIAGGIATORE: e' una decisione dell'amministratore, va seguita
         mockMvc.perform(post("/api/utenti/me")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
                 .andExpect(status().isOk())

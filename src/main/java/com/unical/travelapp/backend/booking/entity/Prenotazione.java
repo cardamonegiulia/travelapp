@@ -11,12 +11,6 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-
-// uso lombok che ci evita codice noioso come getter, setter, costruttore ecc
-//con Data genera automaitcamente getter e setter ecc
-// NOArgs costruttore vuoto
-//All arg il contrario costurttore con tutti i campi
-
 @Getter
 @Setter
 @NoArgsConstructor

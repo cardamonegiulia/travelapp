@@ -13,9 +13,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
-// Genera (o propaga, se il chiamante la fornisce) un correlation id per ogni richiesta:
-// finisce nell'header di risposta, nell'MDC dei log e nel campo "traceId" delle risposte
-// di errore (ProblemDetail), cosi' un errore riportato dall'utente e' ricercabile nei log.
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CorrelationIdFilter extends OncePerRequestFilter {

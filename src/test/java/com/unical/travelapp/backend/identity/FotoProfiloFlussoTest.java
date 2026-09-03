@@ -29,13 +29,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Foto profilo: percorso completo attraverso la filter chain di produzione.
- *
- * <p>Il punto piu' delicato non e' il singolo upload ma la <b>sostituzione</b>: la foto
- * precedente deve sparire da database e storage, altrimenti ogni cambio lascia dietro un
- * file che nessuno puo' piu' raggiungere ne' cancellare.
- */
 @DisplayName("Foto profilo dell'utente autenticato")
 class FotoProfiloFlussoTest extends SecurityIntegrationTestBase {
 
@@ -63,8 +56,6 @@ class FotoProfiloFlussoTest extends SecurityIntegrationTestBase {
         assertThat(caricamento.getResponse().getContentAsString())
                 .contains("/api/immagini/" + immagineId + "/contenuto");
 
-        // il profilo restituito dalla sincronizzazione porta la stessa foto: e' da li' che
-        // il client la rilegge quando l'app riparte
         mockMvc.perform(post("/api/utenti/me")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())
@@ -97,8 +88,6 @@ class FotoProfiloFlussoTest extends SecurityIntegrationTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fotoProfilo.id").value(not(primaId.intValue())));
 
-        // resta una sola immagine, ed e' quella nuova: la vecchia non e' rimasta ne' sul
-        // database ne' sullo storage
         assertThat(immagineRepository.count()).isEqualTo(1);
         assertThat(immagineRepository.existsById(primaId)).isFalse();
         assertThat(primoFile).doesNotExist();
@@ -113,8 +102,6 @@ class FotoProfiloFlussoTest extends SecurityIntegrationTestBase {
         Long originaleId = immagineRepository.findAll().get(0).getId();
         Path originale = fileDellUnicaImmagine();
 
-        // estensione e Content-Type dichiarano "png", il contenuto no: e' il contenuto a
-        // decidere, ed e' l'unico dato che non arriva dal chiamante
         MockMultipartFile falso = new MockMultipartFile(
                 "file", "foto.png", "image/png", "questo non e' un PNG".getBytes());
 
@@ -175,8 +162,6 @@ class FotoProfiloFlussoTest extends SecurityIntegrationTestBase {
     }
 
 
-    // --- helper ---------------------------------------------------------------------------
-
     private RequestBuilder impostaFoto(String keycloakSub) throws IOException {
         return multipart("/api/utenti/me/foto-profilo")
                 .file(immaginePng())
@@ -184,11 +169,6 @@ class FotoProfiloFlussoTest extends SecurityIntegrationTestBase {
                 .with(TestJwt.conRuoliRealm(keycloakSub, "VIAGGIATORE"));
     }
 
-    /**
-     * {@code multipart(...)} costruisce sempre una POST, mentre l'endpoint e' una PUT:
-     * senza questa forzatura la richiesta non troverebbe alcun handler e il test
-     * fallirebbe per il motivo sbagliato.
-     */
     private static RequestPostProcessor comePut() {
         return richiesta -> {
             richiesta.setMethod("PUT");

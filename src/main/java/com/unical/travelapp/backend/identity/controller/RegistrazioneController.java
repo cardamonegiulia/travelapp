@@ -15,10 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Registrazione self-service. E' l'unica rotta pubblica sotto {@code /api} (vedi
- * {@code SecurityConfig}): tutto il resto richiede un token.
- */
 @RestController
 @RequestMapping("/api/auth")
 public class RegistrazioneController {

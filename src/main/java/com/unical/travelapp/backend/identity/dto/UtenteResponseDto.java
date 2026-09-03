@@ -15,7 +15,5 @@ public class UtenteResponseDto {
     private Ruolo ruolo;
     private Tema tema;
 
-    // null quando l'utente non ha ancora caricato una foto: il client mostra il
-    // segnaposto. Dentro c'e' anche l'url da cui scaricarne il contenuto.
     private ImmagineResponse fotoProfilo;
 }

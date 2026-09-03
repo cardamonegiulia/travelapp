@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -19,23 +18,6 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
     Page<Prenotazione> findByViaggiatoreId(Long viaggiatoreId, Pageable pageable);
 
     Optional<Prenotazione> findByIdAndViaggiatoreId(Long id, Long viaggiatoreId);
-
-    @Query("SELECT COALESCE(SUM(p.prezzoTotale), 0) FROM Prenotazione p WHERE p.stato <> :statoEscluso")
-    BigDecimal sumTotaleGlobale(@Param("statoEscluso") StatoPrenotazione statoEscluso);
-
-    @Query("""
-            select coalesce(sum(p.prezzoTotale), 0) from Prenotazione p
-            left join p.disponibilitaItinerario d
-            left join d.itinerario i
-            left join i.organizzatore oi
-            left join p.sessioneSingolaAttivita s
-            left join s.singolaAttivita a
-            left join a.organizzatore oa
-            where p.stato <> :statoEscluso
-              and (oi.id = :organizzatoreId or oa.id = :organizzatoreId)
-            """)
-    BigDecimal sumTotalePerOrganizzatore(@Param("organizzatoreId") Long organizzatoreId,
-                                         @Param("statoEscluso") StatoPrenotazione statoEscluso);
 
     @Query("""
             select p from Prenotazione p
@@ -51,8 +33,6 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
                                                  @Param("statoEscluso") StatoPrenotazione statoEscluso,
                                                  Pageable pageable);
 
-    // Tutto cio' che non e' concluso: viaggi in corso, futuri e anche le prenotazioni
-    // cancellate, che l'utente deve continuare a vedere nella lista principale.
     @Query("""
             select p from Prenotazione p
             left join p.disponibilitaItinerario d

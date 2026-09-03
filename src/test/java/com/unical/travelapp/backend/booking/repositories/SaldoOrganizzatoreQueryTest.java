@@ -1,6 +1,8 @@
 package com.unical.travelapp.backend.booking.repositories;
 
+import com.unical.travelapp.backend.booking.entity.Pagamento;
 import com.unical.travelapp.backend.booking.entity.Prenotazione;
+import com.unical.travelapp.backend.booking.entity.StatoPagamento;
 import com.unical.travelapp.backend.booking.entity.StatoPrenotazione;
 import com.unical.travelapp.backend.catalog.entity.DisponibilitaItinerario;
 import com.unical.travelapp.backend.catalog.entity.Itinerario;
@@ -31,7 +33,7 @@ class SaldoOrganizzatoreQueryTest {
     private EntityManagerFactory emf;
 
     @Autowired
-    private PrenotazioneRepository prenotazioneRepo;
+    private PagamentoRepository pagamentoRepo;
 
     @DynamicPropertySource
     static void datasource(DynamicPropertyRegistry registry) {
@@ -39,7 +41,7 @@ class SaldoOrganizzatoreQueryTest {
     }
 
     @Test
-    void sommaSiaLePrenotazioniDiItinerarioSiaQuelleDiSingolaAttivita() {
+    void sommaSoloIlDenaroIncassatoSuEntrambiIRamiDelCatalogo() {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
 
@@ -50,32 +52,36 @@ class SaldoOrganizzatoreQueryTest {
         em.persist(altroOrganizzatore);
         em.persist(viaggiatore);
 
-        // ramo itinerario: 100.00
-        em.persist(prenotazione(viaggiatore, disponibilita(em, organizzatore), null,
+        pagata(em, prenotazione(viaggiatore, disponibilita(em, organizzatore), null,
                 new BigDecimal("100.00"), StatoPrenotazione.CONFERMATA));
 
-        // ramo singola attivita: 50.00
-        em.persist(prenotazione(viaggiatore, null, sessione(em, organizzatore),
+        pagata(em, prenotazione(viaggiatore, null, sessione(em, organizzatore),
                 new BigDecimal("50.00"), StatoPrenotazione.CONFERMATA));
 
-        // cancellata: esclusa
-        em.persist(prenotazione(viaggiatore, disponibilita(em, organizzatore), null,
+        rimborsata(em, prenotazione(viaggiatore, disponibilita(em, organizzatore), null,
                 new BigDecimal("999.00"), StatoPrenotazione.CANCELLATA));
 
-        // di un altro organizzatore: esclusa
-        em.persist(prenotazione(viaggiatore, disponibilita(em, altroOrganizzatore), null,
-                new BigDecimal("777.00"), StatoPrenotazione.CONFERMATA));
+        annullata(em, prenotazione(viaggiatore, disponibilita(em, organizzatore), null,
+                new BigDecimal("888.00"), StatoPrenotazione.CANCELLATA));
+
+        inAttesa(em, prenotazione(viaggiatore, disponibilita(em, organizzatore), null,
+                new BigDecimal("777.00"), StatoPrenotazione.IN_ATTESA));
+
+        pagata(em, prenotazione(viaggiatore, disponibilita(em, altroOrganizzatore), null,
+                new BigDecimal("666.00"), StatoPrenotazione.CONFERMATA));
 
         em.getTransaction().commit();
         Long organizzatoreId = organizzatore.getId();
         Long altroId = altroOrganizzatore.getId();
         em.close();
 
-        assertEquals(0, new BigDecimal("150.00").compareTo(
-                prenotazioneRepo.sumTotalePerOrganizzatore(organizzatoreId, StatoPrenotazione.CANCELLATA)));
+        assertEquals(0, new BigDecimal("150.00").compareTo(saldo(organizzatoreId)));
+        assertEquals(0, new BigDecimal("666.00").compareTo(saldo(altroId)));
+    }
 
-        assertEquals(0, new BigDecimal("777.00").compareTo(
-                prenotazioneRepo.sumTotalePerOrganizzatore(altroId, StatoPrenotazione.CANCELLATA)));
+    private BigDecimal saldo(Long organizzatoreId) {
+        return pagamentoRepo.sumIncassatoPerOrganizzatore(
+                organizzatoreId, StatoPagamento.COMPLETATO, StatoPrenotazione.CANCELLATA);
     }
 
     private Utente utente(String keycloakId, String email, Ruolo ruolo) {
@@ -134,5 +140,31 @@ class SaldoOrganizzatoreQueryTest {
                 .stato(stato)
                 .dataPrenotazione(LocalDateTime.now())
                 .build();
+    }
+
+    private void pagata(EntityManager em, Prenotazione prenotazione) {
+        pagamento(em, prenotazione, StatoPagamento.COMPLETATO);
+    }
+
+    private void rimborsata(EntityManager em, Prenotazione prenotazione) {
+        pagamento(em, prenotazione, StatoPagamento.RIMBORSATO);
+    }
+
+    private void annullata(EntityManager em, Prenotazione prenotazione) {
+        pagamento(em, prenotazione, StatoPagamento.ANNULLATO);
+    }
+
+    private void inAttesa(EntityManager em, Prenotazione prenotazione) {
+        pagamento(em, prenotazione, StatoPagamento.IN_ATTESA);
+    }
+
+    private void pagamento(EntityManager em, Prenotazione prenotazione, StatoPagamento stato) {
+        em.persist(prenotazione);
+        em.persist(Pagamento.builder()
+                .prenotazione(prenotazione)
+                .importo(prenotazione.getPrezzoTotale())
+                .dataPagamento(stato == StatoPagamento.IN_ATTESA ? null : LocalDateTime.now())
+                .stato(stato)
+                .build());
     }
 }

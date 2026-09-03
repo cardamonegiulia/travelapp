@@ -24,17 +24,6 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 
-/**
- * Fase 1 - matrice completa endpoint x ruolo.
- *
- * <p>Ogni rotta dell'API viene provata con: anonimo, VIAGGIATORE, ORGANIZZATORE, ADMIN.
- * Per le rotte con {@code @PreAuthorize} il ruolo insufficiente deve produrre esattamente
- * 403; per le rotte aperte a ogni utente autenticato la richiesta non deve mai essere
- * respinta con 401/403. L'anonimo deve sempre ricevere 401.
- *
- * <p>La matrice e' ricostruita dal codice (vedi docs/security-inventory.md), non dal
- * riepilogo di progetto.
- */
 class MatriceRuoliSecurityTest extends SecurityIntegrationTestBase {
 
     private static final String QUALSIASI_AUTENTICATO = "*";
@@ -52,7 +41,6 @@ class MatriceRuoliSecurityTest extends SecurityIntegrationTestBase {
         this.idUtenteA = utenteA.getId();
     }
 
-    /** metodo | percorso | ruoli ammessi ("*" = qualunque utente autenticato) | payload */
     static Stream<Arguments> matrice() {
         return Stream.of(
                 Arguments.of("GET", "/api/utenti", "ADMIN", null),
@@ -141,7 +129,6 @@ class MatriceRuoliSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void unUtenteAutenticatoSenzaRuoliApplicativiNonAccedeAlleRotteRiservate() throws Exception {
-        // e' lo stato attuale del realm Keycloak: token valido, nessun ruolo applicativo
         List<MvcResult> risultati = new ArrayList<>();
         risultati.add(mockMvc.perform(costruisci("GET", "/api/utenti", null)
                 .with(TestJwt.senzaRuoli(SUB_UTENTE_A))).andReturn());
@@ -158,7 +145,6 @@ class MatriceRuoliSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void iRuoliClientDiKeycloakSonoEquivalentiAiRuoliRealm() throws Exception {
-        // resource_access.travelapp-backend.roles deve valere quanto realm_access.roles
         mockMvc.perform(costruisci("GET", "/api/utenti", null)
                         .with(TestJwt.conRuoliClient(SUB_ADMIN, "ADMIN")))
                 .andReturn();
@@ -173,8 +159,6 @@ class MatriceRuoliSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void unRuoloDiUnAltroClientNonConcedeAlcunPrivilegio() throws Exception {
-        // il converter legge solo resource_access.<client-id> configurato: i ruoli ADMIN
-        // rilasciati per un altro client non devono valere su questa API
         mockMvc.perform(costruisci("GET", "/api/utenti", null)
                         .with(org.springframework.security.test.web.servlet.request
                                 .SecurityMockMvcRequestPostProcessors.jwt()

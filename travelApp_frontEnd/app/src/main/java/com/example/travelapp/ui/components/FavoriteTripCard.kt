@@ -51,12 +51,6 @@ private val TripCardShape = RoundedCornerShape(16.dp)
 private val CoverShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
 private val CoverHeight = 140.dp
 
-/**
- * Viaggio mostrato nell'elenco dei preferiti.
- *
- * [id] e' l'id dell'itinerario sul backend: le azioni della card (aprire il dettaglio,
- * toglierlo dalla lista) finiscono tutte in una chiamata REST che quell'id se lo aspetta.
- */
 data class FavoriteTrip(
     val id: Long,
     val title: String,
@@ -66,14 +60,6 @@ data class FavoriteTrip(
     val isFavorite: Boolean = true
 )
 
-/**
- * Card di un viaggio: copertina con il cuore dei preferiti, titolo, durata e
- * prezzo di partenza.
- *
- * Componente presentazionale riusabile anche fuori dalla schermata "Preferiti"
- * (es. nei risultati di ricerca): riceve il dato da mostrare e si limita a
- * notificare i tocchi.
- */
 @Composable
 fun FavoriteTripCard(
     trip: FavoriteTrip,
@@ -91,8 +77,6 @@ fun FavoriteTripCard(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             TripCover(imageUrl = trip.imageUrl)
-            // Nascosto quando la card sta in una lista che l'utente puo' solo consultare
-            // (una lista condivisa con lui): un cuore che non fa nulla e' peggio di niente.
             if (showFavoriteBadge) {
                 FavoriteBadge(
                     isFavorite = trip.isFavorite,
@@ -151,12 +135,6 @@ fun FavoriteTripCard(
     }
 }
 
-/**
- * Copertina del viaggio, con angoli arrotondati solo in alto.
- *
- * Il gradiente resta come sfondo: si vede mentre la foto scende e quando
- * l'itinerario non ne ha nessuna.
- */
 @Composable
 private fun TripCover(
     imageUrl: String?,
@@ -190,7 +168,6 @@ private fun TripCover(
     }
 }
 
-/** Cuore dei preferiti sovrapposto alla copertina. */
 @Composable
 private fun FavoriteBadge(
     isFavorite: Boolean,
@@ -218,10 +195,8 @@ private fun FavoriteBadge(
     }
 }
 
-/** Durata del viaggio, es. "5 giorni". */
 private fun formatDuration(days: Int): String =
     if (days == 1) "1 giorno" else days.toString() + " giorni"
 
-/** Prezzo con separatore delle migliaia all'italiana, es. "1.200". */
 private fun formatPrice(amount: Int): String =
     "€ " + NumberFormat.getIntegerInstance(Locale.ITALY).format(amount)

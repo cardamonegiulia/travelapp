@@ -19,13 +19,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 1 - BOLA/IDOR sulle prenotazioni (OWASP API1:2023).
- *
- * <p>L'utente A non deve poter leggere, pagare o annullare le prenotazioni di B. Il codice
- * sceglie 404 invece di 403 per non rivelare l'esistenza di un id altrui: i test verificano
- * proprio l'indistinguibilita' fra "id inesistente" e "id di un altro".
- */
 class BolaPrenotazioniSecurityTest extends SecurityIntegrationTestBase {
 
     private Utente utenteA;
@@ -88,7 +81,6 @@ class BolaPrenotazioniSecurityTest extends SecurityIntegrationTestBase {
                 .isEqualTo(inesistente.getResponse().getStatus())
                 .isEqualTo(404);
 
-        // i due body differiscono solo per l'id richiesto e il traceId: nessun altro segnale
         assertThat(corpoNormalizzato(altrui)).isEqualTo(corpoNormalizzato(inesistente));
     }
 
@@ -139,7 +131,6 @@ class BolaPrenotazioniSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void lIdentitaVieneDalSubNonDallUsernameDelToken() throws Exception {
-        // stesso sub, preferred_username/email diversi: il comportamento non deve cambiare
         mockMvc.perform(get("/api/prenotazioni/" + prenotazioneDiB.getId())
                         .with(TestJwt.conUsernameDiverso(SUB_UTENTE_B, "un-altro-nome", "VIAGGIATORE")))
                 .andExpect(status().isOk());
@@ -151,8 +142,6 @@ class BolaPrenotazioniSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void nonSiPuoIntestareUnaPrenotazioneAUnAltroUtenteDalPayload() throws Exception {
-        // mass assignment: viaggiatoreId/utenteId non sono campi del DTO e il payload va
-        // rifiutato; l'identita' arriva solo dal token
         MvcResult risultato = mockMvc.perform(post("/api/prenotazioni")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -178,7 +167,6 @@ class BolaPrenotazioniSecurityTest extends SecurityIntegrationTestBase {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.viaggiatoreId").value(utenteA.getId().intValue()));
 
-        // verifica a DB, non solo sulla risposta
         assertThat(prenotazioneRepository.findAll())
                 .filteredOn(p -> !p.getId().equals(prenotazioneDiB.getId()))
                 .singleElement()

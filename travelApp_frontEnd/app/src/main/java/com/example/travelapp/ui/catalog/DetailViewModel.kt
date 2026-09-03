@@ -79,9 +79,6 @@ class DetailViewModel(
                         itinerarioId
                     )
             if (result.isSuccess) {
-                // Il server manda gia' solo le partenze ancora prenotabili; il filtro qui
-                // e' una rete di sicurezza: una data il cui termine e' passato non deve
-                // comparire in scheda, nemmeno disabilitata.
                 val list =
                     result.getOrDefault(
                         emptyList()

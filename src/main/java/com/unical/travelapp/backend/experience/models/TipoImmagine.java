@@ -41,7 +41,6 @@ public enum TipoImmagine {
         return estensioniAmmesse.contains(estensione);
     }
 
-    // riconosce il formato reale dai primi byte del file, ignorando nome ed estensione
     public static Optional<TipoImmagine> daContenuto(byte[] intestazione) {
         return Arrays.stream(values())
                 .filter(tipo -> tipo.firmaCorrisponde(intestazione))

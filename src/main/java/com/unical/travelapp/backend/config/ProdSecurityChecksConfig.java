@@ -5,9 +5,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-// Controlli di sicurezza attivi SOLO con il profilo "prod": se l'issuer Keycloak non e' HTTPS
-// l'avvio fallisce subito, invece di partire silenziosamente con un resource server che fida
-// di un endpoint non cifrato.
 @Configuration
 @Profile("prod")
 public class ProdSecurityChecksConfig {

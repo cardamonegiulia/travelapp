@@ -8,9 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Prova che con FAIL_ON_UNKNOWN_PROPERTIES=true un campo "di sistema" iniettato nel payload
-// (es. organizzatoreId, che non esiste nel DTO di request) fa fallire la deserializzazione
-// invece di essere silenziosamente accettato (protezione da mass assignment).
 class MassAssignmentJacksonTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper()

@@ -14,14 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-/**
- * Fase 6 - statelessness e la scelta di disattivare il CSRF.
- *
- * <p>Disabilitare il CSRF e' accettabile solo finche' l'API non si autentica con cookie:
- * il CSRF classico sfrutta l'invio automatico dei cookie da parte del browser. Se
- * comparisse un cookie di sessione, la scelta diventerebbe una vulnerabilita'. Questi test
- * sono quindi la condizione che rende sicura quella decisione.
- */
 class StatelessECsrfSecurityTest extends SecurityIntegrationTestBase {
 
     private Utente utenteA;
@@ -67,8 +59,6 @@ class StatelessECsrfSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void unCookieDiSessioneFornitoDalClientNonAutentica() throws Exception {
-        // se un JSESSIONID bastasse ad autenticare, l'assenza di protezione CSRF
-        // diventerebbe sfruttabile
         MvcResult risultato = mockMvc.perform(get("/api/itinerari")
                         .cookie(new Cookie("JSESSIONID", "una-sessione-inventata")))
                 .andReturn();
@@ -80,11 +70,9 @@ class StatelessECsrfSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void dueRichiesteConLoStessoClientNonCondividonoStato() throws Exception {
-        // prima richiesta autenticata
         mockMvc.perform(get("/api/itinerari")
                 .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))).andReturn();
 
-        // seconda richiesta senza token: non deve ereditare nulla dalla precedente
         MvcResult seconda = mockMvc.perform(get("/api/itinerari")).andReturn();
 
         assertThat(seconda.getResponse().getStatus())
@@ -94,8 +82,6 @@ class StatelessECsrfSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void unaScritturaSenzaTokenCsrfMaConBearerValidoFunziona() throws Exception {
-        // e' la conferma che il CSRF e' disattivato per scelta e che l'autenticazione
-        // dipende solo dal bearer token
         mockMvc.perform(post("/api/utenti/me")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andReturn();
@@ -108,8 +94,6 @@ class StatelessECsrfSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void unaScritturaSenzaAlcunaCredenzialeVieneRespinta() throws Exception {
-        // il rovescio della medaglia: senza CSRF, l'unica difesa e' che una richiesta
-        // senza bearer token non combini nulla
         MvcResult risultato = mockMvc.perform(post("/api/itinerari")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"programma\":[{\"titolo\":\"Giornata 1\",\"descrizione\":\"Attivita della giornata\"}],\"titolo\":\"Da un altro sito\",\"destinazionePrincipale\":\"D\","

@@ -24,21 +24,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Flusso completo delle liste di itinerari preferiti: quelle private e quelle condivise
- * con utenti specifici.
- *
- * <p>Copre due cose insieme.
- * <ul>
- *   <li>La regressione del finding F-06: il primo preferito di un utente andava in
- *       NullPointerException perche' la collection degli itinerari non era inizializzata.
- *       Il caso critico e' proprio il PRIMO inserimento, quando la riga non esiste ancora
- *       e il service ne costruisce una nuova.</li>
- *   <li>Le regole di visibilita': una lista privata non deve essere raggiungibile da
- *       nessun altro, una condivisa deve esserlo dai soli destinatari e comunque in sola
- *       lettura.</li>
- * </ul>
- */
 class PreferitiFlussoTest extends SecurityIntegrationTestBase {
 
     @Autowired private TransactionTemplate transazione;
@@ -46,11 +31,6 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
     private Itinerario primo;
     private Itinerario secondo;
 
-    /**
-     * Legge gli id degli itinerari salvati nelle liste di un utente, dentro una
-     * transazione: le @ManyToMany sono LAZY e fuori da una sessione Hibernate non sarebbero
-     * inizializzabili.
-     */
     private List<Long> itinerariPreferitiA(String subject) {
         return transazione.execute(stato -> {
             Utente utente = utenteRepository.findByKeycloakId(subject).orElseThrow();
@@ -70,9 +50,6 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
         secondo = itinerario(organizzatore);
     }
 
-    // --- helper HTTP ------------------------------------------------------------------
-
-    /** Salvataggio rapido: nessuna lista scelta, finisce in quella predefinita. */
     private MvcResult aggiungi(String subject, long itinerarioId) throws Exception {
         return mockMvc.perform(post("/api/preferiti/itinerari")
                 .with(TestJwt.conRuoliRealm(subject, "VIAGGIATORE"))
@@ -102,8 +79,6 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
     private long idUtente(String subject) {
         return utenteRepository.findByKeycloakId(subject).orElseThrow().getId();
     }
-
-    // --- salvataggio rapido (lista predefinita) ---------------------------------------
 
     @Test
     void ilPrimoPreferitoDiUnUtenteVieneCreatoSenzaErroreInterno() throws Exception {
@@ -204,8 +179,6 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
                 .isEmpty();
     }
 
-    // --- piu' liste per utente --------------------------------------------------------
-
     @Test
     void unViaggiatorePuoAvereListeDiverse() throws Exception {
         creaLista(SUB_UTENTE_A, "Estate", "PRIVATA");
@@ -231,8 +204,6 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
         NessunLeak.verifica(risultato);
     }
 
-    // --- lista privata ----------------------------------------------------------------
-
     @Test
     void unaListaPrivataNonEVisibileAgliAltriUtenti() throws Exception {
         long listaId = creaLista(SUB_UTENTE_A, "Estate", "PRIVATA");
@@ -254,8 +225,6 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
-
-    // --- lista condivisa con utenti specifici -----------------------------------------
 
     @Test
     void ilDestinatarioLeggeLaListaCondivisaConLui() throws Exception {
@@ -285,7 +254,6 @@ class PreferitiFlussoTest extends SecurityIntegrationTestBase {
     void unUtenteNonDestinatarioNonVedeLaListaCondivisa() throws Exception {
         long listaId = creaLista(SUB_UTENTE_A, "Idee per il weekend", "CONDIVISA");
 
-        // condivisa, ma con nessuno: "condivisa" non vuol dire "pubblica"
         MvcResult risultato = mockMvc.perform(get("/api/preferiti/" + listaId)
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
                 .andExpect(status().isNotFound())

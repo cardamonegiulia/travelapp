@@ -20,39 +20,11 @@ import org.springframework.stereotype.Service;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Registrazione self-service: crea l'utente su Keycloak, gli assegna il ruolo realm scelto e
- * salva il record locale con lo stesso ruolo.
- *
- * <p>L'ordine dei passi non e' casuale, ed e' il punto centrale di questa classe:
- * <ol>
- *   <li>controllo email nel DB locale, per non creare su Keycloak un utente che sarebbe
- *       comunque rifiutato dopo;</li>
- *   <li>verifica che il ruolo realm <b>esista</b> prima di creare l'utente: e' l'unico ordine
- *       che rende impossibile ritrovarsi con un account senza ruolo;</li>
- *   <li>creazione su Keycloak;</li>
- *   <li>assegnazione del ruolo realm;</li>
- *   <li>salvataggio del record locale.</li>
- * </ol>
- * Dal passo 3 in poi qualsiasi errore innesca la compensazione: l'utente Keycloak appena
- * creato viene rimosso, cosi' non restano account a meta' che l'utente non potrebbe ne'
- * usare ne' ricreare (la seconda registrazione fallirebbe con 409 da Keycloak).
- *
- * <p>Non e' annotato {@code @Transactional} di proposito: l'unica scrittura sul DB e' un
- * singolo {@code save()}, che ha gia' la sua transazione. Una transazione piu' ampia
- * sposterebbe soltanto il commit dopo la fine del metodo, cioe' fuori dalla portata della
- * compensazione, peggiorando la situazione invece di migliorarla.
- */
 @Service
 public class RegistrazioneService {
 
     private static final Logger log = LoggerFactory.getLogger(RegistrazioneService.class);
 
-    /**
-     * Difesa in profondita'. Il tipo {@link RuoloRegistrabile} gia' esclude ADMIN, ma questa
-     * lista fa in modo che aggiungere domani un valore all'enum non lo renda automaticamente
-     * auto-assegnabile da un endpoint pubblico: serve una decisione esplicita anche qui.
-     */
     private static final Set<String> RUOLI_AUTO_ASSEGNABILI = Set.of("VIAGGIATORE", "ORGANIZZATORE");
 
     private final UtenteRepository utenteRepository;
@@ -111,7 +83,6 @@ public class RegistrazioneService {
             utente.setNome(richiesta.getNome().trim());
             utente.setCognome(richiesta.getCognome().trim());
             utente.setEmail(email);
-            // stesso ruolo assegnato su Keycloak: il campo locale non e' piu' un default fisso
             utente.setRuolo(ruoloScelto.toRuolo());
             utente.setTema(Tema.CHIARO);
 
@@ -126,11 +97,6 @@ public class RegistrazioneService {
         }
     }
 
-    /**
-     * L'email e' sia username Keycloak sia chiave unica locale: normalizzarla evita che
-     * {@code Mario@Example.com} e {@code mario@example.com} diventino due account distinti
-     * in locale ma lo stesso username su Keycloak (che li normalizza per conto suo).
-     */
     private String normalizzaEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
     }

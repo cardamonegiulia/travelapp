@@ -35,13 +35,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * {@code POST /api/utenti/me/password}.
- *
- * <p>Il cuore di questi test e' la condizione di freschezza: senza, il solo possesso di un
- * access token — che puo' essere stato rubato — basterebbe a cambiare la password e a
- * escludere il proprietario dal proprio account.
- */
 class CambioPasswordTest extends SecurityIntegrationTestBase {
 
     private static final String TOKEN_ADMIN = "token-service-account";
@@ -55,10 +48,6 @@ class CambioPasswordTest extends SecurityIntegrationTestBase {
         when(keycloakAdminClient.ottieniTokenAmministrativo()).thenReturn(TOKEN_ADMIN);
     }
 
-    /**
-     * Token con {@code auth_time} esplicito. Non usa {@link TestJwt} perche' quel supporto
-     * costruisce token per i test di autorizzazione, dove il momento del login e' irrilevante.
-     */
     private JwtRequestPostProcessor tokenAutenticatoDa(String subject, Duration eta) {
         return jwt()
                 .jwt(builder -> builder
@@ -74,8 +63,6 @@ class CambioPasswordTest extends SecurityIntegrationTestBase {
     private String payload(String password) {
         return "{\"nuovaPassword\":\"" + password + "\"}";
     }
-
-    // --- percorso felice ---------------------------------------------------
 
     @Test
     void conUnaAutenticazioneRecenteLaPasswordVieneCambiata() throws Exception {
@@ -101,14 +88,10 @@ class CambioPasswordTest extends SecurityIntegrationTestBase {
                         .content(payload(PASSWORD_VALIDA)))
                 .andExpect(status().isNoContent());
 
-        // l'ordine conta: chiudere le sessioni prima di aver cambiato la password lascerebbe
-        // all'attaccante il tempo di rientrare con quella vecchia
         var ordine = inOrder(keycloakAdminClient);
         ordine.verify(keycloakAdminClient).impostaPassword(anyString(), anyString(), anyString());
         ordine.verify(keycloakAdminClient).terminaSessioniSenzaPropagareErrori(TOKEN_ADMIN, SUB_UTENTE_A);
     }
-
-    // --- freschezza dell'autenticazione ------------------------------------
 
     @Test
     void unaAutenticazioneVecchiaRichiedeDiRifareIlLogin() throws Exception {
@@ -132,9 +115,6 @@ class CambioPasswordTest extends SecurityIntegrationTestBase {
     void unTokenSenzaAuthTimeNonBastaACambiareLaPassword() throws Exception {
         utente(SUB_UTENTE_A, Ruolo.VIAGGIATORE);
 
-        // TestJwt non mette auth_time: e' il caso di un token che non sa dire quando sia
-        // avvenuto il login. Fail-closed, altrimenti il controllo sarebbe aggirabile
-        // semplicemente omettendo il claim.
         mockMvc.perform(post("/api/utenti/me/password")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -153,8 +133,6 @@ class CambioPasswordTest extends SecurityIntegrationTestBase {
 
         verifyNoInteractions(keycloakAdminClient);
     }
-
-    // --- validazione -------------------------------------------------------
 
     @Test
     void unaPasswordTroppoCortaVieneRifiutataPrimaDiChiamareKeycloak() throws Exception {
@@ -196,8 +174,6 @@ class CambioPasswordTest extends SecurityIntegrationTestBase {
         verifyNoInteractions(keycloakAdminClient);
     }
 
-    // --- errori lato Keycloak ----------------------------------------------
-
     @Test
     void unaPasswordRifiutataDallaPolicyDelRealmDiventaUn400() throws Exception {
         utente(SUB_UTENTE_A, Ruolo.VIAGGIATORE);
@@ -236,8 +212,6 @@ class CambioPasswordTest extends SecurityIntegrationTestBase {
 
     @Test
     void unUtenteSenzaRecordLocaleNonPuoCambiareLaPassword() throws Exception {
-        // token valido e recente, ma nessun utente locale: il keycloakId su cui agire
-        // arriverebbe da nulla
         mockMvc.perform(post("/api/utenti/me/password")
                         .with(tokenAutenticatoDa("sub-sconosciuto", Duration.ofSeconds(30)))
                         .contentType(MediaType.APPLICATION_JSON)

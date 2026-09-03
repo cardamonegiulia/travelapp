@@ -207,14 +207,12 @@ public class UtenteService {
         String keycloakId = jwt.getSubject();
         String email = normalizzaEmail(jwt.getClaimAsString("email"));
 
-        // 1. Cerca per keycloakId
         Optional<Utente> perKeycloak = utenteRepository.findByKeycloakId(keycloakId);
         if (perKeycloak.isPresent()) {
             Utente utente = riallineaDatiUtente(perKeycloak.get(), jwt);
             return utenteMapper.toResponseDto(utente);
         }
 
-        // 2. Se non trovato per keycloakId, cerca per email per evitare violazione del vincolo UNIQUE
         if (!email.isBlank()) {
             Optional<Utente> perEmail = utenteRepository.findByEmail(email);
             if (perEmail.isPresent()) {
@@ -225,7 +223,6 @@ public class UtenteService {
             }
         }
 
-        // 3. Altrimenti crea il nuovo record
         Utente nuovo = creaDaToken(keycloakId, jwt);
         return utenteMapper.toResponseDto(nuovo);
     }

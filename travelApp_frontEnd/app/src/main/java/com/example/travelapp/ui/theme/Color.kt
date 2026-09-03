@@ -5,14 +5,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 
-// ── Primari ──────────────────────────────────────────────────────────────────
 val PrimaryBlue = Color(0xFF1B6FA8)
 val PrimaryDark = Color(0xFF0D4A73)
 val PrimaryLight = Color(0xFF4C9FD8)
 val NavSelectedBlue = PrimaryBlue
 val NavUnselected = Color(0xFF9CA3AF)
 
-// ── Accenti ──────────────────────────────────────────────────────────────────
 val AccentOrange = Color(0xFFF2994A)
 val AccentOrangeDark = Color(0xFFF2A65A)
 
@@ -21,8 +19,6 @@ val TravelBlueDark = Color(0xFF083C63)
 val TravelOrange = Color(0xFFE87A30)
 val TravelOrangeHover = Color(0xFFCF661E)
 
-// ── Palette Travel ────────────────────────────────────────────────────────────
-// Alias equivalenti a quelli di "Sfondi, superfici e testi" più sotto, con nomi diversi.
 val TravelBg: Color @Composable get() = MaterialTheme.colorScheme.background
 val TravelSurface: Color @Composable get() = MaterialTheme.colorScheme.surface
 val TravelTextDark: Color @Composable get() = MaterialTheme.colorScheme.onSurface
@@ -36,10 +32,6 @@ val TravelChipBg: Color
             Color(0xFFEBF3F9)
         }
 
-/**
- * Testo e icone sopra [TravelChipBg]. [TravelBlueDark] e' un blu quasi nero: sul chip
- * scuro del tema notturno spariva contro lo sfondo.
- */
 val TravelChipText: Color
     @Composable get() =
         if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
@@ -48,7 +40,6 @@ val TravelChipText: Color
             TravelBlueDark
         }
 
-// ── Semantici ────────────────────────────────────────────────────────────────
 val SuccessGreen = Color(0xFF2E9E5B)
 
 val CompletedBadgeBackground: Color
@@ -74,9 +65,6 @@ val FavoriteRed = Color(0xFFE53935)
 val LogoutRed = ErrorRed
 val LogoutBackground = Color(0xFFFFEAEA)
 
-// ── Sfondi, superfici e testi ────────────────────────────────────────────────
-// Seguono MaterialTheme.colorScheme (i valori grezzi sono in Theme.kt) invece di
-// restare fissi sulla versione chiara.
 val BackgroundLight: Color @Composable get() = MaterialTheme.colorScheme.background
 val BackgroundLavender: Color @Composable get() = MaterialTheme.colorScheme.background
 val SurfaceLight: Color @Composable get() = MaterialTheme.colorScheme.surface
@@ -85,19 +73,12 @@ val SurfaceWhite: Color @Composable get() = MaterialTheme.colorScheme.surface
 val TextPrimary: Color @Composable get() = MaterialTheme.colorScheme.onSurface
 val TextSecondary: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
-// ── Utility ──────────────────────────────────────────────────────────────────
 val DividerColor: Color @Composable get() = MaterialTheme.colorScheme.outline
 
-/**
- * Bordo dei campi di testo. [DividerColor] va bene per separare due righe, ma su una
- * superficie chiara e' talmente tenue che il rettangolo del campo sparisce: qui serve
- * un grigio con contrasto pieno, sia sul tema chiaro sia su quello scuro.
- */
 val FieldBorder: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 val ChevronGrey: Color @Composable get() = MaterialTheme.colorScheme.outline
 val SkeletonColor = Color(0xFFE9EAEC)
 
-// ── Badge circolari ──────────────────────────────────────────────────────────
 val BadgeBlue: Color
     @Composable get() =
         if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
@@ -147,14 +128,8 @@ val BadgeGrey: Color
         }
 val IconGrey = Color(0xFF6B6A76)
 
-// ── Card viaggio / Preferiti ─────────────────────────────────────────────────
 val OutlineGrey = Color(0xFFE2E0EC)
 
-/**
- * Sfondo dei riquadri che ospitano un'immagine: copertine mancanti o ancora in
- * caricamento, caselle di upload. Un grigio chiaro fisso su tema scuro diventava una
- * striscia bianca in mezzo alla pagina.
- */
 val ImagePlaceholder: Color
     @Composable get() =
         if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {

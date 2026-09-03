@@ -20,12 +20,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 3 - limiti su upload, transazioni e query.
- *
- * <p>Il limite multipart e' una difesa contro il consumo di memoria e disco: un client non
- * deve poter far accettare al server un corpo arbitrariamente grande.
- */
 class LimitiRisorseSecurityTest extends SecurityIntegrationTestBase {
 
     @Autowired private Environment environment;
@@ -37,11 +31,6 @@ class LimitiRisorseSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void unaRichiestaMultipartVersoUnEndpointJsonVieneRifiutataCon415() throws Exception {
-        // Nota: sotto MockMvc il contenitore servlet e' simulato e i limiti multipart NON
-        // vengono applicati (le parti sono costruite direttamente dal builder di test). Il
-        // limite di dimensione e il 413 sono quindi collaudati su un contenitore vero in
-        // UploadLimiteRealeSecurityTest. Qui si verifica che un endpoint JSON non accetti
-        // comunque un corpo multipart.
         byte[] contenuto = new byte[1024];
 
         MvcResult risultato = mockMvc.perform(multipart("/api/itinerari")
@@ -60,13 +49,6 @@ class LimitiRisorseSecurityTest extends SecurityIntegrationTestBase {
         assertThat(corpo.has("traceId")).isTrue();
     }
 
-    /**
-     * {@code POST /api/attivita/con-sessioni} scrive una riga per ogni giorno dell'intervallo
-     * che ricade nei giorni scelti: se l'ampiezza la decide il chiamante, una sola richiesta
-     * chiede milioni di insert in un'unica transazione. Il timeout la abortirebbe, ma solo
-     * dopo aver occupato per dieci secondi un thread e il database, e il rate limit consente
-     * di ripeterla decine di volte al minuto.
-     */
     @Test
     void unIntervalloSmisuratoVieneRifiutatoPrimaDiGenerareSessioni() throws Exception {
         MvcResult risultato = mockMvc.perform(post("/api/attivita/con-sessioni")
@@ -98,8 +80,6 @@ class LimitiRisorseSecurityTest extends SecurityIntegrationTestBase {
                         .param("fine", "2026-09-30")
                         .param("giorni", "0", "9"))
                 .andExpect(status().isBadRequest())
-                // i vincoli sui parametri devono passare dal gestore globale come quelli sul
-                // corpo: senza un handler dedicato sarebbero un 500 per un errore del chiamante
                 .andExpect(jsonPath("$.errori.giorni").exists())
                 .andExpect(jsonPath("$.traceId").exists());
     }
@@ -182,8 +162,6 @@ class LimitiRisorseSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void lAnonimoHaUnaCapienzaNonSuperioreAQuellaAutenticata() {
-        // in produzione (application.properties) l'anonimo deve essere piu' stretto:
-        // qui si verifica il valore reale del file di configurazione principale
         assertThat(environment.getProperty("spring.jackson.deserialization.fail-on-unknown-properties", Boolean.class))
                 .as("i campi non previsti dal DTO devono essere rifiutati, non ignorati")
                 .isTrue();

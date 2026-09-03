@@ -742,7 +742,6 @@ private fun Caricamento() {
     }
 }
 
-/** Adatta un itinerario del backend alla card gia' esistente dei preferiti. */
 private fun Itinerario.toFavoriteTrip(): FavoriteTrip = FavoriteTrip(
     id = id,
     title = titolo,
@@ -752,7 +751,6 @@ private fun Itinerario.toFavoriteTrip(): FavoriteTrip = FavoriteTrip(
 )
 
 
-/** Dati segnaposto per le anteprime: a runtime lo stato arriva dal PreferitiViewModel. */
 internal val sampleListePreferiti = listOf(
     ListaPreferiti(
         id = 1,

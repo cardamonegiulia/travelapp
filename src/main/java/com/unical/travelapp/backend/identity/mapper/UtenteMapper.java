@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class UtenteMapper {
 
-    // stesso mapper usato da itinerari e recensioni: l'url della foto profilo deve essere
-    // costruito nello stesso identico modo di quello delle altre immagini
     private final ImmagineMapper immagineMapper;
 
     public UtenteMapper(ImmagineMapper immagineMapper) {

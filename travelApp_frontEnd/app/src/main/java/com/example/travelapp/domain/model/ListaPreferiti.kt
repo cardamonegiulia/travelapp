@@ -15,7 +15,6 @@ enum class VisibilitaLista {
     }
 }
 
-/** Utente con cui una lista e' condivisa. */
 data class DestinatarioCondivisione(
     val id: Long,
     val nome: String,
@@ -25,13 +24,6 @@ data class DestinatarioCondivisione(
     val nomeCompleto: String get() = "$nome $cognome".trim()
 }
 
-/**
- * Una lista di itinerari preferiti.
- *
- * [itinerari] e' popolata solo quando si apre il dettaglio: negli elenchi il backend manda
- * il solo [numeroItinerari]. [proprietaria] distingue le liste dell'utente da quelle che
- * qualcun altro ha condiviso con lui, che sono in sola lettura.
- */
 data class ListaPreferiti(
     val id: Long,
     val nome: String,

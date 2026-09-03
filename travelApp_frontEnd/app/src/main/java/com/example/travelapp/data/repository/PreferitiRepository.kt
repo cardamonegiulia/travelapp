@@ -78,7 +78,6 @@ class PreferitiRepository(
         chiamata: suspend () -> Response<List<ListaPreferitiResponseDto>>
     ): Result<List<ListaPreferiti>> = try {
         val risposta = chiamata()
-        // 404 su un elenco non e' un errore da mostrare: significa solo "niente da vedere".
         if (risposta.isSuccessful) {
             Result.success(risposta.body().orEmpty().map { it.toDomain() })
         } else if (risposta.code() == 404) {

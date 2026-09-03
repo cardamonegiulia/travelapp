@@ -14,10 +14,6 @@ import retrofit2.http.Query
 
 interface RecensioneApi {
 
-    /**
-     * Recensioni di un itinerario: sta sotto /api/itinerari perche' fa parte della scheda
-     * pubblica dell'itinerario, visibile a chiunque la consulti.
-     */
     @GET("api/itinerari/{id}/recensioni")
     suspend fun getRecensioniItinerario(
         @Path("id") itinerarioId: Long,
@@ -25,16 +21,12 @@ interface RecensioneApi {
         @Query("size") size: Int = 20
     ): Response<PageDto<RecensioneResponseDto>>
 
-    /**
-     * Le recensioni scritte da chi e' loggato: nessun id nell'URL, l'utente e' quello del token.
-     */
     @GET("api/recensioni/mie")
     suspend fun getMieRecensioni(
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 50
     ): Response<PageDto<RecensioneResponseDto>>
 
-    /** La propria recensione su una prenotazione: 204 se non e' ancora stata scritta. */
     @GET("api/recensioni/prenotazione/{prenotazioneId}")
     suspend fun getRecensionePrenotazione(
         @Path("prenotazioneId") prenotazioneId: Long

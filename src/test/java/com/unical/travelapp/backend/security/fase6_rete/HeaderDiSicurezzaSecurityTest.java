@@ -10,13 +10,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-/**
- * Fase 6 - header di sicurezza su ogni risposta, comprese quelle di errore.
- *
- * <p>Gli header vanno verificati anche sui percorsi di errore: e' facile impostarli sul
- * percorso felice e perderli quando la risposta viene scritta da un filtro o da un
- * gestore di eccezioni.
- */
 class HeaderDiSicurezzaSecurityTest extends SecurityIntegrationTestBase {
 
     @BeforeEach
@@ -95,8 +88,6 @@ class HeaderDiSicurezzaSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void suHttpNonVieneEmessoHstsInSviluppo() throws Exception {
-        // HstsHeaderWriter scrive l'header solo su canale sicuro: annunciare HSTS su HTTP
-        // in sviluppo bloccherebbe il browser sul dominio locale
         MvcResult risultato = mockMvc.perform(get("/api/itinerari")
                 .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))).andReturn();
 

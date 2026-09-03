@@ -21,14 +21,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * {@code DELETE /api/utenti/{id}} deve rimuovere l'utente da entrambe le fonti.
- *
- * <p>Il caso che questi test presidiano: finche' la cancellazione toccava il solo record
- * locale, l'utente restava su Keycloak, continuava ad autenticarsi e il provisioning
- * just-in-time di {@code POST /api/utenti/me} lo ricreava al primo accesso. La cancellazione
- * non cancellava.
- */
 class CancellazioneUtenteTest extends SecurityIntegrationTestBase {
 
     private static final String TOKEN_ADMIN = "token-service-account";

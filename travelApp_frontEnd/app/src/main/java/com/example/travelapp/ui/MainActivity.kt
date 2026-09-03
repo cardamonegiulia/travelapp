@@ -69,35 +69,18 @@ fun AppNavigation(
     val context =
         LocalContext.current
 
-    /*
-     * Prima di mostrare login/home controlliamo
-     * se esiste una sessione salvata valida.
-     */
     var schermataCorrente by remember {
         mutableStateOf("avvio")
     }
 
-    /*
-     * Dopo una registrazione riuscita conserviamo
-     * l'email per precompilare il login.
-     */
     var emailAppenaRegistrata by remember {
         mutableStateOf<String?>(null)
     }
 
-    /*
-     * Cambia ad ogni nuova sessione.
-     *
-     * Così viene creato un nuovo ProfiloViewModel
-     * e non restano dati dell'utente precedente.
-     */
     var sessioneId by remember {
         mutableStateOf(0)
     }
 
-    /*
-     * Controllo iniziale della sessione.
-     */
     LaunchedEffect(Unit) {
 
         schermataCorrente =
@@ -117,12 +100,6 @@ fun AppNavigation(
     }
 
     when (schermataCorrente) {
-
-        /*
-         * ============================================================
-         * AVVIO
-         * ============================================================
-         */
 
         "avvio" -> {
 
@@ -144,12 +121,6 @@ fun AppNavigation(
                 )
             }
         }
-
-        /*
-         * ============================================================
-         * LOGIN
-         * ============================================================
-         */
 
         "login" -> {
 
@@ -185,12 +156,6 @@ fun AppNavigation(
             )
         }
 
-        /*
-         * ============================================================
-         * REGISTRAZIONE
-         * ============================================================
-         */
-
         "registrazione" -> {
 
             RegistrazioneScreen(
@@ -211,12 +176,6 @@ fun AppNavigation(
                 }
             )
         }
-
-        /*
-         * ============================================================
-         * APP
-         * ============================================================
-         */
 
         "home" -> {
 
@@ -239,10 +198,6 @@ fun AppNavigation(
                     schermataCorrente =
                         "login"
 
-                    /*
-                     * Dopo il logout non manteniamo
-                     * il tema dell'utente precedente.
-                     */
                     onDarkModeChanged(
                         temaSistema
                     )

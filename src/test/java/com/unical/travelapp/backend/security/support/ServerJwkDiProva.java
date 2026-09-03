@@ -11,17 +11,6 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Mini server HTTP locale che pubblica la JWK set della chiave RSA generata a runtime.
- *
- * <p>Serve a collaudare il percorso di autenticazione COMPLETO senza toccare una riga di
- * configurazione di produzione: il {@code NimbusJwtDecoder} dell'applicazione scarica
- * davvero le chiavi, verifica davvero la firma e applica davvero i validator di issuer,
- * audience e scadenza. Sostituisce solo l'indirizzo da cui prendere le chiavi pubbliche,
- * che e' esattamente il ruolo di Keycloak.
- *
- * <p>Non contiene alcuna credenziale: la coppia di chiavi nasce e muore nella JVM di test.
- */
 public final class ServerJwkDiProva {
 
     private static ServerJwkDiProva istanza;

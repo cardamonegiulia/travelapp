@@ -24,20 +24,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 5 - eventi di audit applicativo sulle operazioni critiche.
- *
- * <p>Un audit trail serve a ricostruire "chi ha fatto cosa e quando": deve registrare
- * anche i tentativi falliti, altrimenti un attacco respinto non lascia traccia e non e'
- * rilevabile.
- */
 class EventiDiAuditSecurityTest extends SecurityIntegrationTestBase {
 
-    /**
-     * Da quando l'aggiornamento del profilo viene propagato all'IdP, una PUT su
-     * {@code /api/utenti} passa anche da qui. Non e' l'oggetto di questi test: si sostituisce
-     * con un mock perche' il profilo "test" punta di proposito a un Keycloak irraggiungibile.
-     */
     @MockitoBean
     private KeycloakAdminClient keycloakAdminClient;
 
@@ -109,7 +97,6 @@ class EventiDiAuditSecurityTest extends SecurityIntegrationTestBase {
             assertThat(evento.get("ip").asText()).isNotBlank();
             assertThat(evento.hasNonNull("traceId")).as("traceId per correlare con i log applicativi").isTrue();
 
-            // timestamp in UTC e parsabile
             Instant timestamp = Instant.parse(evento.get("timestamp").asText());
             assertThat(timestamp).isBetween(Instant.now().minusSeconds(120), Instant.now().plusSeconds(60));
         }
@@ -191,7 +178,6 @@ class EventiDiAuditSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void gliEventiDiAuditNonFinisconoAncheNelLogRoot() throws Exception {
-        // additivity=false in logback-spring.xml: l'evento non deve essere duplicato
         try (CatturaLog audit = CatturaLog.audit(); CatturaLog root = CatturaLog.root()) {
             mockMvc.perform(post("/api/itinerari")
                             .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
@@ -231,9 +217,6 @@ class EventiDiAuditSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void unaOperazioneFallitaInRollbackNonLasciaLaRisorsaMaLEventoDiErroreSi() throws Exception {
-        // Comportamento atteso e documentato: l'evento di successo viene emesso dal
-        // controller DOPO il commit del service, quindi un rollback non produce eventi di
-        // creazione fantasma.
         try (CatturaLog audit = CatturaLog.audit()) {
             mockMvc.perform(post("/api/prenotazioni")
                             .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))

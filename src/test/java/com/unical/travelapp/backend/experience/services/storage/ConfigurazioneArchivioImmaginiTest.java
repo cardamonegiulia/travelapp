@@ -9,8 +9,6 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Selezione dell'archivio: nessun contesto Spring, la configurazione si costruisce a mano
-// perche' i suoi metodi prendono solo valori di configurazione.
 @DisplayName("ConfigurazioneArchivioImmagini: scelta dello storage e controlli all'avvio")
 class ConfigurazioneArchivioImmaginiTest {
 
@@ -36,17 +34,10 @@ class ConfigurazioneArchivioImmaginiTest {
                 "chiave-di-prova", "segreto-di-prova", "auto");
 
         assertThat(archivio).isInstanceOf(ArchivioS3.class);
-        // il bucket compare nella descrizione, la chiave segreta no
         assertThat(archivio.descrizione())
                 .contains("immagini-travelapp")
                 .doesNotContain("segreto-di-prova");
     }
-
-    /*
-     * I quattro casi che seguono sono il motivo per cui esiste questa classe: con lo storage
-     * esterno attivo ma mal configurato, *ogni* upload e ogni lettura fallirebbero a runtime.
-     * Il messaggio deve dire quale property manca, altrimenti resta da indovinare.
-     */
 
     @Test
     @DisplayName("con tipo s3 e endpoint mancante l'applicazione non parte")
@@ -78,8 +69,6 @@ class ConfigurazioneArchivioImmaginiTest {
     @Test
     @DisplayName("un endpoint che contiene gia' il bucket viene rifiutato all'avvio")
     void endpointConBucketRifiutato() {
-        // e' l'URL che la dashboard R2 mostra sotto "S3 API": senza questo controllo gli
-        // oggetti finirebbero sotto un prefisso in piu', senza che niente segnali l'errore
         assertThatThrownBy(() -> configurazione.archivioS3(
                 "https://esempio.r2.cloudflarestorage.com/immagini-travelapp",
                 "immagini-travelapp", "chiave", "segreto", "auto"))

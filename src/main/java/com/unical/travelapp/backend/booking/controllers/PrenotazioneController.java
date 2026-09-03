@@ -213,14 +213,18 @@ public class PrenotazioneController {
 
     @GetMapping("/saldo/totale")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Ottiene il saldo globale totale della piattaforma")
+    @Operation(summary = "Ottiene il saldo globale totale della piattaforma",
+            description = "Somma dei pagamenti completati: le prenotazioni annullate (pagamento "
+                    + "rimborsato o annullato) e quelle ancora da pagare non vengono conteggiate.")
     public ResponseEntity<BigDecimal> getSaldoTotaleGlobale() {
         return ResponseEntity.ok(prenotazioneService.getSaldoTotaleGlobale());
     }
 
     @GetMapping("/saldo/organizzatore")
     @PreAuthorize("hasRole('ORGANIZZATORE') or hasRole('ADMIN')")
-    @Operation(summary = "Ottiene il saldo incassato dall'organizzatore autenticato")
+    @Operation(summary = "Ottiene il saldo incassato dall'organizzatore autenticato",
+            description = "Somma dei pagamenti completati sulle proprie partenze e sessioni: chi "
+                    + "annulla la prenotazione viene rimborsato, quindi il suo importo esce dal saldo.")
     public ResponseEntity<BigDecimal> getSaldoOrganizzatore() {
         return ResponseEntity.ok(prenotazioneService.getSaldoOrganizzatore());
     }

@@ -16,13 +16,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 3 - paginazione obbligatoria con tetto lato server.
- *
- * <p>Senza il tetto, {@code ?size=1000000} sarebbe una richiesta di estrazione massiva del
- * database con un solo GET: costo di memoria e di banda a carico del server e possibile
- * esfiltrazione in blocco.
- */
 class PaginazioneSecurityTest extends SecurityIntegrationTestBase {
 
     @BeforeEach

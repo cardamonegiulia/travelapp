@@ -15,12 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.travelapp.ui.theme.TextPrimary
 
-/**
- * TopBar comune a tutte le sezioni: titolo centrato su sfondo trasparente,
- * cosi' da fondersi con lo sfondo lavanda della schermata.
- *
- * La freccia indietro compare solo se [onBack] e' valorizzato.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(

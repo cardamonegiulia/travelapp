@@ -19,9 +19,6 @@ import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-// Rate limiting in-memory (singola istanza): un bucket per utente autenticato (claim "sub")
-// e uno per IP per le richieste non autenticate. Non condiviso tra piu' istanze del backend:
-// se il servizio viene scalato orizzontalmente serve un backend distribuito (es. Redis).
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 

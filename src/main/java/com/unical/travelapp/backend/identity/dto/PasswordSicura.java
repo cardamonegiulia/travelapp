@@ -12,18 +12,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Requisiti minimi di una password scelta dall'utente.
- *
- * <p>Vincolo composto e non quattro annotazioni ripetute su ogni DTO: le regole sono una
- * decisione di sicurezza, e duplicarle significa che prima o poi due punti dell'applicazione
- * accetteranno password diverse. Oggi la usano registrazione e cambio password.
- *
- * <p>Vanno tenute allineate alla {@code passwordPolicy} del realm
- * ({@code keycloak-import/travelapp-realm.json}, verificata da {@code ConfigurazioneRealmTest}):
- * una regola presente solo su Keycloak si manifesterebbe come errore alla scrittura sull'IdP
- * invece che come errore di validazione del form, che e' quello che l'utente puo' correggere.
- */
 @NotBlank(message = "La password è obbligatoria")
 @Size(min = 12, max = 128, message = "La password deve avere tra i 12 e i 128 caratteri")
 @Pattern(regexp = ".*[A-Za-z].*", message = "La password deve contenere almeno una lettera")

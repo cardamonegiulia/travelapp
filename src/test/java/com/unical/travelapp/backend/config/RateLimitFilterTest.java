@@ -11,9 +11,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-// Prova il rate limiting per IP (richieste anonime): dopo aver esaurito la capacita' del
-// bucket, la richiesta successiva riceve 429 con Retry-After, senza raggiungere la catena
-// di filtri successiva.
 class RateLimitFilterTest {
 
     private RateLimitFilter filterConCapacita(int capacity) {

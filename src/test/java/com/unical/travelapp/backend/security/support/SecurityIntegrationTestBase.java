@@ -39,13 +39,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Base dei test di sicurezza end-to-end sulla catena di filtri reale.
- *
- * <p>Volutamente NON usa {@code @AutoConfigureMockMvc(addFilters = false)}: i test devono
- * attraversare l'intera SecurityFilterChain di produzione (autenticazione, autorizzazione,
- * header di sicurezza, rate limit, CORS), altrimenti non verificherebbero nulla.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -58,7 +51,6 @@ public abstract class SecurityIntegrationTestBase {
 
     @Autowired protected MockMvc mockMvc;
 
-    /** Mapper solo per costruire i payload di test: quello dell'applicazione si collauda via HTTP. */
     protected final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired protected UtenteRepository utenteRepository;
@@ -83,9 +75,6 @@ public abstract class SecurityIntegrationTestBase {
 
     @BeforeEach
     void ripulisciIlDatabase() {
-        // La foto profilo va sganciata prima di tutto: e' l'unico riferimento che parte da
-        // "utenti" e arriva a "immagini", quindi cancellare le immagini con la colonna
-        // ancora valorizzata violerebbe la chiave esterna.
         utenteRepository.findAll().stream()
                 .filter(utente -> utente.getFotoProfilo() != null)
                 .forEach(utente -> {
@@ -93,9 +82,7 @@ public abstract class SecurityIntegrationTestBase {
                     utenteRepository.save(utente);
                 });
 
-        // per prime le immagini: sono figlie di recensioni e itinerari
         immagineRepository.deleteAll();
-        // le notifiche puntano a prenotazioni e itinerari: vanno via prima di loro
         notificaRepository.deleteAll();
         extraPrenotazioneRepository.deleteAll();
         pagamentoRepository.deleteAll();
@@ -111,15 +98,6 @@ public abstract class SecurityIntegrationTestBase {
         utenteRepository.deleteAll();
     }
 
-    // --- helper di seeding -------------------------------------------------
-
-    /**
-     * Crea un utente locale collegato a un subject Keycloak.
-     *
-     * <p>Nome ed email sono volutamente scollegati dal valore del subject: cosi' i test
-     * che verificano "il keycloakId non finisce nelle risposte" non passano ne' falliscono
-     * per caso, per via di una stringa che compare in due campi diversi.
-     */
     protected Utente utente(String keycloakSub, Ruolo ruolo) {
         String etichetta = Integer.toHexString(keycloakSub.hashCode() & 0xFFFFFF);
         Utente utente = new Utente();
@@ -154,10 +132,6 @@ public abstract class SecurityIntegrationTestBase {
         return disponibilitaRepository.save(disponibilita);
     }
 
-    /**
-     * Una partenza gia' terminata: le date sono nel passato, quindi il viaggio risulta
-     * concluso. Serve a tutto cio' che si puo' fare solo "dopo" (in primis le recensioni).
-     */
     protected DisponibilitaItinerario disponibilitaConclusa(Itinerario itinerario, int posti) {
         DisponibilitaItinerario disponibilita = new DisponibilitaItinerario();
         disponibilita.setItinerario(itinerario);
@@ -167,7 +141,6 @@ public abstract class SecurityIntegrationTestBase {
         return disponibilitaRepository.save(disponibilita);
     }
 
-    /** Prenotazione su una partenza gia' terminata: il caso base del "viaggio da recensire". */
     protected Prenotazione prenotazioneConclusa(Utente viaggiatore, Itinerario itinerario) {
         return prenotazione(viaggiatore, disponibilitaConclusa(itinerario, 10));
     }

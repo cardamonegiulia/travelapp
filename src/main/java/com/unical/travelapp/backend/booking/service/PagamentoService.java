@@ -149,6 +149,16 @@ public class PagamentoService {
                 .orElse(null);
     }
 
+    public BigDecimal getSaldoTotaleGlobale() {
+        return pagamentoRepository.sumIncassatoGlobale(
+                StatoPagamento.COMPLETATO, StatoPrenotazione.CANCELLATA);
+    }
+
+    public BigDecimal getSaldoOrganizzatore(Long organizzatoreId) {
+        return pagamentoRepository.sumIncassatoPerOrganizzatore(
+                organizzatoreId, StatoPagamento.COMPLETATO, StatoPrenotazione.CANCELLATA);
+    }
+
     public Map<Long, Pagamento> getPagamentiPerPrenotazioni(List<Long> prenotazioneIds) {
         if (prenotazioneIds == null || prenotazioneIds.isEmpty()) {
             return Map.of();

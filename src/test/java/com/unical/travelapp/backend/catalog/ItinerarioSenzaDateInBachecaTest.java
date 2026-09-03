@@ -18,13 +18,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Un itinerario senza date prenotabili resta in bacheca.
- *
- * <p>L'assenza di partenze non e' uno stato definitivo: l'organizzatore puo' aggiungerne di
- * nuove quando vuole. L'itinerario sparisce dall'elenco in un solo caso, quello esplicito:
- * l'organizzatore lo elimina.
- */
 @DisplayName("Itinerario senza date disponibili")
 class ItinerarioSenzaDateInBachecaTest extends SecurityIntegrationTestBase {
 
@@ -65,8 +58,6 @@ class ItinerarioSenzaDateInBachecaTest extends SecurityIntegrationTestBase {
         Itinerario itinerario = itinerario(organizzatore);
         disponibilitaConclusa(itinerario, 10);
 
-        // la scheda non deve piu' esibire il periodo di un viaggio gia' finito: senza
-        // partenze prenotabili non ha date da mostrare, solo l'etichetta che lo dice
         mockMvc.perform(get("/api/itinerari/" + itinerario.getId())
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())
@@ -96,7 +87,6 @@ class ItinerarioSenzaDateInBachecaTest extends SecurityIntegrationTestBase {
         Itinerario itinerario = itinerario(organizzatore);
         disponibilitaConclusa(itinerario, 10);
 
-        // l'organizzatore programma una nuova partenza
         DisponibilitaItinerario nuova = new DisponibilitaItinerario();
         nuova.setItinerario(itinerario);
         nuova.setDataInizio(LocalDateTime.now().plusDays(20));
@@ -113,9 +103,8 @@ class ItinerarioSenzaDateInBachecaTest extends SecurityIntegrationTestBase {
     @Test
     void unItinerarioEsauritoNonEUnItinerarioSenzaDate() throws Exception {
         Itinerario itinerario = itinerario(organizzatore);
-        disponibilita(itinerario, 0); // partenza futura, zero posti
+        disponibilita(itinerario, 0);
 
-        // "esaurito" e "nessuna data" sono due cose diverse: qui le date ci sono
         mockMvc.perform(get("/api/itinerari/" + itinerario.getId())
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())

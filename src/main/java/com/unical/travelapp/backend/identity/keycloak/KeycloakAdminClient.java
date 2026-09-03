@@ -24,19 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Gateway verso l'Admin REST API di Keycloak: unica classe che parla con l'IdP in scrittura.
- *
- * <p>Usa l'API REST tramite {@link RestClient} invece della libreria {@code keycloak-admin-client}:
- * quest'ultima trascinerebbe RESTEasy e l'intero stack JAX-RS dentro un'applicazione Spring
- * che non ne ha altrimenti bisogno, per quattro chiamate HTTP. Le motivazioni estese sono in
- * {@code docs/registrazione-implementazione.md}.
- *
- * <p>Regole rispettate qui: il client secret non compare mai nei log, i corpi di risposta di
- * Keycloak non vengono mai rilanciati verso il chiamante (potrebbero contenere dettagli sulla
- * configurazione del realm) e ogni errore infrastrutturale diventa
- * {@link RegistrazioneNonDisponibileException}, mai un 500 generico senza spiegazione nei log.
- */
 @Component
 public class KeycloakAdminClient {
 
@@ -58,28 +45,15 @@ public class KeycloakAdminClient {
         this.clientSecret = clientSecret;
     }
 
-    /** Ruolo realm risolto su Keycloak: per assegnarlo servono sia l'id sia il nome. */
     public record RuoloRealm(String id, String nome) {
     }
 
-    /** Dati dell'utente da creare su Keycloak. La password non viene mai loggata. */
     public record NuovoUtenteKeycloak(String username, String email, String nome, String cognome, String password) {
     }
 
-    /** I campi del profilo che esistono in entrambe le fonti e vanno tenuti allineati. */
     public record ProfiloKeycloak(String email, String nome, String cognome) {
     }
 
-    /**
-     * Access token del service account (grant {@code client_credentials}).
-     *
-     * <p>Deliberatamente non messo in cache: le operazioni amministrative sono rare, e un
-     * token in cache introdurrebbe il caso "token valido secondo noi ma rifiutato da Keycloak"
-     * dopo un riavvio del realm, con una gestione del refresh da mantenere.
-     *
-     * <p>Solleva la superclasse {@link IdentityProviderNonDisponibileException} e non la
-     * variante della registrazione: questo passo e' comune a tutte le operazioni sull'IdP.
-     */
     public String ottieniTokenAmministrativo() {
         if (!StringUtils.hasText(clientSecret)) {
             log.error("Operazioni amministrative su Keycloak non disponibili: 'app.keycloak.admin.client-secret' "
@@ -114,11 +88,6 @@ public class KeycloakAdminClient {
         return accessToken.toString();
     }
 
-    /**
-     * Cerca un ruolo realm per nome. {@link Optional#empty()} se il ruolo non esiste:
-     * e' una condizione prevista che il chiamante deve decidere come trattare, non un errore
-     * di trasporto.
-     */
     public Optional<RuoloRealm> trovaRuoloRealm(String token, String nomeRuolo) {
         Map<?, ?> ruolo;
         try {
@@ -149,19 +118,10 @@ public class KeycloakAdminClient {
         return Optional.of(new RuoloRealm(String.valueOf(ruolo.get("id")), nomeRuolo));
     }
 
-    /**
-     * Crea l'utente e ne restituisce l'id Keycloak (il {@code sub} dei token futuri).
-     *
-     * @throws UtenteGiaEsistenteException se username o email risultano gia' presenti nel realm
-     * @throws PasswordNonConformeException se il realm rifiuta la password per policy: come in
-     *         {@link #impostaPassword}, e' un errore del chiamante e non un guasto del servizio
-     */
     public String creaUtente(String token, NuovoUtenteKeycloak nuovo) {
         Map<String, Object> credenziale = Map.of(
                 "type", "password",
                 "value", nuovo.password(),
-                // non temporanea: con una password temporanea Keycloak imporrebbe UPDATE_PASSWORD
-                // al primo login e il token non verrebbe rilasciato
                 "temporary", false);
 
         Map<String, Object> utente = Map.of(
@@ -170,12 +130,6 @@ public class KeycloakAdminClient {
                 "firstName", nuovo.nome(),
                 "lastName", nuovo.cognome(),
                 "enabled", true,
-                // L'indirizzo non e' verificato: nessuno ha ancora dimostrato di poterlo
-                // leggere. Dichiararlo verificato perche' e' arrivato in un form significa
-                // permettere a chiunque di registrarsi con l'email di un altro, e di
-                // ricevere da quel momento le comunicazioni destinate a quella persona.
-                // Con "verifyEmail" attivo sul realm, Keycloak invia la mail di verifica al
-                // primo tentativo di login e non rilascia token finche' non e' confermata.
                 "emailVerified", false,
                 "credentials", List.of(credenziale));
 
@@ -193,18 +147,9 @@ public class KeycloakAdminClient {
         } catch (RestClientResponseException e) {
             int stato = e.getStatusCode().value();
             if (stato == 409) {
-                // niente dettagli dal corpo di Keycloak nel messaggio: il chiamante sa gia'
-                // quale email ha inviato, e il corpo puo' rivelare quale campo ha fatto conflitto
                 throw new UtenteGiaEsistenteException("Esiste già un utente registrato con questa email");
             }
             if (stato == 400) {
-                // Delle cose che l'utente ha scritto, la password e' l'unica che il realm
-                // valuta per conto suo: formato dell'email, nome e cognome li ha gia' validati
-                // il DTO prima di arrivare qui. Un 400 in creazione e' quindi la policy del
-                // realm che respinge la password, lo stesso significato che ha in
-                // impostaPassword. Senza questo ramo diventava un 503 "servizio non
-                // disponibile": chi si registra rileggeva la stessa password all'infinito
-                // senza sapere che il problema era quella.
                 log.info("Registrazione rifiutata dalla policy password del realm '{}'", realm);
                 throw new PasswordNonConformeException("La password non rispetta i requisiti richiesti");
             }
@@ -233,32 +178,6 @@ public class KeycloakAdminClient {
         return keycloakId;
     }
 
-    /**
-     * Allinea su Keycloak i campi del profilo modificati in locale.
-     *
-     * <p>Vengono inviati solo email, nome e cognome: Keycloak applica i campi presenti nella
-     * rappresentazione e lascia intatti gli altri, quindi {@code enabled}, credenziali e ruoli
-     * non vengono toccati da qui.
-     *
-     * <p>Quando l'email cambia viene aggiunto {@code emailVerified: false}, ed e' la ragione
-     * per cui il metodo vuole saperlo. La verifica dimostra che chi possiede l'account sa
-     * leggere <b>quell'</b> indirizzo: portarsela dietro sul nuovo significherebbe permettere a
-     * chiunque, dopo essersi verificato su una casella propria, di spostare l'account
-     * sull'indirizzo di un'altra persona e risultare verificato su di esso. Con
-     * {@code verifyEmail} attivo sul realm, Keycloak chiede la nuova conferma al login
-     * successivo. Quando l'email non cambia il campo non viene inviato affatto: una
-     * rappresentazione che non lo contiene lascia intatto il valore su Keycloak.
-     *
-     * <p>Lo {@code username} non viene modificato di proposito, nemmeno quando cambia l'email.
-     * Per gli account nati dalla registrazione self-service i due valori coincidono, ma per
-     * quelli creati in console possono essere diversi, e riscrivere lo username significa
-     * cambiare l'identificativo con cui una persona fa login. Con
-     * {@code loginWithEmailAllowed} attivo sul realm, l'accesso con la nuova email funziona
-     * comunque.
-     *
-     * @throws UtenteGiaEsistenteException se l'email e' gia' di un altro utente del realm
-     * @throws IdentityProviderNonDisponibileException se Keycloak non risponde o rifiuta
-     */
     public void aggiornaProfilo(String token, String keycloakId, ProfiloKeycloak profilo, boolean emailCambiata) {
         try {
             restClient.put()
@@ -290,18 +209,6 @@ public class KeycloakAdminClient {
         }
     }
 
-    /**
-     * Ripristina su Keycloak il profilo precedente senza propagare errori: compensa un
-     * aggiornamento riuscito sull'IdP ma non salvato in locale. Come per la registrazione,
-     * l'errore originale e' quello che deve arrivare al chiamante, non quello della pulizia.
-     *
-     * <p>Ripristina l'indirizzo, non il suo stato di verifica: {@code emailVerified} resta a
-     * {@code false}, quindi l'utente dovra' riconfermare la casella da cui era partito. E'
-     * voluto — qui non si sa se quell'indirizzo fosse verificato (potrebbe non esserlo mai
-     * stato), e leggerlo prima di ogni aggiornamento costerebbe una chiamata in piu' su ogni
-     * modifica di profilo per un caso che si presenta solo se la scrittura locale fallisce.
-     * Chiedere una verifica di troppo e' il lato giusto in cui sbagliare.
-     */
     public void aggiornaProfiloSenzaPropagareErrori(String token, String keycloakId, ProfiloKeycloak profilo) {
         try {
             restClient.put()
@@ -330,7 +237,6 @@ public class KeycloakAdminClient {
         return corpo;
     }
 
-    /** Assegna un ruolo realm all'utente appena creato. */
     public void assegnaRuoloRealm(String token, String keycloakId, RuoloRealm ruolo) {
         List<Map<String, String>> corpo = List.of(Map.of("id", ruolo.id(), "name", ruolo.nome()));
 
@@ -349,17 +255,6 @@ public class KeycloakAdminClient {
                 });
     }
 
-    /**
-     * Sostituisce la password dell'utente.
-     *
-     * <p>La credenziale non e' temporanea: una password temporanea farebbe scattare l'azione
-     * richiesta UPDATE_PASSWORD al login successivo, cioe' chiederebbe all'utente di
-     * cambiare di nuovo quella che ha appena scelto.
-     *
-     * @throws PasswordNonConformeException se il realm rifiuta la password per policy: e' un
-     *         400, non un guasto del servizio
-     * @throws IdentityProviderNonDisponibileException per qualunque altro errore dell'IdP
-     */
     public void impostaPassword(String token, String keycloakId, String nuovaPassword) {
         Map<String, Object> credenziale = Map.of(
                 "type", "password",
@@ -377,8 +272,6 @@ public class KeycloakAdminClient {
         } catch (RestClientResponseException e) {
             int stato = e.getStatusCode().value();
             if (stato == 400) {
-                // l'unica parte della richiesta che dipende dall'utente e' la password:
-                // un 400 qui e' la policy del realm che la respinge
                 log.info("Password rifiutata dalla policy del realm per l'utente {}", keycloakId);
                 throw new PasswordNonConformeException("La password non rispetta i requisiti richiesti");
             }
@@ -396,14 +289,6 @@ public class KeycloakAdminClient {
         }
     }
 
-    /**
-     * Chiude tutte le sessioni attive dell'utente, senza propagare errori.
-     *
-     * <p>Va chiamata dopo un cambio password: senza, chi avesse gia' rubato un token o una
-     * sessione manterrebbe l'accesso: proprio la ragione per cui la vittima sta cambiando la
-     * password. Non blocca l'operazione se fallisce, perche' la password nuova e' comunque
-     * gia' attiva e il rischio residuo e' limitato alla durata dei token in circolazione.
-     */
     public void terminaSessioniSenzaPropagareErrori(String token, String keycloakId) {
         try {
             restClient.post()
@@ -417,19 +302,6 @@ public class KeycloakAdminClient {
         }
     }
 
-    /**
-     * Cancella un utente Keycloak propagando gli errori: e' la cancellazione "vera", quella
-     * chiesta da un amministratore, e deve fallire in modo visibile.
-     *
-     * <p>Un utente gia' assente su Keycloak (404) non e' un errore: l'operazione e'
-     * idempotente e il chiamante puo' comunque rimuovere il record locale. E' il caso di un
-     * account cancellato a mano dalla console, che altrimenti resterebbe impossibile da
-     * ripulire in locale.
-     *
-     * @throws IdentityProviderNonDisponibileException se Keycloak non risponde o rifiuta la
-     *         cancellazione: il record locale non va rimosso, o si tornerebbe alla divergenza
-     *         che questa chiamata serve a evitare
-     */
     public void eliminaUtente(String token, String keycloakId) {
         try {
             restClient.delete()
@@ -457,11 +329,6 @@ public class KeycloakAdminClient {
         }
     }
 
-    /**
-     * Cancella un utente Keycloak senza propagare errori: serve a compensare una registrazione
-     * interrotta a meta'. Se anche la compensazione fallisce si logga e basta, perche'
-     * l'errore originale e' piu' importante e non va sostituito da quello della pulizia.
-     */
     public void eliminaUtenteSenzaPropagareErrori(String token, String keycloakId) {
         try {
             restClient.delete()

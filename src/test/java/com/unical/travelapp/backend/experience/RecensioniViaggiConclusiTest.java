@@ -21,13 +21,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Recensioni agganciate al ciclo di vita di una prenotazione.
- *
- * <p>Verifica le tre regole che rendono la recensione credibile - l'ha scritta chi ha
- * viaggiato, dopo il viaggio, una volta sola - e la loro resa verso l'esterno: elenco
- * visibile a tutti sull'itinerario e media delle stelle sulle anteprime.
- */
 @DisplayName("Recensioni dei viaggi conclusi")
 class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
 
@@ -44,13 +37,10 @@ class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
         itinerario = itinerario(organizzatore);
     }
 
-    // --- chi puo' recensire ---------------------------------------------------------------
-
     @Test
     void chiHaViaggiatoPuoRecensireConLeSoleStelle() throws Exception {
         Prenotazione prenotazione = prenotazioneConclusa(viaggiatoreA, itinerario);
 
-        // il commento e' facoltativo: bastano le stelle
         mockMvc.perform(post("/api/recensioni")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -86,7 +76,6 @@ class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
 
     @Test
     void nonSiPuoRecensireUnViaggioNonAncoraConcluso() throws Exception {
-        // la partenza e' fra 30 giorni: il viaggio non e' ancora stato fatto
         Prenotazione futura = prenotazione(viaggiatoreA, disponibilita(itinerario, 10));
 
         MvcResult risultato = mockMvc.perform(post("/api/recensioni")
@@ -129,8 +118,6 @@ class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
         assertThat(recensioneRepository.findAll()).isEmpty();
     }
 
-    // --- una sola recensione, modificabile -------------------------------------------------
-
     @Test
     void unaSolaRecensionePerPrenotazioneMaModificabile() throws Exception {
         Prenotazione prenotazione = prenotazioneConclusa(viaggiatoreA, itinerario);
@@ -146,7 +133,6 @@ class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
         long idRecensione = objectMapper.readTree(creazione.getResponse().getContentAsString())
                 .get("id").asLong();
 
-        // la seconda POST sulla stessa prenotazione e' un conflitto, non un duplicato
         mockMvc.perform(post("/api/recensioni")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -155,7 +141,6 @@ class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
 
         assertThat(recensioneRepository.findAll()).hasSize(1);
 
-        // ripensarci si puo': si modifica la propria
         mockMvc.perform(put("/api/recensioni/" + idRecensione)
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -182,7 +167,6 @@ class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
         long idRecensione = objectMapper.readTree(creazione.getResponse().getContentAsString())
                 .get("id").asLong();
 
-        // nemmeno un ADMIN: puo' cancellarla per moderazione, non metterle in bocca altre parole
         for (String[] chiamante : new String[][]{{SUB_UTENTE_A, "VIAGGIATORE"}, {SUB_ADMIN, "ADMIN"}}) {
             MvcResult risultato = mockMvc.perform(put("/api/recensioni/" + idRecensione)
                             .with(TestJwt.conRuoliRealm(chiamante[0], chiamante[1]))
@@ -196,13 +180,10 @@ class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
         assertThat(recensioneRepository.findById(idRecensione).orElseThrow().getVoto()).isEqualTo(5);
     }
 
-    // --- lettura pubblica e media ----------------------------------------------------------
-
     @Test
     void leRecensioniSonoVisibiliATuttiSullItinerario() throws Exception {
         recensione(viaggiatoreB, itinerario);
 
-        // chi consulta l'itinerario non e' chi ha recensito, e vede comunque tutto
         mockMvc.perform(get("/api/itinerari/" + itinerario.getId() + "/recensioni")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())
@@ -224,7 +205,7 @@ class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
 
     @Test
     void laMediaDelleStelleCompareSulleAnteprimeDellaBacheca() throws Exception {
-        recensione(viaggiatoreA, itinerario);          // voto 4
+        recensione(viaggiatoreA, itinerario);
         Utente terzo = utente("sub-utente-c", Ruolo.VIAGGIATORE);
         var recensioneDaTre = recensione(terzo, itinerario);
         recensioneDaTre.setVoto(3);
@@ -238,12 +219,10 @@ class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
                 .andExpect(jsonPath("$.content[0].numeroRecensioni").value(2));
     }
 
-    // --- la lista dei viaggi conclusi -----------------------------------------------------
-
     @Test
     void laSchedaViaggiConclusiContieneSoloIViaggiFiniti() throws Exception {
         Prenotazione conclusa = prenotazioneConclusa(viaggiatoreA, itinerario);
-        prenotazione(viaggiatoreA, disponibilita(itinerario, 10)); // futura
+        prenotazione(viaggiatoreA, disponibilita(itinerario, 10));
 
         mockMvc.perform(get("/api/prenotazioni/mie/concluse")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
@@ -253,7 +232,6 @@ class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
                 .andExpect(jsonPath("$.content[0].recensibile").value(true))
                 .andExpect(jsonPath("$.content[0].recensioneId").doesNotExist());
 
-        // e la scheda delle prenotazioni attuali contiene esattamente l'altra
         mockMvc.perform(get("/api/prenotazioni/mie/attuali")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())
@@ -277,7 +255,6 @@ class RecensioniViaggiConclusiTest extends SecurityIntegrationTestBase {
                 .andExpect(jsonPath("$.content[0].recensibile").value(false))
                 .andExpect(jsonPath("$.content[0].recensioneId").exists());
 
-        // e il client puo' rileggerla per aprirla in modifica
         mockMvc.perform(get("/api/recensioni/prenotazione/" + prenotazione.getId())
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())

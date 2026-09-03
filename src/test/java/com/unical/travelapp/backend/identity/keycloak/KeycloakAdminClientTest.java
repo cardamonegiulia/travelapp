@@ -25,15 +25,6 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-/**
- * Cosa viene davvero mandato all'Admin API di Keycloak.
- *
- * <p>Negli altri test {@link KeycloakAdminClient} e' sostituito da un mock, il che verifica
- * <i>che</i> venga chiamato ma non <i>con che corpo</i>. Qui si sostituisce invece il
- * trasporto HTTP: e' l'unico punto in cui si controlla la richiesta effettiva, e serve
- * perche' campi come {@code emailVerified} decidono se una persona puo' rivendicare
- * l'indirizzo di un'altra.
- */
 class KeycloakAdminClientTest {
 
     private static final String BASE_URL = "https://idp.test.local";
@@ -59,8 +50,6 @@ class KeycloakAdminClientTest {
         return new NuovoUtenteKeycloak("mario@example.test", "mario@example.test",
                 "Mario", "Rossi", "PasswordSicura1");
     }
-
-    // --- creazione ---------------------------------------------------------
 
     @Test
     void lUtenteCreatoHaLEmailNonVerificata() {
@@ -106,8 +95,6 @@ class KeycloakAdminClientTest {
                 .hasMessageNotContaining("Keycloak");
     }
 
-    // --- aggiornamento del profilo -----------------------------------------
-
     @Test
     void lAggiornamentoDelProfiloNonRiscriveLoUsername() {
         keycloak.expect(requestTo(UTENTI + "/" + KEYCLOAK_ID))
@@ -115,10 +102,7 @@ class KeycloakAdminClientTest {
                 .andExpect(jsonPath("$.email").value("nuova@example.test"))
                 .andExpect(jsonPath("$.firstName").value("Ada"))
                 .andExpect(jsonPath("$.lastName").value("Lovelace"))
-                // lo username e' l'identificativo con cui una persona fa login: cambiarlo
-                // sotto i piedi dell'utente e' una decisione diversa dall'aggiornare l'email
                 .andExpect(jsonPath("$.username").doesNotExist())
-                // ne' si toccano stato dell'account e credenziali
                 .andExpect(jsonPath("$.enabled").doesNotExist())
                 .andExpect(jsonPath("$.credentials").doesNotExist())
                 .andRespond(withStatus(HttpStatus.NO_CONTENT));
@@ -142,9 +126,6 @@ class KeycloakAdminClientTest {
     void unIndirizzoNuovoNonEreditaLaVerificaDelVecchio() {
         keycloak.expect(requestTo(UTENTI + "/" + KEYCLOAK_ID))
                 .andExpect(method(HttpMethod.PUT))
-                // senza questo campo chiunque, dopo essersi verificato su una casella propria,
-                // potrebbe spostare l'account sull'indirizzo di un'altra persona e risultare
-                // verificato su di esso
                 .andExpect(jsonPath("$.emailVerified").value(false))
                 .andRespond(withStatus(HttpStatus.NO_CONTENT));
 
@@ -157,9 +138,6 @@ class KeycloakAdminClientTest {
     void cambiareSoloNomeECognomeNonFaRiverificareLEmail() {
         keycloak.expect(requestTo(UTENTI + "/" + KEYCLOAK_ID))
                 .andExpect(method(HttpMethod.PUT))
-                // Keycloak applica i campi presenti e lascia intatti gli altri: assente
-                // significa "non toccare", mentre un true esplicito dichiarerebbe verificato un
-                // indirizzo che magari non lo e' mai stato
                 .andExpect(jsonPath("$.emailVerified").doesNotExist())
                 .andRespond(withStatus(HttpStatus.NO_CONTENT));
 
@@ -167,8 +145,6 @@ class KeycloakAdminClientTest {
                 new ProfiloKeycloak("stessa@example.test", "Ada", "Lovelace"), false);
         keycloak.verify();
     }
-
-    // --- cancellazione -----------------------------------------------------
 
     @Test
     void laCancellazioneDiUnUtenteGiaAssenteNonEUnErrore() {
@@ -201,15 +177,11 @@ class KeycloakAdminClientTest {
                 .doesNotThrowAnyException();
     }
 
-    // --- cambio password ---------------------------------------------------
-
     @Test
     void laNuovaPasswordVieneImpostataComeDefinitiva() {
         keycloak.expect(requestTo(UTENTI + "/" + KEYCLOAK_ID + "/reset-password"))
                 .andExpect(method(HttpMethod.PUT))
                 .andExpect(jsonPath("$.type").value("password"))
-                // temporanea significherebbe chiedere all'utente, al login successivo, di
-                // cambiare la password che ha appena scelto
                 .andExpect(jsonPath("$.temporary").value(false))
                 .andRespond(withStatus(HttpStatus.NO_CONTENT));
 
@@ -237,8 +209,6 @@ class KeycloakAdminClientTest {
                 .as("la password nuova e' gia' attiva: un errore qui non va rilanciato al chiamante")
                 .doesNotThrowAnyException();
     }
-
-    // --- token del service account -----------------------------------------
 
     @Test
     void senzaClientSecretNonSiContattaNemmenoKeycloak() {

@@ -8,9 +8,6 @@ import org.springframework.stereotype.Component;
 import java.util.Collection;
 import java.util.List;
 
-// Conversione Immagine -> DTO. E' un componente a se' perche' serve anche fuori da
-// experience: gli itinerari espongono le proprie immagini nel loro DTO e devono
-// costruire gli URL nello stesso identico modo.
 @Component
 public class ImmagineMapper {
 
@@ -27,8 +24,6 @@ public class ImmagineMapper {
 
         ImmagineResponse dto = new ImmagineResponse();
         dto.setId(immagine.getId());
-        // al client va l'URL dell'endpoint, non il percorso sullo storage: e' un dettaglio
-        // interno e cambierebbe il giorno in cui i file passano su un servizio esterno
         dto.setUrl(baseUrl + "/" + immagine.getId() + "/contenuto");
         dto.setContentType(immagine.getContentType());
         dto.setDimensioneByte(immagine.getDimensioneByte());
@@ -39,7 +34,6 @@ public class ImmagineMapper {
         return dto;
     }
 
-    // lista vuota e non null: al frontend arriva sempre un array su cui iterare
     public List<ImmagineResponse> toResponse(Collection<Immagine> immagini) {
         if (immagini == null) {
             return List.of();

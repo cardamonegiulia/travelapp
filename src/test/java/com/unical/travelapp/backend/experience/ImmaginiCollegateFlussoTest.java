@@ -29,10 +29,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Foto allegate a recensioni e itinerari: percorso completo attraverso la filter chain di
- * produzione (autenticazione, ruoli, ownership) e non solo la logica del service.
- */
 @DisplayName("Immagini collegate a recensioni e itinerari")
 class ImmaginiCollegateFlussoTest extends SecurityIntegrationTestBase {
 
@@ -55,8 +51,6 @@ class ImmaginiCollegateFlussoTest extends SecurityIntegrationTestBase {
     }
 
 
-    // --- recensioni -----------------------------------------------------------------------
-
     @Test
     @DisplayName("l'autore allega una foto alla propria recensione e la ritrova nella risposta")
     void autoreAllegaFotoAllaPropriaRecensione() throws Exception {
@@ -67,7 +61,6 @@ class ImmaginiCollegateFlussoTest extends SecurityIntegrationTestBase {
         NessunLeak.verifica(caricamento);
         assertThat(immagineRepository.count()).isEqualTo(1);
 
-        // la foto compare sia nel sotto-elenco sia nel DTO della recensione
         mockMvc.perform(get("/api/recensioni/{id}/immagini", recensione.getId())
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())
@@ -128,8 +121,6 @@ class ImmaginiCollegateFlussoTest extends SecurityIntegrationTestBase {
     }
 
 
-    // --- itinerari ------------------------------------------------------------------------
-
     @Test
     @DisplayName("l'organizzatore proprietario allega una foto al proprio itinerario")
     void organizzatoreAllegaFotoAlProprioItinerario() throws Exception {
@@ -182,7 +173,6 @@ class ImmaginiCollegateFlussoTest extends SecurityIntegrationTestBase {
 
         Long immagineId = immagineRepository.findAll().get(0).getId();
 
-        // stessa immagine, ma indicata come se appartenesse alla recensione
         MvcResult risultato = mockMvc.perform(
                 delete("/api/recensioni/{id}/immagini/{immagineId}", recensione.getId(), immagineId)
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))).andReturn();
@@ -210,8 +200,6 @@ class ImmaginiCollegateFlussoTest extends SecurityIntegrationTestBase {
         assertThat(fileSuDisco).doesNotExist();
     }
 
-
-    // --- helper ---------------------------------------------------------------------------
 
     private MockMultipartHttpServletRequestBuilder caricaSuRecensione(Long recensioneId) throws IOException {
         return multipart("/api/recensioni/{id}/immagini", recensioneId).file(immaginePng());

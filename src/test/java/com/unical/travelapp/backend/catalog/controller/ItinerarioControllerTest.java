@@ -59,7 +59,6 @@ class ItinerarioControllerTest {
     @Mock
     private AuditLogger auditLogger;
 
-    // Il controller chiede le valutazioni per mostrare la media delle stelle sulle anteprime
     @Mock
     private RecensioneService recensioneService;
 

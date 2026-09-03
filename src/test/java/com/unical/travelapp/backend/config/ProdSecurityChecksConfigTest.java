@@ -6,8 +6,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// In produzione l'avvio deve fallire subito se l'issuer Keycloak non e' HTTPS, invece di
-// partire silenziosamente fidandosi di un endpoint non cifrato.
 class ProdSecurityChecksConfigTest {
 
     private ProdSecurityChecksConfig configConIssuer(String issuerUri) {

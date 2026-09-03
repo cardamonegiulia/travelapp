@@ -17,13 +17,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Genera coppie di chiavi RSA a runtime e firma token JWT reali con Nimbus.
- *
- * <p>Serve ai test del decoder e dei validator (audience, issuer, firma, scadenza), che il
- * post-processor {@code jwt()} non puo' coprire perche' scavalca il JwtDecoder.
- * Nessuna chiave e' committata nel repository e nessun token reale viene usato.
- */
 public final class RsaTokenFactory {
 
     private final KeyPair coppiaChiavi;
@@ -42,19 +35,16 @@ public final class RsaTokenFactory {
         return (RSAPublicKey) coppiaChiavi.getPublic();
     }
 
-    /** Token valido: firmato con questa chiave, non scaduto, con issuer/audience indicati. */
     public String token(String issuer, List<String> audience, String subject, Map<String, Object> claimAggiuntivi) {
         return firma(issuer, audience, subject, Instant.now().minusSeconds(30),
                 Instant.now().plusSeconds(600), claimAggiuntivi, coppiaChiavi);
     }
 
-    /** Token con scadenza nel passato. */
     public String tokenScaduto(String issuer, List<String> audience, String subject) {
         return firma(issuer, audience, subject, Instant.now().minusSeconds(7200),
                 Instant.now().minusSeconds(3600), Map.of(), coppiaChiavi);
     }
 
-    /** Token firmato con una chiave diversa da quella pubblicata: la firma non deve verificare. */
     public String tokenConFirmaSbagliata(String issuer, List<String> audience, String subject) {
         RsaTokenFactory altraIdentita = new RsaTokenFactory();
         return firma(issuer, audience, subject, Instant.now().minusSeconds(30),

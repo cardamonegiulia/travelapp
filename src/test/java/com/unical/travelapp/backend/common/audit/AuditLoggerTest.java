@@ -20,9 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-// Verifica che l'AuditLogger produca eventi JSON strutturati sul logger dedicato "AUDIT"
-// (non sul logger applicativo), con i campi richiesti, e che non includa MAI il token JWT
-// completo o altri segreti - solo subject/username estratti dal token gia' validato.
 class AuditLoggerTest {
 
     private final AuditLogger auditLogger = new AuditLogger();

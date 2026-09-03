@@ -36,14 +36,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Registrazione self-service su {@code POST /api/auth/registrazione}.
- *
- * <p>{@link KeycloakAdminClient} e' l'unico collaboratore sostituito da un mock: i test devono
- * poter verificare <b>cosa</b> viene chiesto a Keycloak (quale ruolo, quale compensazione)
- * senza dipendere da un'istanza reale. Tutto il resto - catena di filtri, validazione,
- * mapping degli errori, persistenza - e' quello di produzione.
- */
 class RegistrazioneTest extends SecurityIntegrationTestBase {
 
     private static final String TOKEN_ADMIN = "token-service-account";
@@ -73,8 +65,6 @@ class RegistrazioneTest extends SecurityIntegrationTestBase {
                 {"nome":"Mario","cognome":"Rossi","email":"%s","password":"%s","ruolo":"%s"}
                 """.formatted(email, password, ruolo);
     }
-
-    // --- percorso felice ---------------------------------------------------
 
     @ParameterizedTest(name = "registrazione come {0}")
     @ValueSource(strings = {"VIAGGIATORE", "ORGANIZZATORE"})
@@ -135,8 +125,6 @@ class RegistrazioneTest extends SecurityIntegrationTestBase {
                 .doesNotContain(KEYCLOAK_ID);
     }
 
-    // --- il ruolo ADMIN non e' auto-assegnabile ----------------------------
-
     @Test
     void ilRuoloAdminNonEAccettatoInRegistrazione() throws Exception {
         MvcResult risultato = mockMvc.perform(post("/api/auth/registrazione")
@@ -162,8 +150,6 @@ class RegistrazioneTest extends SecurityIntegrationTestBase {
         assertThat(utenteRepository.count()).isZero();
         verifyNoInteractions(keycloakAdminClient);
     }
-
-    // --- validazione dell'input --------------------------------------------
 
     @ParameterizedTest(name = "password rifiutata: \"{0}\"")
     @ValueSource(strings = {"corta1", "soltantolettere", "123456789012345", "            "})
@@ -218,8 +204,6 @@ class RegistrazioneTest extends SecurityIntegrationTestBase {
         assertThat(utenteRepository.count()).isEqualTo(1);
     }
 
-    // --- errori lato Keycloak ----------------------------------------------
-
     @Test
     void seIlRuoloRealmNonEsisteLUtenteNonVieneNemmenoCreato() throws Exception {
         when(keycloakAdminClient.trovaRuoloRealm(anyString(), eq("VIAGGIATORE"))).thenReturn(Optional.empty());
@@ -255,12 +239,6 @@ class RegistrazioneTest extends SecurityIntegrationTestBase {
                 .isZero();
     }
 
-    /**
-     * La policy password vive sul realm ({@code length(12) and digits(1) and notUsername and
-     * notEmail}) ed e' piu' severa del vincolo {@code @PasswordSicura} sul DTO: una password
-     * puo' superare la validazione locale e venire respinta da Keycloak. Diventava un 503, che
-     * dice "riprova piu' tardi" a chi invece deve cambiare quello che ha scritto.
-     */
     @Test
     void unaPasswordRifiutataDalRealmEUnErroreDelChiamanteNonUnGuasto() throws Exception {
         doThrow(new PasswordNonConformeException("La password non rispetta i requisiti richiesti"))
@@ -297,8 +275,6 @@ class RegistrazioneTest extends SecurityIntegrationTestBase {
                 .doesNotContain("Keycloak");
         assertThat(utenteRepository.count()).isZero();
     }
-
-    // --- esposizione della rotta -------------------------------------------
 
     @Test
     void laRegistrazioneEPubblicaEnonRichiedeToken() throws Exception {

@@ -516,11 +516,11 @@ public class PrenotazioneService {
     }
 
     public BigDecimal getSaldoTotaleGlobale() {
-        return prenotazioneRepo.sumTotaleGlobale(StatoPrenotazione.CANCELLATA);
+        return pagamentoService.getSaldoTotaleGlobale();
     }
 
     public BigDecimal getSaldoOrganizzatore() {
         Long organizzatoreId = utenteService.getUtenteSessione().getId();
-        return prenotazioneRepo.sumTotalePerOrganizzatore(organizzatoreId, StatoPrenotazione.CANCELLATA);
+        return pagamentoService.getSaldoOrganizzatore(organizzatoreId);
     }
 }

@@ -18,8 +18,6 @@ data class UtenteResponseDto(
         email = email.orEmpty(),
         ruolo = ruolo,
         tema = tema,
-        // il backend restituisce un percorso relativo ("/api/immagini/12/contenuto"):
-        // alla UI serve l'url completo da cui scaricare i byte
         fotoProfiloUrl = fotoProfilo?.url?.let { ApiClient.urlAssoluto(it) }
     )
 }

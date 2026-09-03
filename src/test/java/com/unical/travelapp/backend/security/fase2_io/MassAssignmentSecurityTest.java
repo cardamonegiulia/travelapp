@@ -18,13 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 2 - mass assignment (OWASP API6:2023, Broken Object Property Level Authorization).
- *
- * <p>{@code spring.jackson.deserialization.fail-on-unknown-properties=true}: un campo di
- * sistema iniettato nel payload deve far fallire la richiesta con 400, non essere ignorato
- * in silenzio (che nasconderebbe il tentativo) ne' tantomeno applicato.
- */
 class MassAssignmentSecurityTest extends SecurityIntegrationTestBase {
 
     private Utente organizzatore;
@@ -80,7 +73,6 @@ class MassAssignmentSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void nonSiPuoForzareIlPrezzoDiUnaPrenotazione() throws Exception {
-        // il prezzo lo calcola il server dal listino, non lo decide il client
         mockMvc.perform(post("/api/prenotazioni")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -88,7 +80,6 @@ class MassAssignmentSecurityTest extends SecurityIntegrationTestBase {
                                 + ",\"numeroPartecipanti\":2,\"prezzoTotale\":0.01}"))
                 .andExpect(status().isBadRequest());
 
-        // la stessa richiesta senza il campo estraneo passa e il prezzo lo mette il server
         mockMvc.perform(post("/api/prenotazioni")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -105,8 +96,6 @@ class MassAssignmentSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void nonSiPuoForzareIlRuoloAllaCreazioneDiUnUtente() throws Exception {
-        // "ruolo" e' un campo legittimo di UtenteDto, ma l'endpoint e' riservato agli ADMIN:
-        // il controllo qui e' l'autorizzazione, non la deserializzazione
         mockMvc.perform(post("/api/utenti")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)

@@ -26,12 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.travelapp.domain.model.ImmagineResponse
 
-/**
- * Galleria a scorrimento orizzontale delle foto di un itinerario o di un'attivita'.
- *
- * Con una sola foto (o nessuna) si comporta esattamente come [AuthedAsyncImage]: niente
- * pallini ne' contatore, perche' non c'e' niente da scorrere.
- */
 @Composable
 fun CaroselloImmagini(
     immagini: List<ImmagineResponse>,
@@ -47,7 +41,6 @@ fun CaroselloImmagini(
 
         if (immagini.isEmpty()) {
 
-            // Nessuna foto: resta il segnaposto gestito da AuthedAsyncImage.
             AuthedAsyncImage(
                 url = null,
                 contentDescription = contentDescription,
@@ -86,7 +79,6 @@ fun CaroselloImmagini(
     }
 }
 
-/** "3 / 7" in alto a destra: dice subito quante foto ci sono. */
 @Composable
 private fun BoxScope.ContatoreFoto(
     posizione: Int,
@@ -124,8 +116,6 @@ private fun BoxScope.PallinePagine(
             .align(Alignment.BottomCenter)
             .fillMaxWidth()
             .padding(bottom = 16.dp)
-            // Un solo testo per l'intera fila: i pallini sono una decorazione, letti uno
-            // per uno direbbero soltanto "immagine, immagine, immagine".
             .semantics {
                 this.contentDescription =
                     "Foto ${paginaCorrente + 1} di $totale"

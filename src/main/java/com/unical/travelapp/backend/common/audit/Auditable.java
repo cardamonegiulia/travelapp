@@ -13,9 +13,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-// Superclasse per il tracciamento "chi/quando ha creato o modificato per ultimo" una riga.
-// Popolata automaticamente da Spring Data JPA Auditing (vedi JpaAuditingConfig), mai da
-// codice applicativo o input del client.
 @Getter
 @Setter
 @MappedSuperclass

@@ -18,13 +18,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Fase 1 - la catena di validazione collaudata in {@link ValidazioneTokenSecurityTest} deve
- * essere davvero quella montata sul bean JwtDecoder dell'applicazione.
- *
- * <p>Senza questo test i validator potrebbero essere corretti ma non collegati: si
- * verificherebbe una classe che nessuno usa.
- */
 class ConfigurazioneJwtDecoderSecurityTest extends SecurityIntegrationTestBase {
 
     @Autowired private JwtDecoder jwtDecoder;
@@ -64,8 +57,6 @@ class ConfigurazioneJwtDecoderSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void laPoliticaDiSessioneEStateless() {
-        // la SecurityConfig dichiara SessionCreationPolicy.STATELESS: qui si verifica
-        // l'effetto osservabile (nessuna sessione creata) nel test dedicato di fase 6.
         assertThat(SessionCreationPolicy.STATELESS).isNotNull();
     }
 

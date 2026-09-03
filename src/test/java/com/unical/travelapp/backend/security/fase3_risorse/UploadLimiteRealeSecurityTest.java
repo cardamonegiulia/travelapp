@@ -25,22 +25,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Fase 3 - limite di dimensione degli upload su un contenitore servlet reale.
- *
- * <p>MockMvc simula il contenitore e non applica i limiti multipart, quindi il 413 va
- * verificato con Tomcat davvero in ascolto: e' l'unico modo per sapere se il limite
- * configurato viene applicato e se il relativo errore e' mappato correttamente.
- *
- * <p>Il token e' firmato a runtime e le chiavi arrivano dal server JWK locale: anche qui
- * nessuna dipendenza da Keycloak.
- *
- * <p>Il limite e' abbassato a 64KB solo per rendere il test rapido e deterministico: con
- * i 5MB di produzione Tomcat interrompe la connessione mentre il client sta ancora
- * inviando, e la risposta non e' leggibile. Il meccanismo verificato e' lo stesso, e che i
- * valori di produzione siano quelli attesi e' verificato da
- * LimitiRisorseSecurityTest#ilLimiteMultipartEEffettivamenteConfigurato.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @TestPropertySource(properties = {

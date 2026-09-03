@@ -327,11 +327,6 @@ private fun decodeLocalImage(context: Context, url: String): ImageBitmap? = runC
     bitmap.asImageBitmap()
 }.getOrNull()
 
-/**
- * La foto profilo arriva da `/api/immagini/{id}/contenuto`, che e' un endpoint autenticato
- * come tutto il resto di `/api`: va scaricata con il client che allega il bearer token,
- * altrimenti il backend risponde 401 e l'avatar resta vuoto senza dire perche'.
- */
 private fun decodeRemoteImage(context: Context, url: String): ImageBitmap? = runCatching {
     val richiesta = Request.Builder().url(url).build()
     ApiClient.getHttpClient(context).newCall(richiesta).execute().use { risposta ->

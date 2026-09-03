@@ -10,8 +10,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Verifica che la configurazione CORS sia un allow-list esplicita (mai '*') e che, non
-// usando credenziali cross-origin (bearer token, non cookie), allowCredentials resti false.
 class SecurityConfigCorsTest {
 
     @Test

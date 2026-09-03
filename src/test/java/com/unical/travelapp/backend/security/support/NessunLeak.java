@@ -8,14 +8,6 @@ import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Controllo automatico anti-leak da applicare a OGNI risposta di errore prodotta dalla suite.
- *
- * <p>Fallisce se il body espone dettagli interni: nomi di classe/eccezione, package Java,
- * frammenti SQL o di vincoli DB, path del filesystem. Se qualcuno rimuovesse il
- * GlobalExceptionHandler e lasciasse trapelare l'errore grezzo di Spring, questi controlli
- * diventerebbero rossi.
- */
 public final class NessunLeak {
 
     private static final List<String> FRAMMENTI_VIETATI = List.of(

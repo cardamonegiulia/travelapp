@@ -8,8 +8,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-// L'"autore" per Spring Data JPA Auditing e' il subject (sub) del token, mai un nome
-// fornito dal client: coerente con "l'identita' va sempre presa dal token".
 @Component
 public class SecurityAuditorAware implements AuditorAware<String> {
 

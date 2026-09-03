@@ -21,12 +21,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 1 - BOLA su itinerari, attivita' e recensioni.
- *
- * <p>Un organizzatore non deve poter cancellare il catalogo di un altro organizzatore, e
- * l'autore di una recensione e' sempre quello del token, mai un id passato nel payload.
- */
 class BolaContenutiSecurityTest extends SecurityIntegrationTestBase {
 
     private static final String SUB_ORGANIZZATORE_2 = "sub-organizzatore-2";
@@ -162,7 +156,6 @@ class BolaContenutiSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void laRecensioneCreataEIntestataAllUtenteDelToken() throws Exception {
-        // si recensisce una prenotazione conclusa, non un itinerario qualsiasi del catalogo
         var prenotazioneDiA = prenotazioneConclusa(viaggiatoreA, itinerarioDi1);
 
         mockMvc.perform(post("/api/recensioni")
@@ -180,7 +173,6 @@ class BolaContenutiSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void nonSiPuoRecensireUnItinerarioSenzaAverloPrenotato() throws Exception {
-        // senza prenotazioneId non c'e' modo di dimostrare di aver fatto quel viaggio
         MvcResult risultato = mockMvc.perform(post("/api/recensioni")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)

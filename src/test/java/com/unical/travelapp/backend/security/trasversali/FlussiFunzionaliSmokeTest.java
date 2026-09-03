@@ -21,12 +21,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Test di regressione funzionale: l'hardening non deve aver rotto il percorso legittimo.
- *
- * <p>Un controllo di sicurezza che blocca anche gli usi corretti viene disattivato al primo
- * incidente in produzione, quindi va verificato che il flusso normale funzioni ancora.
- */
 class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
 
     private Utente organizzatore;
@@ -49,9 +43,6 @@ class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
 
     @Test
     void laSincronizzazioneAssegnaIlRuoloDelTokenNonUnDefaultFisso() throws Exception {
-        // un ORGANIZZATORE creato fuori dal flusso self-service deve risultare ORGANIZZATORE
-        // anche in locale: altrimenti il frontend, che legge UtenteResponseDto.ruolo, mostra
-        // un ruolo diverso da quello che il backend applica nei @PreAuthorize
         mockMvc.perform(post("/api/utenti/me")
                         .with(TestJwt.conEmail("sub-nuovo-organizzatore", "org@example.test", "ORGANIZZATORE")))
                 .andExpect(status().isOk())
@@ -63,8 +54,6 @@ class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
 
     @Test
     void laSincronizzazioneRifiutaUnTokenSenzaEmailInveceDiSalvarneUnaVuota() throws Exception {
-        // l'email e' chiave unica: salvarla vuota bruciava il valore per tutti gli utenti
-        // successivi, che fallivano sul vincolo di unicita' con un errore incomprensibile
         mockMvc.perform(post("/api/utenti/me")
                         .with(TestJwt.conRuoliRealm("sub-senza-email", "VIAGGIATORE")))
                 .andExpect(status().isBadRequest());
@@ -110,7 +99,6 @@ class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
         Itinerario itinerario = itinerario(organizzatore);
         DisponibilitaItinerario disponibilita = disponibilita(itinerario, 10);
 
-        // 1. prenotazione
         MvcResult prenotazione = mockMvc.perform(post("/api/prenotazioni")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -124,11 +112,9 @@ class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
         long idPrenotazione = objectMapper.readTree(prenotazione.getResponse().getContentAsString())
                 .get("id").asLong();
 
-        // i posti sono stati scalati
         assertThat(disponibilitaRepository.findById(disponibilita.getId()).orElseThrow()
                 .getPostiDisponibili()).isEqualTo(8);
 
-        // 2. pagamento
         mockMvc.perform(post("/api/pagamenti/prenotazioni/" + idPrenotazione + "/paga")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())
@@ -140,14 +126,11 @@ class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
         assertThat(pagamentoRepository.findByPrenotazioneId(idPrenotazione).orElseThrow().getStato())
                 .isEqualTo(StatoPagamento.COMPLETATO);
 
-        // 3. il viaggio si conclude: si puo' recensire solo dopo la data di fine, e la
-        // prenotazione non si sarebbe potuta creare su una partenza gia' passata
         DisponibilitaItinerario conclusa = disponibilitaRepository.findById(disponibilita.getId()).orElseThrow();
         conclusa.setDataInizio(LocalDateTime.now().minusDays(10));
         conclusa.setDataFine(LocalDateTime.now().minusDays(7));
         disponibilitaRepository.save(conclusa);
 
-        // il viaggio concluso compare nella scheda dedicata, marcato come recensibile
         mockMvc.perform(get("/api/prenotazioni/mie/concluse")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())
@@ -155,7 +138,6 @@ class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
                 .andExpect(jsonPath("$.content[0].conclusa").value(true))
                 .andExpect(jsonPath("$.content[0].recensibile").value(true));
 
-        // 4. recensione della prenotazione pagata
         mockMvc.perform(post("/api/recensioni")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -164,7 +146,6 @@ class FlussiFunzionaliSmokeTest extends SecurityIntegrationTestBase {
                                 + ",\"votazione\":5,\"comm\":\"Esperienza ottima\"}"))
                 .andExpect(status().isCreated());
 
-        // 5. la recensione compare nell'elenco e nella media
         mockMvc.perform(get("/api/recensioni/itinerario/" + itinerario.getId())
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())

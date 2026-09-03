@@ -30,13 +30,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * {@code PUT /api/utenti/{id}} deve tenere allineati record locale e Keycloak.
- *
- * <p>L'email e' il caso che conta: e' chiave unica in locale ed e' l'indirizzo che l'IdP
- * mette nel claim {@code email} dei token. Finche' l'aggiornamento restava locale, dopo un
- * cambio email le due fonti descrivevano due persone diverse.
- */
 class AggiornamentoProfiloTest extends SecurityIntegrationTestBase {
 
     private static final String TOKEN_ADMIN = "token-service-account";
@@ -68,12 +61,6 @@ class AggiornamentoProfiloTest extends SecurityIntegrationTestBase {
                 .isEqualTo("nuova@example.test");
     }
 
-    /**
-     * L'ultimo parametro di {@code aggiornaProfilo} e' cio' che fa azzerare
-     * {@code emailVerified} su Keycloak. Deve valere {@code true} solo quando l'indirizzo
-     * cambia davvero: altrimenti ogni ritocco al nome costringerebbe a riconfermare la
-     * casella, e gli utenti imparerebbero a ignorare le mail di verifica.
-     */
     @Test
     void laVerificaEmailVieneChiestaSoloQuandoLIndirizzoCambia() throws Exception {
         Utente utente = utente(SUB_UTENTE_A, Ruolo.VIAGGIATORE);

@@ -18,14 +18,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 1 - BOLA sull'anagrafica utenti: {@code @PreAuthorize("hasRole('ADMIN') or
- * @utenteSecurity.isSelf(#id, authentication)")}.
- *
- * <p>Qui il codice sceglie 403 (non 404): l'esistenza di un id utente non e' considerata
- * un'informazione da proteggere, ma il contenuto si'. Il test verifica che id altrui e id
- * inesistente restituiscano comunque lo stesso status, quindi non c'e' enumerazione.
- */
 class BolaUtentiSecurityTest extends SecurityIntegrationTestBase {
 
     private Utente utenteA;
@@ -124,8 +116,6 @@ class BolaUtentiSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void nonSiPuoCambiareRuoloDaSeStessiTramitePut() throws Exception {
-        // UtenteUpdateDto non espone "ruolo": il payload deve essere rifiutato,
-        // non applicato in silenzio
         mockMvc.perform(put("/api/utenti/" + utenteA.getId())
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -139,7 +129,6 @@ class BolaUtentiSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void lIdentitaDiSincronizzazioneVieneDalSubDelToken() throws Exception {
-        // POST /api/utenti/me crea o recupera l'utente locale a partire dal solo claim sub
         mockMvc.perform(post("/api/utenti/me")
                         .with(TestJwt.conUsernameDiverso(SUB_UTENTE_A, "nome-fasullo", "VIAGGIATORE")))
                 .andExpect(status().isOk())
@@ -148,8 +137,6 @@ class BolaUtentiSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void unUtenteNonPuoCrearsiUnAccountConRuoloArbitrario() throws Exception {
-        // POST /api/utenti e' riservato agli ADMIN: un viaggiatore non deve poter
-        // registrare un utente con ruolo ADMIN
         mockMvc.perform(post("/api/utenti")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
                         .contentType(MediaType.APPLICATION_JSON)

@@ -53,13 +53,11 @@ interface PreferitiApi {
         @Path("itinerarioId") itinerarioId: Long
     ): Response<ListaPreferitiResponseDto>
 
-    /** Salvataggio rapido nella lista predefinita: il cuore sulla scheda di un itinerario. */
     @POST("api/preferiti/itinerari")
     suspend fun aggiungiAiPreferiti(
         @Body request: PreferitoItinerarioRequestDto
     ): Response<ListaPreferitiResponseDto>
 
-    /** Toglie l'itinerario da tutte le liste dell'utente. */
     @DELETE("api/preferiti/itinerari/{itinerarioId}")
     suspend fun rimuoviDaiPreferiti(
         @Path("itinerarioId") itinerarioId: Long

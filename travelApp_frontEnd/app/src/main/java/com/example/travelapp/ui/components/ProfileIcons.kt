@@ -6,17 +6,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
 
-/**
- * Icone 24dp non incluse in material-icons-core (l'unico artefatto di icone
- * su cui il modulo dipende). Sono definite qui per evitare di aggiungere
- * material-icons-extended solo per sei glifi.
- *
- * Il colore di riempimento e' nero: e' `Icon(tint = ...)` a decidere la tinta
- * finale, quindi i vettori restano riutilizzabili ovunque.
- */
 object ProfileIcons {
 
-    /** Carta di credito: sezione "I miei pagamenti". */
     val CreditCard: ImageVector by lazy {
         materialVector(
             name = "CreditCard",
@@ -25,7 +16,6 @@ object ProfileIcons {
         )
     }
 
-    /** Macchina fotografica con "+": bottone "Aggiungi foto profilo". */
     val AddAPhoto: ImageVector by lazy {
         materialVector(
             name = "AddAPhoto",
@@ -36,7 +26,6 @@ object ProfileIcons {
         )
     }
 
-    /** Luna: riga "Tema scuro". */
     val DarkMode: ImageVector by lazy {
         materialVector(
             name = "DarkMode",
@@ -45,7 +34,6 @@ object ProfileIcons {
         )
     }
 
-    /** Bussola: voce "Explore" della bottom bar. */
     val Explore: ImageVector by lazy {
         materialVector(
             name = "Explore",
@@ -55,7 +43,6 @@ object ProfileIcons {
         )
     }
 
-    /** Biglietto: voce "Bookings" della bottom bar. */
     val Ticket: ImageVector by lazy {
         materialVector(
             name = "Ticket",
@@ -65,7 +52,6 @@ object ProfileIcons {
         )
     }
 
-    /** Fumetto con righe: sezione "Le mie recensioni". */
     val Review: ImageVector by lazy {
         materialVector(
             name = "Review",
@@ -74,7 +60,6 @@ object ProfileIcons {
         )
     }
 
-    /** Freccia che esce dalla porta: bottone di logout. */
     val Logout: ImageVector by lazy {
         materialVector(
             name = "Logout",

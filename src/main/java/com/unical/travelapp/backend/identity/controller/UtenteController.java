@@ -180,8 +180,6 @@ public class UtenteController {
         return ResponseEntity.noContent().build();
     }
 
-    // --- Foto profilo ---------------------------------------------------------------------
-
     @PutMapping(value = "/me/foto-profilo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Imposta (o sostituisce) la foto profilo dell'utente autenticato"

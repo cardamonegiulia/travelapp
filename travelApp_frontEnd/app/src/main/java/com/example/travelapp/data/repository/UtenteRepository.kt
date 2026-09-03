@@ -32,7 +32,6 @@ class UtenteRepository(
         return chiamata("Errore nel caricamento della foto") { api.impostaFotoProfilo(parte) }
     }
 
-    // Richiede un login recente (401 altrimenti); se va a buon fine chiude tutte le sessioni.
     suspend fun cambiaPassword(nuovaPassword: String): Result<Unit> =
         try {
             val risposta = api.cambiaPassword(CambioPasswordDto(nuovaPassword))

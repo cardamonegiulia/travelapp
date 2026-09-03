@@ -43,12 +43,6 @@ import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 import com.example.travelapp.ui.theme.TravelOrange
 
-/**
- * Elenco delle notifiche in-app.
- *
- * L'invito a recensire non e' un messaggio da leggere e basta: porta con se' l'azione
- * diretta verso il form della recensione di quel viaggio.
- */
 @Composable
 fun NotificheScreen(
     uiState: NotificheUiState,
@@ -196,7 +190,6 @@ private fun NotificaCard(
                 color = TextSecondary
             )
 
-            // L'azione compare solo se la notifica porta con se' la prenotazione da recensire
             if (notifica.tipo == TipoNotifica.INVITO_RECENSIONE && notifica.prenotazioneId != null) {
                 Button(
                     onClick = onApriRecensione,

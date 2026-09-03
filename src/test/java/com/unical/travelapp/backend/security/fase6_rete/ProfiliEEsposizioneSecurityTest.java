@@ -17,9 +17,6 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-/**
- * Fase 6 - esposizione della documentazione, actuator e controlli del profilo prod.
- */
 class ProfiliEEsposizioneSecurityTest extends SecurityIntegrationTestBase {
 
     @BeforeEach
@@ -56,7 +53,6 @@ class ProfiliEEsposizioneSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void ilContestoConProfiloProdNonPartteConUnIssuerHttp() {
-        // verifica fail-fast a livello di ApplicationContext, non solo del singolo bean
         assertThatThrownBy(() -> avviaContesto("prod",
                 "spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8090/realms/travelapp"))
                 .hasStackTraceContaining("HTTPS");
@@ -64,7 +60,6 @@ class ProfiliEEsposizioneSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void inProduzioneSwaggerEOpenApiSonoDisattivati() {
-        // application-prod.properties: springdoc.*.enabled=false
         try (ConfigurableApplicationContext contesto = avviaContesto("prod",
                 "spring.security.oauth2.resourceserver.jwt.issuer-uri=https://auth.example/realms/travelapp",
                 "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://auth.example/certs")) {
@@ -120,9 +115,6 @@ class ProfiliEEsposizioneSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void healthEInfoSonoPubbliciPerDefinizioneMaNonEspongonoDati() throws Exception {
-        // Nota: spring-boot-starter-actuator NON e' fra le dipendenze del progetto, quindi
-        // gli endpoint non esistono e la rotta - pur essendo permitAll - risponde 404.
-        // La regola di autorizzazione resta comunque configurata e verificata sopra.
         for (String percorso : new String[]{"/actuator/health", "/actuator/info"}) {
             MvcResult risultato = mockMvc.perform(get(percorso)).andReturn();
             assertThat(risultato.getResponse().getStatus())
@@ -133,18 +125,11 @@ class ProfiliEEsposizioneSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void laSpecificaOpenApiNonRivelaSegretiQuandoEEsposta() throws Exception {
-        // nel profilo di sviluppo /v3/api-docs e' pubblico per scelta (permitAll):
-        // almeno non deve contenere credenziali o URL interni con segreti
         MvcResult risultato = mockMvc.perform(get("/v3/api-docs")).andReturn();
 
         if (risultato.getResponse().getStatus() == 200) {
             String corpo = risultato.getResponse().getContentAsString().toLowerCase();
             assertThat(corpo)
-                    // "password" compare come NOME di proprieta' nello schema della
-                    // registrazione ("password":{"type":"string",...}): e' il contratto
-                    // dell'API, non una credenziale. Quello che non deve mai comparire e' un
-                    // VALORE associato alla chiave - un default, un esempio, un segreto di
-                    // configurazione - cioe' "password" seguito da una stringa.
                     .doesNotContain("\"password\":\"")
                     .doesNotContain("\"password\": \"")
                     .doesNotContain("client_secret")

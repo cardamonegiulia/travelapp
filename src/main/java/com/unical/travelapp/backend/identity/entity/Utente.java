@@ -31,21 +31,13 @@ public class Utente extends Auditable {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Enumerated(EnumType.STRING) // Salva il nome del ruolo come stringa nel DB
+    @Enumerated(EnumType.STRING)
     private Ruolo ruolo;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tema")
     private Tema tema = Tema.CHIARO;
 
-    // Foto del profilo: una sola per utente, quindi un riferimento singolo e non una
-    // galleria come su Itinerario. La chiave esterna sta qui perche' e' l'utente ad avere
-    // "al piu' una foto": cosi' sostituirla e' un UPDATE di una colonna, e l'unicita' e'
-    // garantita dallo schema invece che da codice applicativo.
-    //
-    // Nessun cascade: l'immagine ha un ciclo di vita proprio (file sullo storage + riga),
-    // gestito da ImmagineService. Cancellarla insieme all'utente lascerebbe il file orfano
-    // sul disco, perche' JPA non sa nulla del filesystem.
     @OneToOne
     @JoinColumn(name = "foto_profilo_id")
     private Immagine fotoProfilo;

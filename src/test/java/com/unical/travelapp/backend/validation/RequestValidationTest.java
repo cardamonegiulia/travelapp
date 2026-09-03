@@ -15,8 +15,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Prova che i DTO di request introdotti in Fase 2 rifiutano payload invalidi/incompleti
-// invece di lasciarli passare fino al service (allow-list via bean validation).
 class RequestValidationTest {
 
     private static final ValidatorFactory FACTORY = Validation.buildDefaultValidatorFactory();

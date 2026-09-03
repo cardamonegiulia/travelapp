@@ -23,13 +23,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-/**
- * Fase 5 - redazione dei segreti nei log. E' il test piu' importante della fase: un token
- * finito nei log e' una credenziale valida a disposizione di chiunque legga i log, e i log
- * di solito hanno una platea molto piu' ampia del database.
- *
- * <p>Si verificano sia gli appender in memoria sia il file logs/audit.log scritto davvero.
- */
 class RedazioneSegretiNeiLogSecurityTest extends SecurityIntegrationTestBase {
 
     private static final String PASSWORD_IN_CHIARO = "SuperSegreta123!";
@@ -50,7 +43,6 @@ class RedazioneSegretiNeiLogSecurityTest extends SecurityIntegrationTestBase {
         dimensioneAuditPrimaDelTest = Files.exists(FILE_AUDIT) ? Files.size(FILE_AUDIT) : 0L;
     }
 
-    /** Solo le righe di audit scritte durante questo test. */
     private String audltScrittoDuranteIlTest() throws IOException {
         if (!Files.exists(FILE_AUDIT)) {
             return "";
@@ -112,8 +104,6 @@ class RedazioneSegretiNeiLogSecurityTest extends SecurityIntegrationTestBase {
     @Test
     void unaPasswordNelPayloadNonCompareNeiLog() throws Exception {
         try (CatturaLog root = CatturaLog.root(); CatturaLog audit = CatturaLog.audit()) {
-            // payload con un campo password: il DTO non lo prevede, quindi la richiesta
-            // fallisce - ma il valore non deve comunque finire nei log
             mockMvc.perform(put("/api/utenti/"
                             + utenteRepository.findByKeycloakId(SUB_UTENTE_A).orElseThrow().getId())
                             .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))
@@ -133,7 +123,6 @@ class RedazioneSegretiNeiLogSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void unAutenticazioneFallitaNonLoggaIlTokenPresentato() throws Exception {
-        // token con audience sbagliata: viene respinto, ma non deve essere trascritto
         String tokenRespinto = ServerJwkDiProva.istanza().idp().token(
                 TestJwt.ISSUER, List.of("account"), SUB_UTENTE_A, Map.of());
 
@@ -199,7 +188,6 @@ class RedazioneSegretiNeiLogSecurityTest extends SecurityIntegrationTestBase {
 
         String contenuto = audltScrittoDuranteIlTest();
 
-        // "eyJ" e' il prefisso Base64 di ogni header JWT: se compare, un token e' finito nel file
         assertThat(contenuto)
                 .as("nessun frammento riconoscibile di JWT nel file di audit")
                 .doesNotContain("eyJ");

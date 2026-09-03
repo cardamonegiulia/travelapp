@@ -16,14 +16,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Le liste che il viaggiatore legge prima di prenotare (partenze di un itinerario, sessioni di
- * un'attività) devono arrivare come DTO piatti.
- *
- * <p>Restituire l'entità JPA non è solo una questione di stile: la disponibilità rimanda
- * all'itinerario, che contiene a sua volta le disponibilità, quindi Jackson entrava in un ciclo
- * infinito e la schermata non riceveva né date né posti.
- */
 class DisponibilitaEsposteTest extends SecurityIntegrationTestBase {
 
     private Utente organizzatore;
@@ -49,7 +41,6 @@ class DisponibilitaEsposteTest extends SecurityIntegrationTestBase {
                 .andExpect(jsonPath("$[0].dataFine").exists())
                 .andExpect(jsonPath("$[0].dataLimitePrenotazione").exists())
                 .andExpect(jsonPath("$[0].postiDisponibili").value(12))
-                // niente entità annidata: era la causa del ciclo in serializzazione
                 .andExpect(jsonPath("$[0].itinerario").doesNotExist());
     }
 
@@ -59,8 +50,6 @@ class DisponibilitaEsposteTest extends SecurityIntegrationTestBase {
         disponibilitaConclusa(itinerario, 10);
         DisponibilitaItinerario futura = disponibilita(itinerario, 10);
 
-        // una data che non si puo' piu' prenotare non arriva affatto: la scheda del
-        // viaggiatore proponeva altrimenti partenze di viaggi gia' conclusi
         mockMvc.perform(get("/api/itinerari/" + itinerario.getId() + "/disponibilita")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())
@@ -72,7 +61,6 @@ class DisponibilitaEsposteTest extends SecurityIntegrationTestBase {
     void unaPartenzaColTermineDiPrenotazioneScadutoNonCompare() throws Exception {
         Itinerario itinerario = itinerario(organizzatore);
         DisponibilitaItinerario partenza = disponibilita(itinerario, 12);
-        // il viaggio deve ancora partire, ma le prenotazioni si sono chiuse ieri
         partenza.setDataLimitePrenotazione(LocalDateTime.now().minusDays(1));
         disponibilitaRepository.save(partenza);
 
@@ -87,7 +75,6 @@ class DisponibilitaEsposteTest extends SecurityIntegrationTestBase {
         Itinerario itinerario = itinerario(organizzatore);
         DisponibilitaItinerario esaurita = disponibilita(itinerario, 0);
 
-        // "esaurito" non e' "concluso": i posti possono tornare liberi, la data resta
         mockMvc.perform(get("/api/itinerari/" + itinerario.getId() + "/disponibilita")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())

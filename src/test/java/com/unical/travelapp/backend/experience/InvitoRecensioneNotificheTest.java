@@ -27,13 +27,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Il job che, il giorno dopo la fine di un viaggio, invita a recensirlo.
- *
- * <p>Lo scheduler e' spento nel profilo di test (app.scheduling.enabled=false): il job viene
- * invocato qui con la giornata da esaminare, cosi' il risultato non dipende dall'ora in cui
- * gira la suite.
- */
 @DisplayName("Notifica di invito a recensire")
 class InvitoRecensioneNotificheTest extends SecurityIntegrationTestBase {
 
@@ -53,7 +46,6 @@ class InvitoRecensioneNotificheTest extends SecurityIntegrationTestBase {
         ieri = LocalDate.now().minusDays(1);
     }
 
-    /** Viaggio terminato ieri a meta' giornata. */
     private Prenotazione viaggioFinitoIeri(Utente chi) {
         DisponibilitaItinerario partenza = new DisponibilitaItinerario();
         partenza.setItinerario(itinerario);
@@ -78,7 +70,6 @@ class InvitoRecensioneNotificheTest extends SecurityIntegrationTestBase {
                     assertThat(notifica.isLetta()).isFalse();
                 });
 
-        // e l'utente la vede, con il riferimento per aprire il form della recensione
         mockMvc.perform(get("/api/notifiche")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")))
                 .andExpect(status().isOk())
@@ -148,9 +139,7 @@ class InvitoRecensioneNotificheTest extends SecurityIntegrationTestBase {
 
     @Test
     void iViaggiChiusiInAltreGiornateNonVengonoToccati() {
-        // finisce fra un mese: il job di oggi non deve accorgersene
         prenotazione(viaggiatore, disponibilita(itinerario, 10));
-        // finito una settimana fa: la sua giornata e' gia' passata
         DisponibilitaItinerario vecchia = new DisponibilitaItinerario();
         vecchia.setItinerario(itinerario);
         vecchia.setDataInizio(LocalDateTime.now().minusDays(12));
@@ -169,13 +158,11 @@ class InvitoRecensioneNotificheTest extends SecurityIntegrationTestBase {
 
         long idNotifica = notificaRepository.findAll().get(0).getId();
 
-        // l'elenco e' sempre e solo il proprio
         mockMvc.perform(get("/api/notifiche")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(0));
 
-        // e non si segna come letta la notifica di un altro
         MvcResult risultato = mockMvc.perform(post("/api/notifiche/" + idNotifica + "/letta")
                         .with(TestJwt.conRuoliRealm(SUB_UTENTE_B, "VIAGGIATORE")))
                 .andExpect(status().isNotFound())

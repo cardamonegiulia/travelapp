@@ -49,22 +49,18 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onAddProfilePhoto: () -> Unit,
 
-    // Viaggiatore
     onBookingsClick: () -> Unit = {},
     onPaymentsClick: () -> Unit = {},
     onFavoritesClick: () -> Unit = {},
     onReviewsClick: () -> Unit = {},
 
-    // Organizzatore
     onCreaItinerarioClick: () -> Unit = {},
     onCreaAttivitaClick: () -> Unit = {},
     onLeMieOfferteClick: () -> Unit = {},
 
-    // Admin
     onGestioneOfferteAdminClick: () -> Unit = {},
     onGestioneUtentiAdminClick: () -> Unit = {},
 
-    // Impostazioni
     onToggleDarkMode: (Boolean) -> Unit = {},
     onChangePassword: () -> Unit = {},
     onLogout: () -> Unit = {},
@@ -83,12 +79,6 @@ fun ProfileScreen(
             onPhotoMessageShown()
         }
     }
-
-    /*
-     * ============================================================
-     * RUOLO
-     * ============================================================
-     */
 
     val isAdmin =
         state.ruolo.contains(
@@ -139,12 +129,6 @@ fun ProfileScreen(
                 )
         ) {
 
-            /*
-             * ============================================================
-             * HEADER
-             * ============================================================
-             */
-
             ProfileHeaderCard(
                 name = state.name,
                 email = state.email,
@@ -154,12 +138,6 @@ fun ProfileScreen(
                 onAddProfilePhoto =
                     onAddProfilePhoto
             )
-
-            /*
-             * ============================================================
-             * ATTIVITÀ VIAGGIATORE (Mostrate solo se NON è Organizzatore e NON è Admin)
-             * ============================================================
-             */
 
             if (!isOrganizzatore && !isAdmin) {
 
@@ -221,12 +199,6 @@ fun ProfileScreen(
                         onReviewsClick
                 )
             }
-
-            /*
-             * ============================================================
-             * IMPOSTAZIONI (Visibili a tutti, inclusi Admin)
-             * ============================================================
-             */
 
             SectionTitle(
                 text = "Impostazioni",

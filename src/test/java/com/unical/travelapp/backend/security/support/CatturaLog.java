@@ -8,12 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Appender in-memory per catturare gli eventi di un logger durante un test.
- *
- * <p>Usa il ListAppender di Logback gia' presente sul classpath invece di introdurre
- * una libreria esterna di log-capture.
- */
 public final class CatturaLog implements AutoCloseable {
 
     private final Logger logger;

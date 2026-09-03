@@ -3,13 +3,6 @@ package com.example.travelapp.data.remote
 import android.util.Base64
 import org.json.JSONObject
 
-/**
- * Dati dell'utente letti direttamente dall'access token.
- *
- * Servono a mostrare subito nome, email e ruolo giusti, senza aspettare la
- * chiamata a /api/utenti/me: il token è già sul dispositivo e questi claim
- * arrivano da Keycloak, quindi sono i dati veri dell'utente collegato.
- */
 data class DatiToken(
     val nome: String,
     val cognome: String,
@@ -22,21 +15,10 @@ data class DatiToken(
             .joinToString(" ")
 }
 
-/**
- * Lettura dei claim di un JWT.
- *
- * Il token non viene verificato: la firma la controlla il backend a ogni
- * richiesta. Qui serve solo a leggere dati che l'utente ha già ottenuto
- * facendo il login.
- */
 object LettoreToken {
 
     private const val RUOLO_PREDEFINITO = "VIAGGIATORE"
 
-    /**
-     * Ruoli applicativi in ordine di precedenza: un utente che ha più ruoli
-     * viene trattato come il più alto tra quelli che possiede.
-     */
     private val RUOLI_NOTI = listOf(
         "ADMIN",
         "ORGANIZZATORE",
@@ -69,9 +51,6 @@ object LettoreToken {
         )
     }
 
-    /**
-     * Ruolo applicativo dell'utente, letto da realm_access.roles.
-     */
     fun ruolo(accessToken: String): String {
         val claim = payload(accessToken) ?: return RUOLO_PREDEFINITO
         return ruoloDaClaim(claim)

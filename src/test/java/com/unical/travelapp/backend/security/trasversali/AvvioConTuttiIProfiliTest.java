@@ -10,13 +10,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Il contesto deve avviarsi con ciascun profilo previsto.
- *
- * <p>Una configurazione di sicurezza che rompe l'avvio di un profilo verrebbe rimossa in
- * fretta; una che si avvia ma disattiva silenziosamente un controllo e' peggio. Qui si
- * verifica l'avvio e, per ogni profilo, che i controlli chiave restino accesi.
- */
 class AvvioConTuttiIProfiliTest {
 
     private ConfigurableApplicationContext avvia(String... profili) {

@@ -8,21 +8,12 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.travelapp.ui.components.ProfileIcons
 
-/**
- * Destinazioni della navigazione principale.
- *
- * Le route vivono solo qui: chi naviga passa una [AppDestination], mai una
- * stringa scritta a mano.
- */
 sealed class AppDestination(
     val route: String,
     val label: String,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    // Explore e Bookings usano lo stesso vettore nei due stati: ProfileIcons
-    // non ha (ancora) le varianti outlined, che arriverebbero solo aggiungendo
-    // material-icons-extended.
     data object Explore : AppDestination(
         route = "explore",
         label = "Explore",
@@ -80,10 +71,8 @@ sealed class AppDestination(
     )
 
     companion object {
-        /** Voci della bottom navigation, nell'ordine in cui compaiono. */
         val bottomBarItems: List<AppDestination> = listOf(Explore, Bookings, Favorites, Profile)
 
-        /** Schermata mostrata all'avvio dell'app. */
         val start: AppDestination = Explore
     }
 }

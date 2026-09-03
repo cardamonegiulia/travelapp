@@ -21,18 +21,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Fase 2 - test strutturale: nessuna entita' JPA deve comparire nelle firme dei
- * {@code @RestController}.
- *
- * <p>Esporre un'entita' significa esporre la mappa del database e ogni relazione
- * raggiungibile (con il rischio di serializzare dati di altri utenti), e accettarne una in
- * ingresso significa mass assignment. Il controllo scandaglia parametri e tipi di ritorno,
- * inclusi i generici (List&lt;T&gt;, Page&lt;T&gt;, ResponseEntity&lt;T&gt;).
- *
- * <p>ArchUnit non e' fra le dipendenze del progetto e non e' stato aggiunto: lo stesso
- * controllo e' realizzato con la reflection e con lo scanner del classpath di Spring.
- */
 class NessunaEntitaJpaNeiControllerTest {
 
     private static final String PACKAGE_BASE = "com.unical.travelapp.backend";
@@ -55,7 +43,6 @@ class NessunaEntitaJpaNeiControllerTest {
 
     @Test
     void ilProgettoEspoOneAlmenoUnRestControllerDaControllare() {
-        // se lo scanner non trovasse nulla, i test sotto passerebbero a vuoto
         assertThat(controller())
                 .as("lo scanner deve trovare i controller del progetto")
                 .isNotEmpty()
@@ -131,8 +118,6 @@ class NessunaEntitaJpaNeiControllerTest {
 
     @Test
     void ilControlloRiconosceDavveroUnEntitaJpa() {
-        // verifica che il test non sia una rete a maglie larghe: su una firma che espone
-        // davvero un'entita' il rilevatore deve scattare
         assertThat(eEntitaJpa(com.unical.travelapp.backend.identity.entity.Utente.class)).isTrue();
         assertThat(eEntitaJpa(com.unical.travelapp.backend.booking.entity.Prenotazione.class)).isTrue();
 
@@ -152,7 +137,6 @@ class NessunaEntitaJpaNeiControllerTest {
         return tipo.isAnnotationPresent(Entity.class);
     }
 
-    /** Appiattisce un tipo generico in tutte le classi concrete che vi compaiono. */
     private Set<Class<?>> tipiCoinvolti(Type tipo) {
         Set<Class<?>> risultato = new LinkedHashSet<>();
         raccogli(tipo, risultato);

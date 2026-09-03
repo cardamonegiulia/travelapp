@@ -76,19 +76,15 @@ public class SecurityConfig {
                         ))
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Rotte di documentazione e diagnostica
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
 
-                        // Registrazione pubblica
                         .requestMatchers(HttpMethod.POST, "/api/auth/registrazione").permitAll()
 
-                        // Lettura pubblica del catalogo, immagini, date e sessioni
                         .requestMatchers(HttpMethod.GET, "/api/itinerari/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/attivita/**").permitAll()
 
-                        // Tutte le altre chiamate API richiedono autenticazione
                         .requestMatchers("/api/**").authenticated()
 
                         .anyRequest().denyAll()
@@ -143,13 +139,11 @@ public class SecurityConfig {
             public Collection<GrantedAuthority> convert(Jwt jwt) {
                 Set<String> ruoli = new HashSet<>();
 
-                // 1. Estrazione Realm Roles
                 Map<String, Object> realmAccess = (Map<String, Object>) jwt.getClaims().get("realm_access");
                 if (realmAccess != null && realmAccess.containsKey("roles")) {
                     ruoli.addAll((List<String>) realmAccess.get("roles"));
                 }
 
-                // 2. Estrazione Client Roles
                 Map<String, Object> resourceAccess = (Map<String, Object>) jwt.getClaims().get("resource_access");
                 if (resourceAccess != null && resourceAccess.containsKey(resourceClientId)) {
                     Map<String, Object> clientResource = (Map<String, Object>) resourceAccess.get(resourceClientId);
@@ -158,7 +152,6 @@ public class SecurityConfig {
                     }
                 }
 
-                // 3. Mapping dei ruoli con prefisso standard ROLE_
                 return ruoli.stream()
                         .map(r -> {
                             String roleName = r.toUpperCase();

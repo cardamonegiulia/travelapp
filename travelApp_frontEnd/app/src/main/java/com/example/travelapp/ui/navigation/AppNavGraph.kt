@@ -154,24 +154,6 @@ fun AppNavGraph(
         rememberCoroutineScope()
 
 
-    /*
-     * ============================================================
-     * BOOKING VIEWMODEL CONDIVISO
-     * ============================================================
-     *
-     * Viene condiviso da:
-     *
-     * dettaglio -> step 1 -> step 2 -> successo
-     *
-     * In questo modo manteniamo:
-     *
-     * - disponibilità/sessione scelta
-     * - date
-     * - posti disponibili
-     * - extra
-     * - partecipanti
-     * - pagamento
-     */
     val bookingViewModel: PrenotazioniViewModel =
         viewModel(
             factory =
@@ -186,40 +168,12 @@ fun AppNavGraph(
         .collectAsState()
 
 
-    /*
-     * ============================================================
-     * BOOKINGS VIEWMODEL CONDIVISO
-     * ============================================================
-     *
-     * Serve anche dopo:
-     *
-     * - una nuova prenotazione
-     * - una recensione
-     *
-     * per aggiornare immediatamente gli elenchi.
-     */
     val bookingsViewModel: BookingsViewModel =
         viewModel()
 
 
-    /*
-     * ============================================================
-     * PARTENZE ORGANIZZATORE
-     * ============================================================
-     *
-     * Condiviso fra l'elenco delle partenze e quello dei prenotati:
-     * la seconda schermata mostra in testata la partenza scelta
-     * nella prima, che quindi non va riletta dalla rete.
-     */
     val partenzeViewModel: PartenzeOrganizzatoreViewModel =
         viewModel()
-
-
-    /*
-     * ============================================================
-     * PROFILO
-     * ============================================================
-     */
 
     val profiloState by
     profiloViewModel
@@ -227,14 +181,6 @@ fun AppNavGraph(
         .collectAsState()
 
 
-    /*
-     * ============================================================
-     * LOGOUT
-     * ============================================================
-     *
-     * Usiamo GestoreSessione invece di cancellare soltanto
-     * il token, così viene rimossa l'intera sessione salvata.
-     */
     val eseguiLogout: () -> Unit = {
 
         coroutineScope.launch {
@@ -246,13 +192,6 @@ fun AppNavGraph(
             onLogout()
         }
     }
-
-
-    /*
-     * ============================================================
-     * BACK
-     * ============================================================
-     */
 
     var mostraConfermaUscita by remember {
         mutableStateOf(false)
@@ -268,24 +207,11 @@ fun AppNavGraph(
         }
     }
 
-
-    /*
-     * ============================================================
-     * TEMA
-     * ============================================================
-     */
-
     LaunchedEffect(
         profiloState.isDarkModeEnabled,
         profiloState.id
     ) {
 
-        /*
-         * Aspettiamo il profilo reale.
-         *
-         * Altrimenti il valore iniziale dello state potrebbe
-         * sovrascrivere per un istante il tema di sistema.
-         */
         if (
             profiloState.id != null
         ) {
@@ -295,13 +221,6 @@ fun AppNavGraph(
             )
         }
     }
-
-
-    /*
-     * ============================================================
-     * RUOLO
-     * ============================================================
-     */
 
     val ruoloStr =
         profiloState.ruolo
@@ -318,13 +237,6 @@ fun AppNavGraph(
         ruoloStr.contains(
             "ORGANIZZATORE"
         )
-
-
-    /*
-     * ============================================================
-     * ELEMENTI CATALOGO SELEZIONATI
-     * ============================================================
-     */
 
     var itinerarioSelezionato by remember {
         mutableStateOf<Itinerario?>(
@@ -350,19 +262,6 @@ fun AppNavGraph(
         )
     }
 
-
-    /*
-     * ============================================================
-     * RECENSIONE
-     * ============================================================
-     *
-     * Si può arrivare alla recensione:
-     *
-     * 1. dalla lista "Viaggi conclusi"
-     * 2. da una notifica
-     * 3. da "Le mie recensioni", per modificarne una gia' scritta
-     */
-
     var viaggioDaRecensire by remember {
         mutableStateOf<Prenotazione?>(
             null
@@ -380,13 +279,6 @@ fun AppNavGraph(
             null
         )
     }
-
-
-    /*
-     * ============================================================
-     * REDIRECT ADMIN / ORGANIZZATORE
-     * ============================================================
-     */
 
     LaunchedEffect(
         profiloState.ruolo
@@ -430,13 +322,6 @@ fun AppNavGraph(
         }
     }
 
-
-    /*
-     * ============================================================
-     * BOTTOM BAR
-     * ============================================================
-     */
-
     val navBackStackEntry by
     navController
         .currentBackStackEntryAsState()
@@ -466,13 +351,6 @@ fun AppNavGraph(
         )
 
 
-    /*
-     * Nascondiamo la bottom bar anche nelle schermate
-     * specifiche di Admin/Organizzatore.
-     *
-     * È utile anche durante il brevissimo intervallo
-     * in cui il ruolo potrebbe essere ancora in caricamento.
-     */
     val isCatalogAdminOrOrg =
         currentRoute in setOf(
             CatalogRoutes.ADMIN_HOME,
@@ -492,13 +370,6 @@ fun AppNavGraph(
                 !isOrganizzatore &&
                 !isBookingWizard &&
                 !isCatalogAdminOrOrg
-
-
-    /*
-     * ============================================================
-     * SCAFFOLD
-     * ============================================================
-     */
 
     Scaffold(
         modifier = modifier,
@@ -539,13 +410,6 @@ fun AppNavGraph(
                 )
         ) {
 
-
-            /*
-             * ============================================================
-             * ADMIN
-             * ============================================================
-             */
-
             composable(
                 CatalogRoutes.ADMIN_HOME
             ) {
@@ -585,13 +449,6 @@ fun AppNavGraph(
                         eseguiLogout
                 )
             }
-
-
-            /*
-             * ============================================================
-             * ORGANIZZATORE
-             * ============================================================
-             */
 
             composable(
                 CatalogRoutes
@@ -669,13 +526,6 @@ fun AppNavGraph(
                 )
             }
 
-
-            /*
-             * ============================================================
-             * PARTENZE DI UN ITINERARIO (ORGANIZZATORE)
-             * ============================================================
-             */
-
             composable(
                 CatalogRoutes
                     .PARTENZE_ITINERARIO
@@ -741,13 +591,6 @@ fun AppNavGraph(
                 )
             }
 
-
-            /*
-             * ============================================================
-             * PRENOTATI DI UNA PARTENZA (ORGANIZZATORE)
-             * ============================================================
-             */
-
             composable(
                 CatalogRoutes
                     .PRENOTATI_PARTENZA
@@ -773,13 +616,6 @@ fun AppNavGraph(
                     }
                 )
             }
-
-
-            /*
-             * ============================================================
-             * EXPLORE
-             * ============================================================
-             */
 
             composable(
                 AppDestination.Explore.route
@@ -810,13 +646,6 @@ fun AppNavGraph(
                     }
                 )
             }
-
-
-            /*
-             * ============================================================
-             * PRENOTAZIONI
-             * ============================================================
-             */
 
             composable(
                 AppDestination.Bookings.route
@@ -851,13 +680,6 @@ fun AppNavGraph(
                 )
             }
 
-
-            /*
-             * ============================================================
-             * NOTIFICHE
-             * ============================================================
-             */
-
             composable(
                 EsperienzaRoutes.NOTIFICHE
             ) {
@@ -882,13 +704,6 @@ fun AppNavGraph(
                     }
                 )
             }
-
-
-            /*
-             * ============================================================
-             * RECENSIONE
-             * ============================================================
-             */
 
             composable(
                 EsperienzaRoutes.RECENSIONE
@@ -927,10 +742,6 @@ fun AppNavGraph(
 
                         onSalvata = {
 
-                            /*
-                             * Aggiorniamo immediatamente
-                             * "Viaggi conclusi".
-                             */
                             bookingsViewModel
                                 .caricaPrenotazioni()
 
@@ -939,13 +750,6 @@ fun AppNavGraph(
                     )
                 }
             }
-
-
-            /*
-             * ============================================================
-             * LE MIE RECENSIONI
-             * ============================================================
-             */
 
             composable(
                 EsperienzaRoutes
@@ -959,10 +763,6 @@ fun AppNavGraph(
 
                     onModifica = { recensione ->
 
-                        /*
-                         * Il form riparte dalla prenotazione:
-                         * azzeriamo le altre due provenienze.
-                         */
                         recensioneDaModificare =
                             recensione
 
@@ -980,13 +780,6 @@ fun AppNavGraph(
                 )
             }
 
-
-            /*
-             * ============================================================
-             * PAGAMENTI
-             * ============================================================
-             */
-
             composable(
                 AppDestination.Payments.route
             ) {
@@ -1000,13 +793,6 @@ fun AppNavGraph(
                     }
                 )
             }
-
-
-            /*
-             * ============================================================
-             * PREFERITI
-             * ============================================================
-             */
 
             composable(
                 AppDestination.Favorites.route
@@ -1029,13 +815,6 @@ fun AppNavGraph(
                     }
                 )
             }
-
-
-            /*
-             * ============================================================
-             * PROFILO
-             * ============================================================
-             */
 
             composable(
                 AppDestination.Profile.route
@@ -1068,13 +847,6 @@ fun AppNavGraph(
                 )
             }
 
-
-            /*
-             * ============================================================
-             * CAMBIO PASSWORD
-             * ============================================================
-             */
-
             composable(
                 ProfiloRoutes
                     .CAMBIA_PASSWORD
@@ -1085,20 +857,10 @@ fun AppNavGraph(
                     onBack =
                         onBack,
 
-                    /*
-                     * Il backend invalida le sessioni.
-                     */
                     onPasswordCambiata =
                         eseguiLogout
                 )
             }
-
-
-            /*
-             * ============================================================
-             * DETTAGLIO ITINERARIO
-             * ============================================================
-             */
 
             composable(
                 CatalogRoutes
@@ -1116,10 +878,6 @@ fun AppNavGraph(
                             onBack =
                                 onBack,
 
-                            /*
-                             * DetailScreen restituisce
-                             * l'intero DTO della disponibilità.
-                             */
                             onPrenota = { disponibilita ->
 
                                 bookingViewModel
@@ -1139,10 +897,6 @@ fun AppNavGraph(
                                                 ?.toDouble()
                                                 ?: 0.0,
 
-                                        /*
-                                         * Necessario per caricare
-                                         * gli extra dal backend.
-                                         */
                                         itinerarioId =
                                             item.id,
 
@@ -1180,13 +934,6 @@ fun AppNavGraph(
                     }
             }
 
-
-            /*
-             * ============================================================
-             * DETTAGLIO ATTIVITÀ
-             * ============================================================
-             */
-
             composable(
                 CatalogRoutes
                     .DETTAGLIO_ATTIVITA
@@ -1203,10 +950,6 @@ fun AppNavGraph(
                             onBack =
                                 onBack,
 
-                            /*
-                             * DetailScreen restituisce
-                             * l'intero DTO della sessione.
-                             */
                             onPrenota = { sessione ->
 
                                 bookingViewModel
@@ -1224,11 +967,6 @@ fun AppNavGraph(
                                                 ?.toDouble()
                                                 ?: 0.0,
 
-                                        /*
-                                         * Nessun itinerario:
-                                         * le attività singole non
-                                         * caricano extra.
-                                         */
                                         itinerarioId =
                                             null,
 
@@ -1265,13 +1003,6 @@ fun AppNavGraph(
                     }
             }
 
-
-            /*
-             * ============================================================
-             * CREA ITINERARIO
-             * ============================================================
-             */
-
             composable(
                 CatalogRoutes
                     .CREA_ITINERARIO
@@ -1282,13 +1013,6 @@ fun AppNavGraph(
                         onBack
                 )
             }
-
-
-            /*
-             * ============================================================
-             * MODIFICA ITINERARIO
-             * ============================================================
-             */
 
             composable(
                 CatalogRoutes
@@ -1305,13 +1029,6 @@ fun AppNavGraph(
                 )
             }
 
-
-            /*
-             * ============================================================
-             * CREA ATTIVITÀ
-             * ============================================================
-             */
-
             composable(
                 CatalogRoutes
                     .CREA_ATTIVITA
@@ -1322,13 +1039,6 @@ fun AppNavGraph(
                         onBack
                 )
             }
-
-
-            /*
-             * ============================================================
-             * MODIFICA ATTIVITÀ
-             * ============================================================
-             */
 
             composable(
                 CatalogRoutes
@@ -1344,13 +1054,6 @@ fun AppNavGraph(
                         onBack
                 )
             }
-
-
-            /*
-             * ============================================================
-             * OFFERTE ORGANIZZATORE
-             * ============================================================
-             */
 
             composable(
                 CatalogRoutes
@@ -1389,13 +1092,6 @@ fun AppNavGraph(
                 )
             }
 
-
-            /*
-             * ============================================================
-             * OFFERTE ADMIN
-             * ============================================================
-             */
-
             composable(
                 CatalogRoutes.OFFERTE_ADMIN
             ) {
@@ -1410,13 +1106,6 @@ fun AppNavGraph(
                 )
             }
 
-
-            /*
-             * ============================================================
-             * GESTIONE UTENTI ADMIN
-             * ============================================================
-             */
-
             composable(
                 CatalogRoutes
                     .GESTIONE_UTENTI_ADMIN
@@ -1427,13 +1116,6 @@ fun AppNavGraph(
                         onBack
                 )
             }
-
-
-            /*
-             * ============================================================
-             * BOOKING GRAPH
-             * ============================================================
-             */
 
             navigation(
 
@@ -1446,13 +1128,6 @@ fun AppNavGraph(
                     "booking_graph"
 
             ) {
-
-
-                /*
-                 * ========================================================
-                 * STEP 1
-                 * ========================================================
-                 */
 
                 composable(
                     AppDestination
@@ -1479,11 +1154,6 @@ fun AppNavGraph(
                                     .route
                             ) {
 
-                                /*
-                                 * Non vogliamo creare nuovamente
-                                 * la stessa prenotazione tornando
-                                 * allo step precedente.
-                                 */
                                 popUpTo(
                                     AppDestination
                                         .BookingStep1
@@ -1505,11 +1175,6 @@ fun AppNavGraph(
                         uiState =
                             bookingState,
 
-                        /*
-                         * IMPORTANTE:
-                         *
-                         * non deve tornare emptyList().
-                         */
                         extraDisponibili =
                             bookingState
                                 .extraDisponibili,
@@ -1526,9 +1191,6 @@ fun AppNavGraph(
                             bookingViewModel::
                             toggleExtra,
 
-                        /*
-                         * Gli ID sono già dentro BookingUiState.
-                         */
                         onContinua = {
 
                             bookingViewModel
@@ -1536,13 +1198,6 @@ fun AppNavGraph(
                         }
                     )
                 }
-
-
-                /*
-                 * ========================================================
-                 * STEP 2
-                 * ========================================================
-                 */
 
                 composable(
                     AppDestination
@@ -1601,13 +1256,6 @@ fun AppNavGraph(
                     )
                 }
 
-
-                /*
-                 * ========================================================
-                 * SUCCESSO
-                 * ========================================================
-                 */
-
                 composable(
                     AppDestination
                         .BookingSuccess
@@ -1625,10 +1273,6 @@ fun AppNavGraph(
                             bookingViewModel
                                 .resetBooking()
 
-                            /*
-                             * La prenotazione appena creata
-                             * deve apparire subito nella lista.
-                             */
                             bookingsViewModel
                                 .caricaPrenotazioni()
 
@@ -1710,13 +1354,6 @@ fun AppNavGraph(
 
 }
 
-
-/*
- * ================================================================
- * FAVORITES
- * ================================================================
- */
-
 @Composable
 private fun FavoritesRoute(
     onBack: () -> Unit,
@@ -1785,13 +1422,6 @@ private fun FavoritesRoute(
     )
 }
 
-
-/*
- * ================================================================
- * PROFILE
- * ================================================================
- */
-
 @Composable
 private fun ProfileRoute(
     onBack: () -> Unit,
@@ -1836,13 +1466,6 @@ private fun ProfileRoute(
         onBack =
             onBack,
 
-
-        /*
-         * ============================================================
-         * VIAGGIATORE
-         * ============================================================
-         */
-
         onBookingsClick = {
 
             onNavigateTo(
@@ -1872,13 +1495,6 @@ private fun ProfileRoute(
             )
         },
 
-
-        /*
-         * ============================================================
-         * FOTO
-         * ============================================================
-         */
-
         onAddProfilePhoto = {
 
             photoPicker.launch(
@@ -1895,13 +1511,6 @@ private fun ProfileRoute(
         onPhotoMessageShown =
             viewModel::
             messaggioMostrato,
-
-
-        /*
-         * ============================================================
-         * ORGANIZZATORE
-         * ============================================================
-         */
 
         onCreaItinerarioClick = {
 
@@ -1927,13 +1536,6 @@ private fun ProfileRoute(
             )
         },
 
-
-        /*
-         * ============================================================
-         * ADMIN
-         * ============================================================
-         */
-
         onGestioneOfferteAdminClick = {
 
             onNavigateToRoute(
@@ -1949,13 +1551,6 @@ private fun ProfileRoute(
                     .GESTIONE_UTENTI_ADMIN
             )
         },
-
-
-        /*
-         * ============================================================
-         * IMPOSTAZIONI
-         * ============================================================
-         */
 
         onToggleDarkMode =
             viewModel::
@@ -1973,13 +1568,6 @@ private fun ProfileRoute(
             onLogout
     )
 }
-
-
-/*
- * ================================================================
- * BOOKINGS
- * ================================================================
- */
 
 @Composable
 private fun BookingsRoute(
@@ -1999,10 +1587,6 @@ private fun BookingsRoute(
             .prenotazioneSelezionata
 
 
-    /*
-     * Tornando da notifiche o recensioni
-     * aggiorniamo il contatore.
-     */
     LaunchedEffect(Unit) {
 
         viewModel
@@ -2091,13 +1675,6 @@ private fun BookingsRoute(
     }
 }
 
-
-/*
- * ================================================================
- * NOTIFICHE
- * ================================================================
- */
-
 @Composable
 private fun NotificheRoute(
     onBack: () -> Unit,
@@ -2121,10 +1698,6 @@ private fun NotificheRoute(
 
         onApriRecensione = { notifica ->
 
-            /*
-             * Aprire la notifica equivale
-             * a segnarla come letta.
-             */
             viewModel
                 .segnaLetta(
                     notifica
@@ -2139,13 +1712,6 @@ private fun NotificheRoute(
             viewModel::carica
     )
 }
-
-
-/*
- * ================================================================
- * RECENSIONE
- * ================================================================
- */
 
 @Composable
 private fun RecensioneRoute(
@@ -2209,19 +1775,6 @@ private fun RecensioneRoute(
             viewModel::salva
     )
 }
-
-
-/*
- * ================================================================
- * PAYMENTS
- * ================================================================
- */
-
-/*
- * ================================================================
- * LE MIE RECENSIONI
- * ================================================================
- */
 
 @Composable
 private fun MieRecensioniRoute(

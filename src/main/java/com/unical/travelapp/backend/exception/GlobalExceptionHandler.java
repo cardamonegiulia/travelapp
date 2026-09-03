@@ -19,9 +19,6 @@ import com.unical.travelapp.backend.identity.exception.RegistrazioneNonDisponibi
 import com.unical.travelapp.backend.identity.exception.RiautenticazioneRichiestaException;
 import com.unical.travelapp.backend.identity.exception.UtenteGiaEsistenteException;
 import com.unical.travelapp.backend.identity.exception.UtenteNonTrovatoException;
-// Jackson 3 (tools.jackson): e' quello che Spring Boot 4 usa per (de)serializzare le
-// richieste HTTP. Sul classpath c'e' anche Jackson 2 (com.fasterxml) tirato dentro da altre
-// dipendenze: le sue eccezioni non verrebbero mai lanciate qui.
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.InvalidFormatException;
 import jakarta.persistence.EntityNotFoundException;
@@ -58,9 +55,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-// Risposte di errore in formato RFC 7807 (ProblemDetail): niente stack trace, niente
-// messaggi di eccezione grezzi o dettagli infrastrutturali (nomi tabella/colonna/constraint)
-// nel body. Lo stack trace completo va solo nei log server, correlabile via traceId.
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -72,23 +66,16 @@ public class GlobalExceptionHandler {
         this.auditLogger = auditLogger;
     }
 
-    // 409 - Utente già esistente (email o keycloakId duplicati)
     @ExceptionHandler(UtenteGiaEsistenteException.class)
     public ResponseEntity<ProblemDetail> handleUtenteGiaEsistente(UtenteGiaEsistenteException ex, HttpServletRequest request) {
         return respond(HttpStatus.CONFLICT, "Risorsa già esistente", ex.getMessage(), "risorsa-esistente", request);
     }
 
-    // 404 - Utente non trovato
     @ExceptionHandler(UtenteNonTrovatoException.class)
     public ResponseEntity<ProblemDetail> handleUtenteNonTrovato(UtenteNonTrovatoException ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
     }
 
-    // 503 - Registrazione non completabile per un problema dell'IdP (Keycloak irraggiungibile,
-    // service account non autorizzato, ruolo realm mancante). Copre anche
-    // RuoloRealmNonConfiguratoException, che ne e' sottoclasse.
-    // Il messaggio dell'eccezione resta nei log: nel body finirebbero dettagli sulla
-    // configurazione del realm, utili solo a chi sta sondando il servizio.
     @ExceptionHandler(RegistrazioneNonDisponibileException.class)
     public ResponseEntity<ProblemDetail> handleRegistrazioneNonDisponibile(RegistrazioneNonDisponibileException ex, HttpServletRequest request) {
         log.error("Registrazione non disponibile su {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
@@ -96,9 +83,6 @@ public class GlobalExceptionHandler {
                 "Registrazione temporaneamente non disponibile, riprovare più tardi", "servizio-non-disponibile", request);
     }
 
-    // 503 - Un'altra operazione che scrive su Keycloak (cancellazione, aggiornamento del
-    // profilo) non e' andata a buon fine. Handler distinto da quello della registrazione,
-    // piu' specifico, che continua a vincere sulle proprie eccezioni.
     @ExceptionHandler(IdentityProviderNonDisponibileException.class)
     public ResponseEntity<ProblemDetail> handleIdentityProviderNonDisponibile(IdentityProviderNonDisponibileException ex, HttpServletRequest request) {
         log.error("Operazione sull'identity provider fallita su {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
@@ -106,17 +90,11 @@ public class GlobalExceptionHandler {
                 "Operazione temporaneamente non disponibile, riprovare più tardi", "servizio-non-disponibile", request);
     }
 
-    // 400 - Password rifiutata dalla policy del realm Keycloak
     @ExceptionHandler(PasswordNonConformeException.class)
     public ResponseEntity<ProblemDetail> handlePasswordNonConforme(PasswordNonConformeException ex, HttpServletRequest request) {
         return respond(HttpStatus.BAD_REQUEST, "Dati non validi", ex.getMessage(), "password-non-conforme", request);
     }
 
-    // 401 - Token valido ma autenticazione troppo vecchia per un'operazione sensibile.
-    // L'header WWW-Authenticate segue RFC 9470: dice al client che deve rifare il login
-    // (con max_age), non che il token e' scaduto. Senza, un interceptor che tratta ogni 401
-    // come "rinnova col refresh token" entrerebbe in un ciclo, perche' il refresh non
-    // aggiorna auth_time.
     @ExceptionHandler(RiautenticazioneRichiestaException.class)
     public ResponseEntity<ProblemDetail> handleRiautenticazioneRichiesta(RiautenticazioneRichiestaException ex, HttpServletRequest request) {
         auditLogger.failure("RIAUTENTICAZIONE_RICHIESTA", "endpoint",
@@ -135,7 +113,6 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
 
-    // 400 - Validazioni fallite (@NotBlank, @Email, @Size sul DTO)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ProblemDetail> handleValidazione(MethodArgumentNotValidException ex, HttpServletRequest request) {
         Map<String, String> erroriCampi = new HashMap<>();
@@ -149,43 +126,36 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
     }
 
-    // 400 - Richiesta prenotazione non valida
     @ExceptionHandler(RichiestaPrenotazioneNonValidaException.class)
     public ResponseEntity<ProblemDetail> handleRichiestaPrenotazioneNonValida(RichiestaPrenotazioneNonValidaException ex, HttpServletRequest request) {
         return respond(HttpStatus.BAD_REQUEST, "Richiesta non valida", ex.getMessage(), "richiesta-non-valida", request);
     }
 
-    // 400 - Attività extra non valida
     @ExceptionHandler(AttivitaExtraNonValidaException.class)
     public ResponseEntity<ProblemDetail> handleAttivitaExtraNonValida(AttivitaExtraNonValidaException ex, HttpServletRequest request) {
         return respond(HttpStatus.BAD_REQUEST, "Richiesta non valida", ex.getMessage(), "attivita-extra-non-valida", request);
     }
 
-    // 404 - Disponibilità o sessione non trovata
     @ExceptionHandler(DisponibilitaNonTrovataException.class)
     public ResponseEntity<ProblemDetail> handleDisponibilitaNonTrovata(DisponibilitaNonTrovataException ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
     }
 
-    // 404 - Prenotazione non trovata
     @ExceptionHandler(PrenotazioneNonTrovataException.class)
     public ResponseEntity<ProblemDetail> handlePrenotazioneNonTrovata(PrenotazioneNonTrovataException ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
     }
 
-    // 404 - Pagamento non trovato
     @ExceptionHandler(PagamentoNonTrovatoException.class)
     public ResponseEntity<ProblemDetail> handlePagamentoNonTrovato(PagamentoNonTrovatoException ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
     }
 
-    // 409 - Posti insufficienti
     @ExceptionHandler(PostiInsufficientiException.class)
     public ResponseEntity<ProblemDetail> handlePostiInsufficienti(PostiInsufficientiException ex, HttpServletRequest request) {
         return respond(HttpStatus.CONFLICT, "Conflitto", ex.getMessage(), "posti-insufficienti", request);
     }
 
-    // 409 - Stato prenotazione/pagamento non valido
     @ExceptionHandler({
             StatoPrenotazioneNonValidoException.class,
             StatoPagamentoNonValidoException.class,
@@ -204,13 +174,8 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // 400 - JSON malformato o con campi non previsti dal DTO (es. FAIL_ON_UNKNOWN_PROPERTIES)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ProblemDetail> handleMessaggioNonLeggibile(HttpMessageNotReadableException ex, HttpServletRequest request) {
-        // Caso particolare: valore non ammesso per un campo enum (es. "ruolo":"ADMIN" in
-        // registrazione). Elencare i valori validi aiuta il chiamante e non espone nulla che
-        // non sia gia' nel contratto OpenAPI. Il valore rifiutato NON viene mai rimandato
-        // indietro: e' testo arbitrario del chiamante e non deve finire in una risposta.
         if (ex.getCause() instanceof InvalidFormatException causa
                 && causa.getTargetType() != null && causa.getTargetType().isEnum()) {
 
@@ -235,13 +200,11 @@ public class GlobalExceptionHandler {
                 "Payload JSON non valido o con campi non previsti", "payload-non-valido", request);
     }
 
-    // 404 - Riferimento a un'entità JPA non più presente (es. lazy reference risolta dopo cancellazione)
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ProblemDetail> handleEntityNotFound(EntityNotFoundException ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", "La risorsa richiesta non esiste", "risorsa-non-trovata", request);
     }
 
-    // 409 - Vincolo di integrità dei dati violato (es. unique/foreign key): mai esporre dettagli DB nel body
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ProblemDetail> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
         log.warn("Violazione di integrità dei dati su {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
@@ -249,19 +212,16 @@ public class GlobalExceptionHandler {
                 "La richiesta viola un vincolo di integrità dei dati", "conflitto-dati", request);
     }
 
-    // 409 - Stato applicativo incoerente con l'operazione richiesta (es. recensione già presente)
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ProblemDetail> handleIllegalState(IllegalStateException ex, HttpServletRequest request) {
         return respond(HttpStatus.CONFLICT, "Conflitto", ex.getMessage(), "stato-non-valido", request);
     }
 
-    // 400 - Argomenti applicativi non validi (validazioni manuali nei service)
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ProblemDetail> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
         return respond(HttpStatus.BAD_REQUEST, "Richiesta non valida", ex.getMessage(), "richiesta-non-valida", request);
     }
 
-    // 403 - Autenticato ma senza i permessi necessari (ruolo insufficiente o risorsa non propria)
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ProblemDetail> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
         log.warn("Accesso negato su {} {}", request.getMethod(), request.getRequestURI());
@@ -270,7 +230,6 @@ public class GlobalExceptionHandler {
                 "Non hai i permessi necessari per eseguire questa operazione", "accesso-negato", request);
     }
 
-    // 401 - Autenticazione mancante o non valida
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ProblemDetail> handleAuthentication(AuthenticationException ex, HttpServletRequest request) {
         auditLogger.failure("AUTENTICAZIONE_FALLITA", "endpoint", request.getMethod() + " " + request.getRequestURI(), ex.getMessage());
@@ -278,42 +237,30 @@ public class GlobalExceptionHandler {
                 "È necessario un token valido per accedere a questa risorsa", "non-autenticato", request);
     }
 
-    // --- Errori del client rilevati dal framework -------------------------------------
-    // Senza questi handler l'@ExceptionHandler(Exception.class) qui sotto li assorbirebbe
-    // tutti, restituendo 500 per quelli che sono a tutti gli effetti errori 4xx del
-    // chiamante. Oltre a essere una risposta sbagliata, ogni errore banale finirebbe nei
-    // log come stack trace di livello ERROR: rumore che un chiamante puo' generare a
-    // volonta' e che rende inutilizzabile qualsiasi allarme sui 5xx.
-
-    // 405 - Verbo HTTP non ammesso sulla rotta
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ProblemDetail> handleMetodoNonAmmesso(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
         return respond(HttpStatus.METHOD_NOT_ALLOWED, "Metodo non consentito",
                 "Il metodo HTTP usato non e' ammesso su questa risorsa", "metodo-non-consentito", request);
     }
 
-    // 415 - Content-Type della richiesta non supportato
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<ProblemDetail> handleTipoNonSupportato(HttpMediaTypeNotSupportedException ex, HttpServletRequest request) {
         return respond(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Formato non supportato",
                 "Il formato della richiesta non e' supportato: usare application/json", "formato-non-supportato", request);
     }
 
-    // 406 - Nessuna rappresentazione compatibile con l'header Accept
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
     public ResponseEntity<ProblemDetail> handleTipoNonAccettabile(HttpMediaTypeNotAcceptableException ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_ACCEPTABLE, "Formato non accettabile",
                 "Nessuna rappresentazione disponibile per i formati richiesti", "formato-non-accettabile", request);
     }
 
-    // 404 - Nessun handler mappato sulla rotta richiesta
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ProblemDetail> handleRottaNonMappata(NoResourceFoundException ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata",
                 "La risorsa richiesta non esiste", "risorsa-non-trovata", request);
     }
 
-    // 413 - Upload oltre il limite configurato (spring.servlet.multipart.max-*-size)
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ProblemDetail> handleUploadTroppoGrande(MaxUploadSizeExceededException ex, HttpServletRequest request) {
         log.warn("Upload oltre il limite consentito su {} {}", request.getMethod(), request.getRequestURI());
@@ -321,10 +268,6 @@ public class GlobalExceptionHandler {
                 "Il contenuto inviato supera la dimensione massima consentita", "contenuto-troppo-grande", request);
     }
 
-    // 400 - Vincoli violati sui parametri del metodo di controller (@Min, @Size, ... su
-    // @RequestParam/@PathVariable). E' l'equivalente di handleValidazione per cio' che non
-    // arriva nel corpo: senza questo handler finirebbe nell'Exception generico, cioe' un 500
-    // per un errore del chiamante.
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ResponseEntity<ProblemDetail> handleValidazioneParametri(HandlerMethodValidationException ex, HttpServletRequest request) {
         Map<String, String> errori = new HashMap<>();
@@ -340,23 +283,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
     }
 
-    // 400 - Parametro di richiesta assente o non convertibile nel tipo atteso
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
     public ResponseEntity<ProblemDetail> handleParametroNonValido(Exception ex, HttpServletRequest request) {
         return respond(HttpStatus.BAD_REQUEST, "Richiesta non valida",
                 "Uno o piu' parametri della richiesta sono assenti o non validi", "parametro-non-valido", request);
     }
 
-    // 400 - Ordinamento su un campo inesistente (?sort=campoQualsiasi): e' un errore del
-    // chiamante, e il messaggio di Spring Data conterrebbe nomi di entita' e proprieta'
     @ExceptionHandler(PropertyReferenceException.class)
     public ResponseEntity<ProblemDetail> handleOrdinamentoNonValido(PropertyReferenceException ex, HttpServletRequest request) {
         return respond(HttpStatus.BAD_REQUEST, "Richiesta non valida",
                 "Il criterio di ordinamento richiesto non e' valido", "ordinamento-non-valido", request);
     }
 
-    // 500 - Fallback generico per qualsiasi altra eccezione non gestita: nessun dettaglio grezzo,
-    // lo stack trace completo finisce SOLO nei log (correlabile con traceId)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleGenerico(Exception ex, HttpServletRequest request) {
         log.error("Errore interno non gestito su {} {}", request.getMethod(), request.getRequestURI(), ex);
@@ -369,7 +307,6 @@ public class GlobalExceptionHandler {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
     }
 
-    // 404 - Notifica inesistente oppure di un altro utente: stessa risposta nei due casi
     @ExceptionHandler(NotificaNonTrovata.class)
     public ResponseEntity<ProblemDetail> handleNotificaNonTrovata(NotificaNonTrovata ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
@@ -380,8 +317,6 @@ public class GlobalExceptionHandler {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
     }
 
-    // 404 - Lista di preferiti inesistente, oppure esistente ma non accessibile a chi la
-    // chiede: i due casi rispondono uguale apposta, vedi ListaPreferitiNonTrovata.
     @ExceptionHandler(ListaPreferitiNonTrovata.class)
     public ResponseEntity<ProblemDetail> handleListaPreferitiNonTrovata(ListaPreferitiNonTrovata ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
@@ -402,9 +337,6 @@ public class GlobalExceptionHandler {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
     }
 
-    // 400 - Upload rifiutato dai controlli sul file (dimensione, estensione, tipo reale del
-    // contenuto). Il messaggio del service e' scritto per essere mostrato all'utente e non
-    // rivela nulla dello storage.
     @ExceptionHandler(ImmagineNonValida.class)
     public ResponseEntity<ProblemDetail> handleImmagineNonValida(ImmagineNonValida ex, HttpServletRequest request) {
         auditLogger.failure("IMMAGINE_RIFIUTATA", "endpoint",
@@ -412,14 +344,11 @@ public class GlobalExceptionHandler {
         return respond(HttpStatus.BAD_REQUEST, "File non valido", ex.getMessage(), "immagine-non-valida", request);
     }
 
-    // 404 - Immagine inesistente, oppure esistente ma non del chiamante (vedi ImmagineService)
     @ExceptionHandler(ImmagineNonTrovata.class)
     public ResponseEntity<ProblemDetail> handleImmagineNonTrovata(ImmagineNonTrovata ex, HttpServletRequest request) {
         return respond(HttpStatus.NOT_FOUND, "Risorsa non trovata", ex.getMessage(), "risorsa-non-trovata", request);
     }
 
-    // 500 - Storage non disponibile (disco pieno, permessi, cartella non scrivibile). Il
-    // motivo reale resta nei log: nel body finirebbero percorsi del filesystem del server.
     @ExceptionHandler(ArchiviazioneImmagineFallita.class)
     public ResponseEntity<ProblemDetail> handleArchiviazioneFallita(ArchiviazioneImmagineFallita ex, HttpServletRequest request) {
         log.error("Archiviazione immagine fallita su {} {}", request.getMethod(), request.getRequestURI(), ex);
@@ -439,7 +368,6 @@ public class GlobalExceptionHandler {
         problemDetail.setProperty("traceId", MDC.get(CorrelationIdFilter.MDC_KEY));
         return problemDetail;
     }
-    // 409 - Conflitto di concorrenza sulla disponibilità dei posti
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<ProblemDetail> handleOptimisticLock(
             ObjectOptimisticLockingFailureException ex,

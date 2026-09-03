@@ -26,16 +26,6 @@ public class PrenotazioneMapper {
         );
     }
 
-    /**
-     * @param recensioneId id della recensione già scritta
-     *                     su questa prenotazione, oppure null.
-     *
-     *                     Viene passato dall'esterno così,
-     *                     quando si costruisce una pagina,
-     *                     le recensioni possono essere recuperate
-     *                     tutte insieme evitando una query
-     *                     per ogni prenotazione.
-     */
     public PrenotazioneResponseDto toResponseDto(
             Prenotazione prenotazione,
             Pagamento pagamento,
@@ -47,12 +37,6 @@ public class PrenotazioneMapper {
         String luogo;
 
         Long itinerarioId = null;
-
-        /*
-         * ============================================================
-         * ITINERARIO
-         * ============================================================
-         */
 
         if (
                 prenotazione.getDisponibilitaItinerario()
@@ -78,12 +62,6 @@ public class PrenotazioneMapper {
                     itinerario.getId();
         }
 
-        /*
-         * ============================================================
-         * ATTIVITÀ SINGOLA
-         * ============================================================
-         */
-
         else if (
                 prenotazione
                         .getSessioneSingolaAttivita()
@@ -106,11 +84,6 @@ public class PrenotazioneMapper {
                             .getLuogo();
         }
 
-        /*
-         * Una prenotazione deve sempre riferirsi
-         * esattamente a un itinerario oppure a una
-         * sessione di attività singola.
-         */
         else {
 
             throw new IllegalStateException(
@@ -119,23 +92,11 @@ public class PrenotazioneMapper {
             );
         }
 
-        /*
-         * Determinato dal backend.
-         *
-         * Il frontend non deve ricalcolare se
-         * un viaggio è concluso usando le proprie date.
-         */
         boolean conclusa =
                 RecensioneService.viaggioConcluso(
                         prenotazione,
                         LocalDateTime.now()
                 );
-
-        /*
-         * ============================================================
-         * RESPONSE DTO
-         * ============================================================
-         */
 
         return PrenotazioneResponseDto
                 .builder()
@@ -224,18 +185,10 @@ public class PrenotazioneMapper {
                         luogo
                 )
 
-                /*
-                 * Presente solo per prenotazioni
-                 * relative a un itinerario.
-                 */
                 .itinerarioId(
                         itinerarioId
                 )
 
-                /*
-                 * Date del viaggio/sessione,
-                 * NON data di creazione prenotazione.
-                 */
                 .dataInizioViaggio(
                         dataInizio(
                                 prenotazione
@@ -249,20 +202,10 @@ public class PrenotazioneMapper {
                                 )
                 )
 
-                /*
-                 * Viaggio concluso.
-                 */
                 .conclusa(
                         conclusa
                 )
 
-                /*
-                 * Una recensione può essere creata solo se:
-                 *
-                 * - il viaggio è concluso
-                 * - è una prenotazione di itinerario
-                 * - non esiste già una recensione
-                 */
                 .recensibile(
                         conclusa &&
                                 itinerarioId != null &&
@@ -275,12 +218,6 @@ public class PrenotazioneMapper {
 
                 .build();
     }
-
-    /*
-     * ============================================================
-     * PAGINA PRENOTAZIONI
-     * ============================================================
-     */
 
     public Page<PrenotazioneResponseDto> toResponseDtoPage(
             Page<Prenotazione> prenotazioni,
@@ -313,12 +250,6 @@ public class PrenotazioneMapper {
                         )
         );
     }
-
-    /*
-     * ============================================================
-     * DATA INIZIO VIAGGIO
-     * ============================================================
-     */
 
     private LocalDateTime dataInizio(
             Prenotazione prenotazione

@@ -15,16 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 1 - deny-by-default.
- *
- * <p>Senza token nessuna rotta /api/** deve rispondere 200: la catena deve restituire 401
- * (autenticazione mancante), non 403 e soprattutto non il contenuto. Qualunque rotta non
- * mappata esplicitamente nella SecurityConfig deve essere negata.
- *
- * <p>Se sparisse {@code .anyRequest().denyAll()} o {@code .requestMatchers("/api/**").authenticated()}
- * questi test diventerebbero rossi.
- */
 class DenyByDefaultSecurityTest extends SecurityIntegrationTestBase {
 
     @ParameterizedTest(name = "{0} {1} senza token -> 401")
@@ -95,15 +85,12 @@ class DenyByDefaultSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void ilPathTraversalNellaUrlVieneRifiutatoPrimaDiArrivareAlControllore() throws Exception {
-        // StrictHttpFirewall di Spring Security blocca i segmenti "../" con 400,
-        // senza normalizzare la URL e senza raggiungere alcun handler
         mockMvc.perform(richiesta("GET", "/api/utenti/../../internal"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void unaRottaNonMappataFuoriDaApiEnegataAncheConTokenValido() throws Exception {
-        // .anyRequest().denyAll(): nemmeno un ADMIN autenticato passa su una rotta non prevista
         mockMvc.perform(richiesta("GET", "/internal/qualcosa")
                         .with(TestJwt.conRuoliRealm(SUB_ADMIN, "ADMIN")))
                 .andExpect(status().isForbidden());

@@ -23,10 +23,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Il periodo del viaggio (data di inizio e data di fine) sostituisce la durata inserita a mano:
- * e' il server a ricavare i giorni dalle due date e a registrare la disponibilita' corrispondente.
- */
 class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
 
     private Utente organizzatore;
@@ -74,7 +70,6 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload(inizio.toString(), fine.toString())))
                 .andExpect(status().isOk())
-                // estremi inclusi: dal 10 al 14 giorno sono 5 giorni di viaggio
                 .andExpect(jsonPath("$.durataGiorni").value(5))
                 .andExpect(jsonPath("$.dataInizio").value(inizio.toString()))
                 .andExpect(jsonPath("$.dataFine").value(fine.toString()))
@@ -173,14 +168,11 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         assertThat(disponibilitaRepository.findByItinerario_Id(idItinerario)).isEmpty();
     }
 
-    // Una partenza pubblicata non si sposta: chi ha prenotato si e' impegnato su quelle
-    // date. Il periodo inviato con la modifica e' quindi una partenza in piu'.
     @Test
     void laModificaAggiungeUnaPartenzaSenzaToccareQuellaGiaPubblicata() throws Exception {
         LocalDate inizio = LocalDate.now().plusDays(10);
         long idItinerario = creaItinerarioConPeriodo(inizio, inizio.plusDays(4), null);
 
-        // simuliamo delle prenotazioni gia' incassate sulla disponibilita' creata
         DisponibilitaItinerario periodo = disponibilitaRepository.findByItinerario_Id(idItinerario).get(0);
         periodo.setPostiDisponibili(6);
         disponibilitaRepository.save(periodo);
@@ -193,7 +185,6 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload(nuovoInizio.toString(), nuovaFine.toString())))
                 .andExpect(status().isOk())
-                // in bacheca resta la partenza piu' vicina, che e' ancora quella originale
                 .andExpect(jsonPath("$.dataInizio").value(inizio.toString()));
 
         assertThat(disponibilitaRepository.findByItinerario_Id(idItinerario))
@@ -217,8 +208,6 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
                 });
     }
 
-    // Rimandare lo stesso periodo (il caso di chi salva il form senza toccare le date) non
-    // deve lasciare una partenza doppia.
     @Test
     void unPeriodoUgualeAUnoGiaPresenteNonCreaUnDoppione() throws Exception {
         LocalDate inizio = LocalDate.now().plusDays(10);
@@ -260,8 +249,6 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
                         assertThat(periodo.getDataInizio().toLocalDate()).isEqualTo(inizio));
     }
 
-    // --- termine per le prenotazioni ---------------------------------------------------
-
     @Test
     void ilTermineDiPrenotazioneVieneSalvatoEdEsposto() throws Exception {
         LocalDate inizio = LocalDate.now().plusDays(30);
@@ -288,7 +275,6 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
     void ilTermineNonPuoSuperareLaPartenzaNeStareNelPassato() throws Exception {
         LocalDate inizio = LocalDate.now().plusDays(10);
 
-        // termine dopo la partenza
         mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -296,7 +282,6 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
                                 inizio.plusDays(1).toString())))
                 .andExpect(status().isBadRequest());
 
-        // termine gia' scaduto
         mockMvc.perform(post("/api/itinerari")
                         .with(TestJwt.conRuoliRealm(SUB_ORGANIZZATORE, "ORGANIZZATORE"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -320,9 +305,6 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         assertThat(itinerarioRepository.findAll()).isEmpty();
     }
 
-    // Anche il termine per prenotare fa parte di una partenza pubblicata: rimandare lo
-    // stesso periodo senza termine non lo cancella. Per cambiarlo si elimina la partenza e
-    // se ne aggiunge un'altra.
     @Test
     void ilTermineDiUnaPartenzaGiaPubblicataNonCambia() throws Exception {
         LocalDate inizio = LocalDate.now().plusDays(30);
@@ -348,7 +330,6 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         LocalDate inizio = LocalDate.now().plusDays(30);
         long idItinerario = creaItinerarioConPeriodo(inizio, inizio.plusDays(3), inizio.minusDays(5));
 
-        // il termine scade domani: nessun problema
         DisponibilitaItinerario periodo = disponibilitaRepository.findByItinerario_Id(idItinerario).get(0);
         utente(SUB_UTENTE_A, Ruolo.VIAGGIATORE);
 
@@ -359,8 +340,6 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
                                 + ",\"numeroPartecipanti\":2}"))
                 .andExpect(status().isCreated());
 
-        // ora il termine e' passato: la stessa richiesta non deve piu' essere accettata
-        // (rileggiamo la riga: la prenotazione ne ha gia' cambiato posti e versione)
         DisponibilitaItinerario dopoPrenotazione =
                 disponibilitaRepository.findById(periodo.getId()).orElseThrow();
         dopoPrenotazione.setDataLimitePrenotazione(LocalDateTime.now().minusMinutes(1));
@@ -384,7 +363,6 @@ class PeriodoItinerarioTest extends SecurityIntegrationTestBase {
         long idItinerario = creaItinerarioConPeriodo(inizio, inizio.plusDays(3), null);
 
         DisponibilitaItinerario periodo = disponibilitaRepository.findByItinerario_Id(idItinerario).get(0);
-        // la partenza e' gia' avvenuta e nessun termine e' stato fissato
         periodo.setDataInizio(LocalDateTime.now().minusDays(1));
         disponibilitaRepository.save(periodo);
 

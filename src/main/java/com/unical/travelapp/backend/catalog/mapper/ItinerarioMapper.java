@@ -299,12 +299,6 @@ public class ItinerarioMapper {
                         )
                 );
     }
-    /**
-     * La partenza da mostrare in scheda: la piu' vicina fra quelle ancora prenotabili.
-     *
-     * <p>Le partenze gia' concluse non contano: se restassero, la scheda continuerebbe a
-     * esibire le date di un viaggio che nessuno puo' piu' comprare.
-     */
     private Optional<DisponibilitaItinerario> primaDisponibilita(
             Itinerario itinerario
     ) {

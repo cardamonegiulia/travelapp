@@ -4,14 +4,6 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-/**
- * Sorgente del datasource per i test di integrazione.
- *
- * <p>Se Docker risponde usa un Postgres reale via Testcontainers (stesso motore della
- * produzione: cosi' i test su SQL injection e integrita' dei dati sono significativi).
- * Altrimenti ricade automaticamente su H2 in modalita' PostgreSQL, in modo che la suite
- * resti eseguibile su una macchina senza Docker.
- */
 public final class TestDatabase {
 
     private static final String IMMAGINE = "postgres:16-alpine";
@@ -41,7 +33,6 @@ public final class TestDatabase {
         }
     }
 
-    /** Vero quando i test girano su Postgres reale: alcune asserzioni SQL-specifiche lo richiedono. */
     public static boolean postgresReale() {
         return DOCKER_DISPONIBILE;
     }

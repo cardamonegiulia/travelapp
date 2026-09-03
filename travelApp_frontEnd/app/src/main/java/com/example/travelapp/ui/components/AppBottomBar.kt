@@ -26,12 +26,6 @@ import com.example.travelapp.ui.theme.NavSelectedBlue
 import com.example.travelapp.ui.theme.NavUnselected
 import com.example.travelapp.ui.theme.SurfaceWhite
 
-/**
- * Bottom navigation condivisa da tutte le sezioni dell'app.
- *
- * La voce evidenziata non e' uno stato a parte: viene dedotta dal back stack,
- * cosi' la barra resta allineata anche quando la navigazione parte da altrove.
- */
 @Composable
 fun AppBottomBar(
     navController: NavController,
@@ -79,8 +73,6 @@ fun AppBottomBar(
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    // Il badge circolare è già disegnato dall'icona: l'indicatore
-                    // a pillola di Material3 va reso invisibile.
                     indicatorColor = Color.Transparent,
                     selectedIconColor = Color.White,
                     selectedTextColor = NavSelectedBlue,

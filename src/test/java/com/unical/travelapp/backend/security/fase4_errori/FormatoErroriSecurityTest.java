@@ -25,13 +25,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 
-/**
- * Fase 4 - formato RFC 7807 e assenza di leak su tutti i codici di errore.
- *
- * <p>Per ogni status raggiungibile si verifica la forma del ProblemDetail e si applica il
- * controllo anti-leak: un messaggio di eccezione grezzo, un nome di tabella o un path del
- * filesystem in un body di errore sono informazioni gratuite per chi sta sondando l'API.
- */
 class FormatoErroriSecurityTest extends SecurityIntegrationTestBase {
 
     private Utente utenteA;
@@ -49,7 +42,6 @@ class FormatoErroriSecurityTest extends SecurityIntegrationTestBase {
         disponibilita = disponibilita(itinerario, 5);
     }
 
-    /** Esegue la richiesta e verifica forma RFC 7807 + assenza di leak. */
     private JsonNode erroreConforme(MockHttpServletRequestBuilder richiesta, int statusAtteso) throws Exception {
         MvcResult risultato = mockMvc.perform(richiesta).andReturn();
 
@@ -141,7 +133,6 @@ class FormatoErroriSecurityTest extends SecurityIntegrationTestBase {
         mockMvc.perform(post("/api/prenotazioni/" + prenotazione.getId() + "/annulla")
                 .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))).andReturn();
 
-        // secondo annullamento sulla stessa prenotazione: conflitto di stato
         erroreConforme(post("/api/prenotazioni/" + prenotazione.getId() + "/annulla")
                 .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")), 409);
     }
@@ -180,8 +171,6 @@ class FormatoErroriSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void tutteLeRisposteDiErroreDellaSuitePassanoIlControlloAntiLeak() throws Exception {
-        // batteria trasversale: molte richieste sbagliate in modi diversi, una sola
-        // asserzione ripetuta - nessuna deve far trapelare dettagli interni
         List<MockHttpServletRequestBuilder> richieste = new ArrayList<>(List.of(
                 get("/api/itinerari"),
                 get("/api/utenti").with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE")),
@@ -216,8 +205,6 @@ class FormatoErroriSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void ilFallbackA500NonCambiaComportamentoInBaseAllInput() throws Exception {
-        // nessun oracolo: due input diversi che finiscono nello stesso errore interno
-        // devono produrre risposte indistinguibili a meno del traceId
         MvcResult primo = mockMvc.perform(get("/api/itinerari").param("sort", "a; DROP TABLE utenti")
                 .with(TestJwt.conRuoliRealm(SUB_UTENTE_A, "VIAGGIATORE"))).andReturn();
         MvcResult secondo = mockMvc.perform(get("/api/itinerari").param("sort", "b; SELECT 1")

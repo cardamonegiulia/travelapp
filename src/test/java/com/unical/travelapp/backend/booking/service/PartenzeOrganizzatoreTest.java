@@ -32,8 +32,6 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-// La vista con cui l'organizzatore controlla chi ha comprato le sue partenze: mostra solo
-// le partenze non ancora concluse e solo a chi ha creato l'itinerario.
 @ExtendWith(MockitoExtension.class)
 class PartenzeOrganizzatoreTest {
 
@@ -77,7 +75,6 @@ class PartenzeOrganizzatoreTest {
         return d;
     }
 
-    /** L'organizzatore e' il proprietario: la query filtrata per organizzatore lo trova. */
     private void proprietarioDellItinerario() {
         when(utenteService.isAdmin()).thenReturn(false);
         when(utenteService.getUtenteSessione()).thenReturn(utente(1L));
@@ -102,8 +99,6 @@ class PartenzeOrganizzatoreTest {
                 .containsExactly(2L);
     }
 
-    // Chi e' partito ieri e torna domani sta ancora viaggiando: l'organizzatore deve poter
-    // vedere il gruppo che ha per le mani.
     @Test
     void unaPartenzaInCorsoRestaVisibile() {
         proprietarioDellItinerario();
@@ -138,7 +133,6 @@ class PartenzeOrganizzatoreTest {
         assertThat(partenze.get(0).getNumeroPrenotazioni()).isEqualTo(2L);
         assertThat(partenze.get(0).getPartecipantiTotali()).isEqualTo(5L);
 
-        // Una partenza senza prenotazioni non compare fra i conteggi: vale zero, non null.
         assertThat(partenze.get(1).getNumeroPrenotazioni()).isZero();
         assertThat(partenze.get(1).getPartecipantiTotali()).isZero();
     }
@@ -181,8 +175,6 @@ class PartenzeOrganizzatoreTest {
         org.mockito.Mockito.verify(disponibilitaItinerarioRepository).delete(partenza);
     }
 
-    // Vale anche per una prenotazione cancellata: resta nello storico del viaggiatore e
-    // continua a puntare a questa partenza.
     @Test
     void unaPartenzaGiaPrenotataNonSiElimina() {
         proprietarioDellItinerario();

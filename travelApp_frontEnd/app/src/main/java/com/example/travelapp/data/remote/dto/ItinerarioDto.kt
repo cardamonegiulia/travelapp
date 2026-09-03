@@ -19,14 +19,9 @@ data class ItinerarioResponseDto(
     val dataLimitePrenotazione: String? = null,
     val maxPartecipanti: Int?,
     val stato: String?,
-    // Valutazione media: null quando l'itinerario non ha ancora recensioni.
     val mediaVoti: Double? = null,
     val numeroRecensioni: Long = 0,
-    // false quando non resta nessuna partenza prenotabile: l'itinerario resta comunque
-    // in bacheca, con un'etichetta che lo dice.
     val dateDisponibili: Boolean = false,
-    // Programma giorno per giorno. Assente sugli itinerari creati prima che diventasse
-    // obbligatorio: la scheda in quel caso lo dice, invece di mostrare una sezione vuota.
     val programma: List<GiornoProgrammaDto>? = null,
     val immagini: List<ImmagineDto>? = null
 ) {
@@ -49,7 +44,6 @@ data class ItinerarioResponseDto(
         programma = programma
             ?.mapIndexed { indice, giorno ->
                 GiornoProgramma(
-                    // Il progressivo lo assegna il server; se manca vale la posizione.
                     giorno = giorno.giorno ?: (indice + 1),
                     titolo = giorno.titolo,
                     descrizione = giorno.descrizione
@@ -66,10 +60,6 @@ data class ItinerarioResponseDto(
     )
 }
 
-/**
- * Una giornata del programma. Serve sia in risposta sia in richiesta: in richiesta il
- * campo [giorno] resta null, perche' la numerazione la assegna il server dalla posizione.
- */
 data class GiornoProgrammaDto(
     val giorno: Int? = null,
     val titolo: String,
@@ -81,17 +71,11 @@ data class ItinerarioRequestDto(
     val descrizione: String?,
     val destinazionePrincipale: String,
     val prezzoBase: BigDecimal,
-    // Periodo di una partenza (ISO yyyy-MM-dd): il server ne ricava la durata in giorni.
-    // In aggiornamento e' il periodo di una partenza NUOVA, non una correzione di quelle
-    // gia' pubblicate; se non se ne aggiunge nessuna resta null e si manda la durata.
     val dataInizio: String? = null,
     val dataFine: String? = null,
-    // Termine per le prenotazioni: null significa "fino alla partenza".
     val dataLimitePrenotazione: String? = null,
-    // Serve quando non si invia un periodo: il server esige di poter determinare la durata.
     val durataGiorni: Int? = null,
     val maxPartecipanti: Int,
-    // Obbligatorio come il titolo o il prezzo: almeno una giornata, in ordine.
     val programma: List<GiornoProgrammaDto>
 )
 

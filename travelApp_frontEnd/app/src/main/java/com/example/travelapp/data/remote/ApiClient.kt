@@ -18,12 +18,6 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
-    /**
-     * Indirizzo del backend iniettato a build time.
-     *
-     * In questo modo ogni sviluppatore può usare il proprio indirizzo
-     * senza modificare e committare il sorgente.
-     */
     val BASE_URL: String = BuildConfig.BACKEND_BASE_URL
 
     @Volatile
@@ -32,10 +26,6 @@ object ApiClient {
     @Volatile
     private var retrofitAutenticato: Retrofit? = null
 
-    /**
-     * Client OkHttp condiviso che aggiunge il Bearer token
-     * alle richieste verso il backend.
-     */
     @Synchronized
     fun getHttpClient(context: Context): OkHttpClient =
         httpClientAutenticato ?: OkHttpClient.Builder()
@@ -52,9 +42,6 @@ object ApiClient {
                 httpClientAutenticato = it
             }
 
-    /**
-     * Istanza Retrofit autenticata condivisa.
-     */
     @Synchronized
     fun getClientAutenticato(context: Context): Retrofit =
         retrofitAutenticato ?: Retrofit.Builder()
@@ -71,9 +58,6 @@ object ApiClient {
     fun getPreferitiApi(context: Context): PreferitiApi =
         getClientAutenticato(context).create(PreferitiApi::class.java)
 
-    /**
-     * Compatibilità con le classi che usano ancora ApiClient.getClient(context).
-     */
     fun getClient(context: Context): Retrofit =
         getClientAutenticato(context)
 
@@ -89,9 +73,6 @@ object ApiClient {
         getClientAutenticato(context)
             .create(SingolaAttivitaApi::class.java)
 
-    /**
-     * Gli endpoint /api/utenti/me identificano l'utente tramite JWT.
-     */
     fun getUtenteApi(
         context: Context
     ): UtenteApi =
@@ -122,10 +103,6 @@ object ApiClient {
         getClientAutenticato(context)
             .create(NotificaApi::class.java)
 
-    /**
-     * Trasforma in URL assoluto i link relativi
-     * restituiti dal backend.
-     */
     fun urlAssoluto(percorso: String): String {
         return if (
             percorso.startsWith("http://") ||

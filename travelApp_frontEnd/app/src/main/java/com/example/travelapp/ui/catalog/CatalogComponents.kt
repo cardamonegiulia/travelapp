@@ -354,12 +354,6 @@ fun SingolaAttivitaCard(
     }
 }
 
-/**
- * Riga "icona + testo" per le informazioni brevi sotto il titolo di una card.
- *
- * L'icona sostituisce l'emoji che c'era prima: stessa riga, ma disegno coerente con il
- * resto dell'interfaccia invece di un glifo che cambia da un dispositivo all'altro.
- */
 @Composable
 private fun DettaglioCard(
     icona: ImageVector,
@@ -385,12 +379,6 @@ private fun DettaglioCard(
     }
 }
 
-/**
- * Etichetta "Nessuna data disponibile".
- *
- * È uno stato temporaneo, non una bocciatura dell'itinerario:
- * usa i colori di avviso e non quelli di errore.
- */
 @Composable
 fun EtichettaNessunaData(
     modifier: Modifier = Modifier

@@ -18,15 +18,10 @@ public class ListaPreferitiMapper {
         this.itinerarioMapper = itinerarioMapper;
     }
 
-    /**
-     * Riepilogo per gli elenchi: niente itinerari, solo il loro numero. Una schermata con
-     * dieci liste non deve tirarsi dietro dieci gallerie di immagini.
-     */
     public ListaPreferitiDTO toRiepilogo(ListaPreferiti lista, Utente richiedente) {
         return costruisci(lista, richiedente, false);
     }
 
-    /** Dettaglio della singola lista: include gli itinerari salvati. */
     public ListaPreferitiDTO toDettaglio(ListaPreferiti lista, Utente richiedente) {
         return costruisci(lista, richiedente, true);
     }
@@ -68,8 +63,6 @@ public class ListaPreferitiMapper {
             dto.setItinerari(lista.getItinerari().stream().map(itinerarioMapper::toDTO).toList());
         }
 
-        // Solo al proprietario: a un destinatario non interessa - e non spetta - sapere con
-        // chi altro il proprietario ha condiviso la lista.
         if (proprietaria) {
             dto.setDestinatari(lista.getDestinatari().stream().map(this::toDestinatario).toList());
         }

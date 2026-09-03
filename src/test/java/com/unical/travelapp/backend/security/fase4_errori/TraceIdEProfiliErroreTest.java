@@ -14,13 +14,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-/**
- * Fase 4 - correlazione fra risposta di errore e log, e configurazione degli errori.
- *
- * <p>Il traceId e' il compromesso fra "non dire nulla al client" e "riuscire a
- * diagnosticare": nel body c'e' solo un identificativo opaco, il dettaglio resta nei log.
- * Deve pero' essere davvero ritrovabile, altrimenti e' un placebo.
- */
 class TraceIdEProfiliErroreTest extends SecurityIntegrationTestBase {
 
     @Autowired private Environment environment;

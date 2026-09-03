@@ -20,17 +20,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * Fase 1 - validazione del token vera e propria: firma, scadenza, issuer, audience.
- *
- * <p>Il post-processor {@code jwt()} usato altrove scavalca il JwtDecoder, quindi questi
- * controlli si collaudano qui: chiavi RSA generate a runtime, token firmati con Nimbus e
- * la stessa catena di validator montata da SecurityConfig
- * ({@code JwtValidators.createDefaultWithIssuer} + {@link AudienceValidator}).
- *
- * <p>Nessun Keycloak reale e nessun token vero: i test restano verdi anche con il realm
- * non ancora configurato.
- */
 class ValidazioneTokenSecurityTest {
 
     private static final String ISSUER_ATTESO = "http://travelapp-keycloak:8080/realms/travelapp";
@@ -38,7 +27,6 @@ class ValidazioneTokenSecurityTest {
 
     private final RsaTokenFactory idp = new RsaTokenFactory();
 
-    /** Ricostruisce esattamente la catena di validazione di SecurityConfig#jwtDecoder. */
     private JwtDecoder decoderComeInProduzione() {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(idp.chiavePubblica()).build();
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(List.of(
@@ -46,8 +34,6 @@ class ValidazioneTokenSecurityTest {
                 new AudienceValidator(AUDIENCE_ATTESA))));
         return decoder;
     }
-
-    // --- audience -----------------------------------------------------------
 
     @Test
     void accettaIlTokenConLAudienceAttesa() {
@@ -60,8 +46,6 @@ class ValidazioneTokenSecurityTest {
 
     @Test
     void rifiutaIlTokenConAudienceAccount() {
-        // e' esattamente lo stato attuale del realm: i token reali hanno aud=account.
-        // Finche' il mapper di audience non e' configurato, l'API deve rifiutarli.
         String token = idp.token(ISSUER_ATTESO, List.of("account"), "utente-1", Map.of());
 
         assertThatThrownBy(() -> decoderComeInProduzione().decode(token))
@@ -86,9 +70,6 @@ class ValidazioneTokenSecurityTest {
 
     @Test
     void senzaAudienceValidatorLoStessoTokenPasserebbe() {
-        // dimostra che e' proprio l'AudienceValidator a bloccare aud=account:
-        // togliendolo dalla catena il token viene accettato. Se il validator sparisse dalla
-        // configurazione, il test "rifiutaIlTokenConAudienceAccount" diventerebbe rosso.
         NimbusJwtDecoder senzaAudience = NimbusJwtDecoder.withPublicKey(idp.chiavePubblica()).build();
         senzaAudience.setJwtValidator(JwtValidators.createDefaultWithIssuer(ISSUER_ATTESO));
 
@@ -97,8 +78,6 @@ class ValidazioneTokenSecurityTest {
         assertThat(senzaAudience.decode(token).getSubject()).isEqualTo("utente-1");
     }
 
-    // --- issuer -------------------------------------------------------------
-
     @ParameterizedTest(name = "issuer {0} -> rifiutato")
     @ValueSource(strings = {
             "http://localhost:8090/realms/travelapp",
@@ -106,16 +85,11 @@ class ValidazioneTokenSecurityTest {
             "http://travelapp-keycloak:8080/realms/altro-realm"
     })
     void rifiutaIlTokenConIssuerDiverso(String issuerDelToken) {
-        // caso concreto del progetto: localhost:8090 (accesso dall'host) contro
-        // travelapp-keycloak:8080 (nome del servizio in docker compose). Se l'issuer
-        // configurato e quello del token non coincidono il token va rifiutato.
         String token = idp.token(issuerDelToken, List.of(AUDIENCE_ATTESA), "utente-1", Map.of());
 
         assertThatThrownBy(() -> decoderComeInProduzione().decode(token))
                 .isInstanceOf(JwtException.class);
     }
-
-    // --- firma e scadenza ---------------------------------------------------
 
     @Test
     void rifiutaIlTokenScaduto() {
@@ -135,7 +109,6 @@ class ValidazioneTokenSecurityTest {
 
     @Test
     void rifiutaUnTokenNonFirmato() {
-        // "alg: none": header e payload in chiaro, nessuna firma
         String none = java.util.Base64.getUrlEncoder().withoutPadding()
                 .encodeToString("{\"alg\":\"none\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8))
                 + "." + java.util.Base64.getUrlEncoder().withoutPadding()
@@ -146,8 +119,6 @@ class ValidazioneTokenSecurityTest {
         assertThatThrownBy(() -> decoderComeInProduzione().decode(none))
                 .isInstanceOf(JwtException.class);
     }
-
-    // --- coerenza fra i validator e il resto della configurazione -----------
 
     @Test
     void ilValidatorDiAudienceUsaEsattamenteLaPropertyConfigurata() {

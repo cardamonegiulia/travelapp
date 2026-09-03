@@ -19,19 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fase 1 - token JWT veri (firmati con RSA a runtime) attraverso l'intera catena di filtri.
- *
- * <p>E' il test che chiude il cerchio: gli altri test di autorizzazione usano il
- * post-processor {@code jwt()}, che scavalca il decoder. Qui il token viaggia
- * nell'header {@code Authorization: Bearer ...} e viene decodificato dal JwtDecoder di
- * produzione, che scarica davvero le chiavi pubbliche e verifica davvero firma, issuer,
- * audience e scadenza. L'unica cosa sostituita e' l'indirizzo della JWK set, che punta a
- * un server locale invece che a Keycloak (vedi {@link ServerJwkDiProva}): nessun controllo
- * viene disattivato.
- *
- * <p>Un token non valido deve produrre 401, mai 200 e mai 500.
- */
 class TokenRealeSullaCatenaSecurityTest extends SecurityIntegrationTestBase {
 
     private static final String ISSUER = TestJwt.ISSUER;
@@ -82,7 +69,6 @@ class TokenRealeSullaCatenaSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void unTokenConAudienceAccountVieneRespintoCon401() throws Exception {
-        // stato attuale del realm: i token reali hanno aud=account
         String token = idp().token(ISSUER, List.of("account"), SUB_UTENTE_A,
                 Map.of("realm_access", Map.of("roles", List.of("VIAGGIATORE"))));
 
@@ -94,8 +80,6 @@ class TokenRealeSullaCatenaSecurityTest extends SecurityIntegrationTestBase {
 
     @Test
     void unTokenSenzaClaimAudVieneRespintoCon401() throws Exception {
-        // token senza alcun claim "aud": deve essere rifiutato in modo pulito (401),
-        // non far esplodere il validator con un errore non gestito.
         String token = idp().token(ISSUER, null, SUB_UTENTE_A,
                 Map.of("realm_access", Map.of("roles", List.of("VIAGGIATORE"))));
 
