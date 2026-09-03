@@ -136,4 +136,19 @@ public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long
     List<Prenotazione> findItinerariConclusiTra(@Param("da") LocalDateTime da,
                                                 @Param("a") LocalDateTime a,
                                                 @Param("statoEscluso") StatoPrenotazione statoEscluso);
+
+    @Query("""
+        select p from Prenotazione p
+        join fetch p.disponibilitaItinerario d
+        join fetch d.itinerario
+        join fetch p.viaggiatore
+        where p.stato <> :statoEscluso
+          and d.dataFine < :primaDi
+        order by d.dataFine asc
+        """)
+    List<Prenotazione> findItinerariConclusiPrimaDi(
+            @Param("primaDi") LocalDateTime primaDi,
+            @Param("statoEscluso") StatoPrenotazione statoEscluso
+    );
 }
+
