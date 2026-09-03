@@ -7,12 +7,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.travelapp.ui.theme.AccentOrange
 import com.example.travelapp.ui.theme.SuccessGreen
 import com.example.travelapp.ui.theme.SurfaceWhite
@@ -58,15 +61,13 @@ fun PrenotazioneSuccessoScreen(
             color = Color(0xFFE8F5EC)
         ) {
 
-            Text(
-                text = "✓",
-                color = SuccessGreen,
-                fontSize = 42.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(
-                    horizontal = 22.dp,
-                    vertical = 12.dp
-                )
+            Icon(
+                imageVector = Icons.Outlined.Check,
+                contentDescription = null,
+                tint = SuccessGreen,
+                modifier = Modifier
+                    .padding(18.dp)
+                    .size(40.dp)
             )
         }
 

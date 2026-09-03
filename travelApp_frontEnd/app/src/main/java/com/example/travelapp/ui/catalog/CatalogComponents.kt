@@ -7,9 +7,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -17,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -24,7 +30,9 @@ import androidx.compose.ui.unit.dp
 import com.example.travelapp.data.remote.dto.dataLeggibile
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
+import com.example.travelapp.ui.components.AppIcons
 import com.example.travelapp.ui.components.AuthedAsyncImage
+import com.example.travelapp.ui.components.Orologio
 import com.example.travelapp.ui.components.StelleValutazione
 import com.example.travelapp.ui.theme.WarningBackground
 import com.example.travelapp.ui.theme.WarningYellow
@@ -155,20 +163,18 @@ fun ItinerarioCard(
                         itinerario.destinazionePrincipale
                             ?.let { destinazione ->
 
-                                Text(
-                                    text = "📍 $destinazione",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                DettaglioCard(
+                                    icona = Icons.Outlined.Place,
+                                    testo = destinazione
                                 )
                             }
 
                         itinerario.durataGiorni
                             ?.let { durata ->
 
-                                Text(
-                                    text = "📅 $durata giorni",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                DettaglioCard(
+                                    icona = Icons.Outlined.DateRange,
+                                    testo = "$durata giorni"
                                 )
                             }
                     }
@@ -327,26 +333,55 @@ fun SingolaAttivitaCard(
                         attivita.luogo
                             ?.let { luogo ->
 
-                                Text(
-                                    text = "📍 $luogo",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                DettaglioCard(
+                                    icona = Icons.Outlined.Place,
+                                    testo = luogo
                                 )
                             }
 
                         attivita.durataMinuti
                             ?.let { durata ->
 
-                                Text(
-                                    text = "⏱️ $durata min",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                DettaglioCard(
+                                    icona = AppIcons.Orologio,
+                                    testo = "$durata min"
                                 )
                             }
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * Riga "icona + testo" per le informazioni brevi sotto il titolo di una card.
+ *
+ * L'icona sostituisce l'emoji che c'era prima: stessa riga, ma disegno coerente con il
+ * resto dell'interfaccia invece di un glifo che cambia da un dispositivo all'altro.
+ */
+@Composable
+private fun DettaglioCard(
+    icona: ImageVector,
+    testo: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+
+        Icon(
+            imageVector = icona,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(14.dp)
+        )
+
+        Text(
+            text = testo,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
