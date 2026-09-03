@@ -11,12 +11,13 @@ ciclo: catalogo → prenotazione → pagamento → viaggio concluso → recensio
 membri del gruppo e i loro contributi:
 
 - Alessandro Curcio: 
-- occupato del lato experience:
-  - fatta la sezione degli itinerari preferiti, con le liste private e quelle condivise.
-  - messa l'opzione di poter lasciare commenti e recensioni sui viaggi fatti.
-  - fatto il caricamento delle immagini, dall'upload al salvataggio su disco.
-  - curato il lato sicurezza: validazione dei JWT, rate limiting, HTTPS e controllo sul tipo delle immagini caricate.
-  - lato frontend fatto un po' di tutto: soprattutto la sezione preferiti, ma anche aggiustamenti alle parti dei colleghi in explore, booking, profile e lato organizzatore.
+  -  Mi sono occupato principalmente del modulo experience, cioè di tutto quello che l'utente fa attorno al viaggio più che durante la prenotazione vera e propria.                                                               
+   Ho realizzato la sezione degli itinerari preferiti: l'utente può creare più liste, salvarci dentro i viaggi che gli interessano e decidere se tenerle private o condividerle con altri utenti, che da quel momento se le ritrovano tra le liste
+   condivise con loro.                                                                                                                                                                                                                              
+   Ho poi aggiunto la parte delle recensioni: chi ha concluso un viaggio può lasciare un voto e un commento, una sola volta per prenotazione, e allegare delle foto. A supporto c'è una notifica che invita a recensire i viaggi appena conclusi.   
+   Da lì è nato anche il caricamento delle immagini, che ho gestito dall'upload fino al salvataggio: i file non finiscono nel database ma vengono archiviati a parte e restituiti solo su richiesta autenticata.                                    
+   Mi sono infine occupato del lato sicurezza: validazione dei token JWT, permessi legati al ruolo dell'utente, rate limiting sulle richieste, HTTPS e controlli sui file caricati.                                                                 
+   Sul frontend ho fatto un po' di tutto: soprattutto la sezione preferiti, ma ho anche messo mano alle parti dei colleghi in explore, booking, profilo e lato organizzatore.
 
 
 - Alessandro Giancarelli:
