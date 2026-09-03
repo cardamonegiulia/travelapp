@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,7 +14,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.travelapp.domain.model.Itinerario
 import com.example.travelapp.domain.model.SingolaAttivita
 import com.example.travelapp.ui.theme.BackgroundLavender
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
@@ -24,7 +22,6 @@ fun CatalogScreen(
     onAttivitaClick: (SingolaAttivita) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
-
     Scaffold(
         containerColor = BackgroundLavender,
         topBar = {
@@ -50,16 +47,12 @@ fun CatalogScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
-
             Spacer(modifier = Modifier.height(12.dp))
-
             FiltriRow(
                 selezionato = state.filtroSelezionato,
                 onFiltroSelected = { viewModel.impostaFiltro(it) }
             )
-
             Spacer(modifier = Modifier.height(16.dp))
-
             when {
                 state.isLoading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -88,7 +81,6 @@ fun CatalogScreen(
         }
     }
 }
-
 @Composable
 private fun FiltriRow(
     selezionato: TipoFiltroCatalogo,
@@ -112,7 +104,6 @@ private fun FiltriRow(
         }
     }
 }
-
 @Composable
 private fun ListaCatalogo(
     state: CatalogUiState,
@@ -120,15 +111,12 @@ private fun ListaCatalogo(
     onAttivitaClick: (SingolaAttivita) -> Unit
 ) {
     val query = state.queryRicerca.trim().lowercase()
-
     val itinerariFiltrati = state.itinerari.filter {
         query.isEmpty() || it.titolo.lowercase().contains(query) || (it.descrizione?.lowercase()?.contains(query) == true)
     }
-
     val attivitaFiltrate = state.attivita.filter {
         query.isEmpty() || it.titolo.lowercase().contains(query) || (it.luogo?.lowercase()?.contains(query) == true)
     }
-
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize()
@@ -141,7 +129,6 @@ private fun ListaCatalogo(
                 )
             }
         }
-
         if (state.filtroSelezionato == TipoFiltroCatalogo.TUTTI || state.filtroSelezionato == TipoFiltroCatalogo.ATTIVITA) {
             items(attivitaFiltrate) { attivita ->
                 SingolaAttivitaCard(

@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import androidx.lifecycle.viewModelScope
 import com.example.travelapp.data.remote.ApiClient
 import com.example.travelapp.data.remote.dto.DisponibilitaItinerarioResponseDto
@@ -20,19 +19,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
 data class DetailUiState(
     val isLoading: Boolean = false,
     val disponibilitaItinerario: List<DisponibilitaItinerarioResponseDto> = emptyList(),
     val sessioniAttivita: List<SessioneAttivitaResponseDto> = emptyList(),
     val idSelezionato: Long? = null,
     val errorMessage: String? = null,
-
-    // Recensioni
     val recensioni: List<Recensione> = emptyList(),
     val recensioniInCaricamento: Boolean = false,
-
-    // Preferiti
     val listePreferiti: List<ListaPreferiti> = emptyList(),
     val listeConItinerario: Set<Long> = emptySet(),
     val preferitiInCaricamento: Boolean = false,
@@ -41,51 +35,35 @@ data class DetailUiState(
     val messaggioPreferiti: String? = null,
     val errorePreferiti: String? = null
 ) {
-
     val ePreferito: Boolean
         get() = listeConItinerario.isNotEmpty()
 }
-
 class DetailViewModel(
     application: android.app.Application
 ) : androidx.lifecycle.AndroidViewModel(application) {
-
     private val itinerarioRepository =
         ItinerarioRepository(
             ApiClient.getItinerarioApi(application)
         )
-
     private val attivitaRepository =
         SingolaAttivitaRepository(
             ApiClient.getSingolaAttivitaApi(application)
         )
-
     private val recensioneRepository =
         RecensioneRepository(
             ApiClient.getRecensioneApi(application)
         )
-
     private val preferitiRepository =
         PreferitiRepository(
             ApiClient.getPreferitiApi(application)
         )
-
     private val _uiState =
         MutableStateFlow(DetailUiState())
-
     val uiState: StateFlow<DetailUiState> =
         _uiState.asStateFlow()
-
-    /*
-     * ============================================================
-     * DISPONIBILITÀ ITINERARIO
-     * ============================================================
-     */
-
     fun caricaDisponibilitaItinerario(
         itinerarioId: Long
     ) {
-
         _uiState.update {
             it.copy(
                 isLoading = true,
@@ -93,37 +71,28 @@ class DetailViewModel(
                 idSelezionato = null
             )
         }
-
         viewModelScope.launch {
-
             val result =
                 itinerarioRepository
                     .getDisponibilitaItinerario(
                         itinerarioId
                     )
-
             if (result.isSuccess) {
-
                 val list =
                     result.getOrDefault(
                         emptyList()
                     )
-
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         disponibilitaItinerario = list,
-
-                        // Prima partenza realmente prenotabile
                         idSelezionato =
                             list.firstOrNull { disponibilita ->
                                 disponibilita.isPrenotabile()
                             }?.id
                     )
                 }
-
             } else {
-
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -136,31 +105,20 @@ class DetailViewModel(
             }
         }
     }
-
-    /*
-     * ============================================================
-     * RECENSIONI
-     * ============================================================
-     */
-
     fun caricaRecensioni(
         itinerarioId: Long
     ) {
-
         _uiState.update {
             it.copy(
                 recensioniInCaricamento = true
             )
         }
-
         viewModelScope.launch {
-
             val risultato =
                 recensioneRepository
                     .getRecensioniItinerario(
                         itinerarioId
                     )
-
             _uiState.update {
                 it.copy(
                     recensioniInCaricamento = false,
@@ -172,17 +130,9 @@ class DetailViewModel(
             }
         }
     }
-
-    /*
-     * ============================================================
-     * SESSIONI ATTIVITÀ
-     * ============================================================
-     */
-
     fun caricaSessioniAttivita(
         attivitaId: Long
     ) {
-
         _uiState.update {
             it.copy(
                 isLoading = true,
@@ -190,22 +140,17 @@ class DetailViewModel(
                 idSelezionato = null
             )
         }
-
         viewModelScope.launch {
-
             val result =
                 attivitaRepository
                     .getSessioniAttivita(
                         attivitaId
                     )
-
             if (result.isSuccess) {
-
                 val list =
                     result.getOrDefault(
                         emptyList()
                     )
-
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -214,9 +159,7 @@ class DetailViewModel(
                             list.firstOrNull()?.id
                     )
                 }
-
             } else {
-
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -229,46 +172,33 @@ class DetailViewModel(
             }
         }
     }
-
     fun selezionaSlot(
         id: Long
     ) {
-
         _uiState.update {
             it.copy(
                 idSelezionato = id
             )
         }
     }
-
-    /*
-     * ============================================================
-     * PREFERITI
-     * ============================================================
-     */
-
     fun caricaPreferiti(
         itinerarioId: Long
     ) {
-
         _uiState.update {
             it.copy(
                 preferitiInCaricamento = true,
                 errorePreferiti = null
             )
         }
-
         viewModelScope.launch {
             rileggiPreferiti(
                 itinerarioId
             )
         }
     }
-
     fun apriSelettorePreferiti(
         itinerarioId: Long
     ) {
-
         _uiState.update {
             it.copy(
                 selettorePreferitiAperto = true,
@@ -277,16 +207,13 @@ class DetailViewModel(
                 errorePreferiti = null
             )
         }
-
         viewModelScope.launch {
             rileggiPreferiti(
                 itinerarioId
             )
         }
     }
-
     fun chiudiSelettorePreferiti() {
-
         _uiState.update {
             it.copy(
                 selettorePreferitiAperto = false,
@@ -295,41 +222,33 @@ class DetailViewModel(
             )
         }
     }
-
     fun cambiaAppartenenzaLista(
         lista: ListaPreferiti,
         itinerarioId: Long
     ) {
-
         val eraDentro =
             lista.id in
                     _uiState
                         .value
                         .listeConItinerario
-
         val messaggio =
             if (eraDentro) {
                 "Rimosso da \"${lista.nome}\""
             } else {
                 "Salvato in \"${lista.nome}\""
             }
-
         esegui(
             messaggio = messaggio,
             itinerarioId = itinerarioId
         ) {
-
             if (eraDentro) {
-
                 preferitiRepository
                     .rimuoviItinerario(
                         lista.id,
                         itinerarioId
                     )
                     .map { }
-
             } else {
-
                 preferitiRepository
                     .aggiungiItinerario(
                         lista.id,
@@ -339,55 +258,43 @@ class DetailViewModel(
             }
         }
     }
-
     fun creaListaConItinerario(
         nome: String,
         itinerarioId: Long
     ) {
-
         if (nome.isBlank()) {
-
             _uiState.update {
                 it.copy(
                     errorePreferiti =
                         "Dai un nome alla lista"
                 )
             }
-
             return
         }
-
         val nomePulito =
             nome.trim()
-
         esegui(
             messaggio =
                 "Salvato in \"$nomePulito\"",
             itinerarioId =
                 itinerarioId
         ) {
-
             val creata =
                 preferitiRepository
                     .creaLista(
                         nomePulito,
                         VisibilitaLista.PRIVATA
                     )
-
             val nuova =
                 creata.getOrNull()
-
             if (nuova == null) {
-
                 Result.failure(
                     creata.exceptionOrNull()
                         ?: Exception(
                             "Errore nella creazione della lista"
                         )
                 )
-
             } else {
-
                 preferitiRepository
                     .aggiungiItinerario(
                         nuova.id,
@@ -397,9 +304,7 @@ class DetailViewModel(
             }
         }
     }
-
     fun messaggioPreferitiMostrato() {
-
         _uiState.update {
             it.copy(
                 messaggioPreferiti = null,
@@ -407,19 +312,11 @@ class DetailViewModel(
             )
         }
     }
-
-    /*
-     * ============================================================
-     * SUPPORTO PREFERITI
-     * ============================================================
-     */
-
     private fun esegui(
         messaggio: String,
         itinerarioId: Long,
         operazione: suspend () -> Result<Unit>
     ) {
-
         _uiState.update {
             it.copy(
                 operazionePreferitiInCorso = true,
@@ -427,14 +324,10 @@ class DetailViewModel(
                 messaggioPreferiti = null
             )
         }
-
         viewModelScope.launch {
-
             val risultato =
                 operazione()
-
             if (risultato.isFailure) {
-
                 _uiState.update {
                     it.copy(
                         operazionePreferitiInCorso = false,
@@ -444,14 +337,11 @@ class DetailViewModel(
                                 ?.message
                     )
                 }
-
                 return@launch
             }
-
             rileggiPreferiti(
                 itinerarioId
             )
-
             _uiState.update {
                 it.copy(
                     operazionePreferitiInCorso = false,
@@ -461,20 +351,15 @@ class DetailViewModel(
             }
         }
     }
-
     private suspend fun rileggiPreferiti(
         itinerarioId: Long
     ) {
-
         val risultato =
             preferitiRepository
                 .getMieListe()
-
         val liste =
             risultato.getOrNull()
-
         if (liste == null) {
-
             _uiState.update {
                 it.copy(
                     preferitiInCaricamento = false,
@@ -484,18 +369,13 @@ class DetailViewModel(
                             ?.message
                 )
             }
-
             return
         }
-
         val contenenti =
             coroutineScope {
-
                 liste
                     .map { lista ->
-
                         async {
-
                             lista.id to
                                     contieneItinerario(
                                         lista.id,
@@ -514,7 +394,6 @@ class DetailViewModel(
                     }
                     .toSet()
             }
-
         _uiState.update {
             it.copy(
                 preferitiInCaricamento = false,
@@ -524,12 +403,10 @@ class DetailViewModel(
             )
         }
     }
-
     private suspend fun contieneItinerario(
         listaId: Long,
         itinerarioId: Long
     ): Boolean {
-
         return preferitiRepository
             .getLista(listaId)
             .getOrNull()

@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,13 +48,6 @@ import com.example.travelapp.ui.theme.TextPrimary
 import com.example.travelapp.ui.theme.TextSecondary
 import com.example.travelapp.ui.theme.TravelBlue
 import com.example.travelapp.ui.util.formattaIntervalloDate
-
-/**
- * Le partenze di un itinerario dell'organizzatore, dalla piu' vicina.
- *
- * Presentazionale: le partenze gia' concluse non arrivano nemmeno, perche' e' il backend a
- * escluderle. Toccando un periodo si va all'elenco di chi lo ha prenotato.
- */
 @Composable
 fun PartenzeItinerarioScreen(
     state: PartenzeUiState,
@@ -68,16 +60,13 @@ fun PartenzeItinerarioScreen(
     onMessaggioMostrato: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-
     val snackbarHostState = remember { SnackbarHostState() }
-
     LaunchedEffect(state.messaggio) {
         state.messaggio?.let {
             snackbarHostState.showSnackbar(it)
             onMessaggioMostrato()
         }
     }
-
     state.partenzaDaEliminare?.let { partenza ->
         ConfermaEliminazionePartenza(
             partenza = partenza,
@@ -85,7 +74,6 @@ fun PartenzeItinerarioScreen(
             onAnnulla = onAnnullaEliminazione
         )
     }
-
     Scaffold(
         modifier = modifier,
         containerColor = BackgroundLavender,
@@ -98,9 +86,7 @@ fun PartenzeItinerarioScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-
         when {
-
             state.isLoading -> {
                 Box(
                     modifier = Modifier
@@ -111,7 +97,6 @@ fun PartenzeItinerarioScreen(
                     CircularProgressIndicator()
                 }
             }
-
             state.errore != null -> {
                 MessaggioErrore(
                     titolo = "Impossibile caricare le partenze",
@@ -120,7 +105,6 @@ fun PartenzeItinerarioScreen(
                     modifier = Modifier.padding(innerPadding)
                 )
             }
-
             state.partenze.isEmpty() -> {
                 Box(
                     modifier = Modifier
@@ -136,7 +120,6 @@ fun PartenzeItinerarioScreen(
                     )
                 }
             }
-
             else -> {
                 LazyColumn(
                     modifier = Modifier
@@ -145,7 +128,6 @@ fun PartenzeItinerarioScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-
                     item {
                         Text(
                             text = "Scegli un periodo per vedere chi si è prenotato. " +
@@ -155,7 +137,6 @@ fun PartenzeItinerarioScreen(
                             color = TextSecondary
                         )
                     }
-
                     items(
                         state.partenze,
                         key = { it.disponibilitaId }
@@ -172,8 +153,6 @@ fun PartenzeItinerarioScreen(
         }
     }
 }
-
-
 @Composable
 private fun PartenzaCard(
     partenza: PartenzaOrganizzatore,
@@ -181,7 +160,6 @@ private fun PartenzaCard(
     onElimina: () -> Unit,
     eliminazioneAbilitata: Boolean
 ) {
-
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
@@ -190,25 +168,20 @@ private fun PartenzaCard(
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Column(modifier = Modifier.weight(1f)) {
-
                 Text(
                     text = formattaIntervalloDate(partenza.dataInizio, partenza.dataFine),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
-
                 Spacer(Modifier.height(4.dp))
-
                 Text(
                     text = if (partenza.senzaPrenotazioni) {
                         "Nessuna prenotazione"
@@ -224,7 +197,6 @@ private fun PartenzaCard(
                         FontWeight.SemiBold
                     }
                 )
-
                 partenza.postiDisponibili?.let { posti ->
                     Spacer(Modifier.height(2.dp))
                     Text(
@@ -234,9 +206,6 @@ private fun PartenzaCard(
                     )
                 }
             }
-
-            // Il cestino sta dentro la riga cliccabile: essendo un IconButton si prende
-            // il tocco per conto suo e non apre l'elenco dei prenotati.
             IconButton(
                 onClick = onElimina,
                 enabled = eliminazioneAbilitata
@@ -248,7 +217,6 @@ private fun PartenzaCard(
                     modifier = Modifier.size(20.dp)
                 )
             }
-
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
@@ -258,19 +226,12 @@ private fun PartenzaCard(
         }
     }
 }
-
-
-/**
- * Conferma prima di eliminare: una partenza cancellata per sbaglio sparisce dal catalogo e
- * va ricreata a mano, quindi il tocco sul cestino da solo non basta.
- */
 @Composable
 private fun ConfermaEliminazionePartenza(
     partenza: PartenzaOrganizzatore,
     onConferma: () -> Unit,
     onAnnulla: () -> Unit
 ) {
-
     AlertDialog(
         onDismissRequest = onAnnulla,
         title = { Text("Eliminare questa partenza?") },
@@ -287,8 +248,6 @@ private fun ConfermaEliminazionePartenza(
             )
         },
         confirmButton = {
-            // Con delle prenotazioni attive il server rifiuterebbe comunque: meglio dirlo
-            // qui che far premere un pulsante destinato a fallire.
             TextButton(
                 onClick = onConferma,
                 enabled = partenza.senzaPrenotazioni
@@ -303,17 +262,8 @@ private fun ConfermaEliminazionePartenza(
         }
     )
 }
-
-
-/** "1 prenotazione" e non "1 prenotazioni". */
 internal fun etichettaPrenotazioni(numero: Long): String =
     if (numero == 1L) "1 prenotazione" else "$numero prenotazioni"
-
-
-/**
- * Errore a tutta schermata con il pulsante per riprovare: identico nelle due schermate
- * dell'organizzatore, quindi vive qui una volta sola.
- */
 @Composable
 internal fun MessaggioErrore(
     titolo: String,
@@ -321,7 +271,6 @@ internal fun MessaggioErrore(
     onRiprova: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -329,20 +278,17 @@ internal fun MessaggioErrore(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Text(
             text = titolo,
             style = MaterialTheme.typography.titleMedium,
             color = TextPrimary
         )
-
         Text(
             text = dettaglio,
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary,
             modifier = Modifier.padding(top = 8.dp)
         )
-
         Button(
             onClick = onRiprova,
             modifier = Modifier.padding(top = 16.dp)

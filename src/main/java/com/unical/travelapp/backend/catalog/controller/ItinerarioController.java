@@ -1,5 +1,4 @@
 package com.unical.travelapp.backend.catalog.controller;
-
 import com.unical.travelapp.backend.catalog.dto.AttivitaExtraDTO;
 import com.unical.travelapp.backend.catalog.dto.DisponibilitaItinerarioDTO;
 import com.unical.travelapp.backend.catalog.dto.ItinerarioDTO;
@@ -30,10 +29,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 import java.util.Map;
-
 @RestController
 @RequestMapping("/api/itinerari")
 @Tag(
@@ -42,28 +39,16 @@ import java.util.Map;
 )
 @SecurityRequirement(name = "bearerAuth")
 public class ItinerarioController {
-
     @Autowired
     private ItinerarioService itinerarioService;
-
     @Autowired
     private ItinerarioMapper itinerarioMapper;
-
     @Autowired
     private UtenteService utenteService;
-
     @Autowired
     private AuditLogger auditLogger;
-
     @Autowired
     private RecensioneService recensioneService;
-
-    /*
-     * ============================================================
-     * LETTURA ITINERARI
-     * ============================================================
-     */
-
     @GetMapping
     @Operation(
             summary = "Restituisce tutti gli itinerari paginati",
@@ -82,17 +67,8 @@ public class ItinerarioController {
     public ResponseEntity<Page<ItinerarioDTO>> getAllItinerari(
             @PageableDefault(size = 20) Pageable pageable
     ) {
-
         Page<Itinerario> itinerari =
                 itinerarioService.getAllItinerari(pageable);
-
-        /*
-         * Recuperiamo media e numero recensioni
-         * per l'intera pagina in una sola query.
-         *
-         * In questo modo evitiamo una chiamata
-         * separata per ogni card del catalogo.
-         */
         Map<Long, ValutazioneMediaDTO> valutazioni =
                 recensioneService.getValutazioni(
                         itinerari
@@ -101,7 +77,6 @@ public class ItinerarioController {
                                 .map(Itinerario::getId)
                                 .toList()
                 );
-
         return ResponseEntity.ok(
                 itinerari.map(
                         itinerario ->
@@ -114,7 +89,6 @@ public class ItinerarioController {
                 )
         );
     }
-
     @GetMapping("/{id}")
     @Operation(
             summary = "Restituisce un itinerario per id",
@@ -137,7 +111,6 @@ public class ItinerarioController {
     public ResponseEntity<ItinerarioDTO> getItinerarioById(
             @PathVariable Long id
     ) {
-
         Itinerario itinerario =
                 itinerarioService
                         .getItinerarioById(id)
@@ -147,7 +120,6 @@ public class ItinerarioController {
                                                 "Itinerario non trovato: " + id
                                         )
                         );
-
         return ResponseEntity.ok(
                 itinerarioMapper.toDTO(
                         itinerario,
@@ -155,13 +127,6 @@ public class ItinerarioController {
                 )
         );
     }
-
-    /*
-     * ============================================================
-     * DISPONIBILITÀ
-     * ============================================================
-     */
-
     @GetMapping("/{id}/disponibilita")
     @Operation(
             summary = "Restituisce le disponibilità di un itinerario",
@@ -171,7 +136,6 @@ public class ItinerarioController {
     getDisponibilitaByItinerario(
             @PathVariable Long id
     ) {
-
         return ResponseEntity.ok(
                 itinerarioMapper.toDisponibilitaDTO(
                         itinerarioService
@@ -179,13 +143,6 @@ public class ItinerarioController {
                 )
         );
     }
-
-    /*
-     * ============================================================
-     * ATTIVITÀ EXTRA
-     * ============================================================
-     */
-
     @GetMapping("/{id}/attivita-extra")
     @Operation(
             summary = "Restituisce le attività extra di un itinerario",
@@ -194,18 +151,10 @@ public class ItinerarioController {
     public ResponseEntity<List<AttivitaExtraDTO>> getAttivitaExtra(
             @PathVariable Long id
     ) {
-
         return ResponseEntity.ok(
                 itinerarioService.getAttivitaExtra(id)
         );
     }
-
-    /*
-     * ============================================================
-     * RECENSIONI
-     * ============================================================
-     */
-
     @GetMapping("/{id}/recensioni")
     @Operation(
             summary = "Restituisce le recensioni di un itinerario",
@@ -227,18 +176,15 @@ public class ItinerarioController {
             @PathVariable Long id,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-
         if (
                 itinerarioService
                         .getItinerarioById(id)
                         .isEmpty()
         ) {
-
             throw new ItinerarioNonTrovatoException(
                     "Itinerario non trovato: " + id
             );
         }
-
         return ResponseEntity.ok(
                 recensioneService
                         .getRecensioniDaItinerarioId(
@@ -247,13 +193,6 @@ public class ItinerarioController {
                         )
         );
     }
-
-    /*
-     * ============================================================
-     * CREAZIONE
-     * ============================================================
-     */
-
     @PostMapping
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(
@@ -285,23 +224,18 @@ public class ItinerarioController {
     public ResponseEntity<ItinerarioDTO> createItinerario(
             @Valid @RequestBody ItinerarioRequestDTO itinerarioRequest
     ) {
-
         Itinerario entity =
                 itinerarioMapper.fromRequest(
                         itinerarioRequest
                 );
-
         entity.setOrganizzatore(
                 utenteService.getUtenteSessione()
         );
-
         entity.setStato("BOZZA");
-
         Itinerario salvato =
                 itinerarioService.saveItinerario(
                         entity
                 );
-
         auditLogger.success(
                 "ITINERARIO_CREATO",
                 "Itinerario",
@@ -309,20 +243,12 @@ public class ItinerarioController {
                         salvato.getId()
                 )
         );
-
         return ResponseEntity.ok(
                 itinerarioMapper.toDTO(
                         salvato
                 )
         );
     }
-
-    /*
-     * ============================================================
-     * MODIFICA
-     * ============================================================
-     */
-
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(
@@ -356,12 +282,10 @@ public class ItinerarioController {
             @PathVariable Long id,
             @Valid @RequestBody ItinerarioRequestDTO itinerarioRequest
     ) {
-
         Itinerario entity =
                 itinerarioMapper.fromRequest(
                         itinerarioRequest
                 );
-
         Itinerario aggiornato =
                 itinerarioService.updateItinerario(
                         id,
@@ -369,26 +293,17 @@ public class ItinerarioController {
                         utenteService.getUtenteSessione(),
                         utenteService.isAdmin()
                 );
-
         auditLogger.success(
                 "ITINERARIO_MODIFICATO",
                 "Itinerario",
                 String.valueOf(id)
         );
-
         return ResponseEntity.ok(
                 itinerarioMapper.toDTO(
                         aggiornato
                 )
         );
     }
-
-    /*
-     * ============================================================
-     * ELIMINAZIONE
-     * ============================================================
-     */
-
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(
@@ -417,30 +332,20 @@ public class ItinerarioController {
     public ResponseEntity<Void> deleteItinerario(
             @PathVariable Long id
     ) {
-
         itinerarioService.deleteItinerario(
                 id,
                 utenteService.getUtenteSessione(),
                 utenteService.isAdmin()
         );
-
         auditLogger.success(
                 "ITINERARIO_ELIMINATO",
                 "Itinerario",
                 String.valueOf(id)
         );
-
         return ResponseEntity
                 .noContent()
                 .build();
     }
-
-    /*
-     * ============================================================
-     * IMMAGINI
-     * ============================================================
-     */
-
     @PostMapping(
             value = "/{id}/immagini",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -477,7 +382,6 @@ public class ItinerarioController {
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file
     ) {
-
         ImmagineResponse immagine =
                 itinerarioService.aggiungiImmagine(
                         id,
@@ -485,18 +389,15 @@ public class ItinerarioController {
                         utenteService.getUtenteSessione(),
                         utenteService.isAdmin()
                 );
-
         auditLogger.success(
                 "IMMAGINE_AGGIUNTA",
                 "Itinerario",
                 String.valueOf(id)
         );
-
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(immagine);
     }
-
     @GetMapping("/{id}/immagini")
     @Operation(
             summary = "Restituisce le immagini di un itinerario",
@@ -520,14 +421,12 @@ public class ItinerarioController {
     public ResponseEntity<List<ImmagineResponse>> getImmagini(
             @PathVariable Long id
     ) {
-
         return ResponseEntity.ok(
                 itinerarioService.getImmagini(
                         id
                 )
         );
     }
-
     @DeleteMapping("/{id}/immagini/{immagineId}")
     @PreAuthorize("hasAnyRole('ORGANIZZATORE', 'ADMIN')")
     @Operation(
@@ -556,20 +455,17 @@ public class ItinerarioController {
             @PathVariable Long id,
             @PathVariable Long immagineId
     ) {
-
         itinerarioService.rimuoviImmagine(
                 id,
                 immagineId,
                 utenteService.getUtenteSessione(),
                 utenteService.isAdmin()
         );
-
         auditLogger.success(
                 "IMMAGINE_RIMOSSA",
                 "Itinerario",
                 String.valueOf(id)
         );
-
         return ResponseEntity
                 .noContent()
                 .build();

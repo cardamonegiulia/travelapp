@@ -1,16 +1,12 @@
 package com.unical.travelapp.backend.catalog.repository;
-
 import com.unical.travelapp.backend.catalog.entity.Attivita;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
-
 @Repository
 public interface AttivitaRepository extends JpaRepository<Attivita, Long> {
-
     @Query("""
         SELECT a
         FROM Attivita a

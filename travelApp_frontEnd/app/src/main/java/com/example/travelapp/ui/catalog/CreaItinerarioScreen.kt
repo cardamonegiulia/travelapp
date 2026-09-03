@@ -1,5 +1,4 @@
 package com.example.travelapp.ui.catalog
-
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -46,15 +45,11 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-
 private const val GIORNO_MILLIS = 24L * 60 * 60 * 1000
-
 private fun formatterIso() =
     SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }
-
 private fun dataIsoInMillis(iso: String?): Long? =
     iso?.let { runCatching { formatterIso().parse(it)?.time }.getOrNull() }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreaItinerarioScreen(
@@ -65,12 +60,10 @@ fun CreaItinerarioScreen(
     val context = LocalContext.current
     val isModifica = itinerarioDaModificare != null
     val uiState by viewModel.uiState.collectAsState()
-
     val displayDateFormat = remember {
         SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply { timeZone = TimeZone.getTimeZone("UTC") }
     }
     val isoDateFormat = remember { formatterIso() }
-
     val oggiMillis = remember {
         Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
             set(Calendar.HOUR_OF_DAY, 0)
@@ -79,41 +72,22 @@ fun CreaItinerarioScreen(
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
     }
-
     val durataIniziale = (itinerarioDaModificare?.durataGiorni ?: 7).coerceAtLeast(1)
-
-    /*
-     * In modifica le date NON sono quelle gia' pubblicate: una partenza venduta non si
-     * sposta. I campi descrivono sempre una partenza nuova, quindi partono da una data
-     * futura anche quando l'itinerario ne ha gia' altre.
-     */
     val inizioIniziale = remember { oggiMillis + 7L * GIORNO_MILLIS }
     val fineIniziale = remember { inizioIniziale + (durataIniziale - 1) * GIORNO_MILLIS }
-
     var dataInizioMillis by remember { mutableStateOf(inizioIniziale) }
     var dataFineMillis by remember { mutableStateOf(fineIniziale) }
     var dataLimiteMillis by remember { mutableStateOf<Long?>(null) }
-
-    // Creando un itinerario la prima partenza e' obbligatoria; modificandolo aggiungerne
-    // una e' una scelta, e di norma si sta cambiando altro (prezzo, foto, descrizione).
     var aggiungiPartenza by remember { mutableStateOf(!isModifica) }
-
     var mostraDatePickerInizio by remember { mutableStateOf(false) }
     var mostraDatePickerFine by remember { mutableStateOf(false) }
     var mostraDatePickerLimite by remember { mutableStateOf(false) }
-
     var titolo by remember { mutableStateOf(itinerarioDaModificare?.titolo ?: "") }
     var descrizione by remember { mutableStateOf(itinerarioDaModificare?.descrizione ?: "") }
     var destinazione by remember { mutableStateOf(itinerarioDaModificare?.destinazionePrincipale ?: "") }
     var prezzoInput by remember { mutableStateOf(itinerarioDaModificare?.prezzoBase?.toString() ?: "") }
     var maxPartecipantiInput by remember { mutableStateOf(itinerarioDaModificare?.maxPartecipanti?.toString() ?: "20") }
     var immaginiUri by remember { mutableStateOf<List<Uri>>(emptyList()) }
-
-    /*
-     * Programma giorno per giorno. In modifica si riparte da quello gia' pubblicato; in
-     * creazione da una giornata vuota, perche' almeno una e' obbligatoria e presentare
-     * l'elenco gia' aperto e' piu' chiaro di un pulsante "aggiungi" isolato.
-     */
     var programma by remember {
         mutableStateOf(
             itinerarioDaModificare
@@ -123,7 +97,6 @@ fun CreaItinerarioScreen(
                 ?: listOf(GiornataForm())
         )
     }
-
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris: List<Uri> ->
@@ -131,27 +104,19 @@ fun CreaItinerarioScreen(
             immaginiUri = (immaginiUri + uris).distinct()
         }
     }
-
     val prezzoNumerico = prezzoInput.replace(",", ".").toDoubleOrNull()
     val isPrezzoValido = prezzoNumerico != null && prezzoNumerico > 0.0
-
     val durataCalcolata = (((dataFineMillis - dataInizioMillis) / GIORNO_MILLIS) + 1).toInt()
     val isInizioValido = dataInizioMillis >= oggiMillis
     val isPeriodoValido = isInizioValido && dataFineMillis >= dataInizioMillis
     val isLimiteValido = dataLimiteMillis?.let { it in oggiMillis..dataInizioMillis } ?: true
-
     val partecipantiNumerici = maxPartecipantiInput.toIntOrNull()
     val isPartecipantiValidi = partecipantiNumerici != null && partecipantiNumerici > 0
-
     val isPeriodoRichiestoValido = !aggiungiPartenza || (isPeriodoValido && isLimiteValido)
-
-    // Il programma e' obbligatorio quanto il titolo: almeno una giornata, tutte compilate.
     val isProgrammaValido = programma.isNotEmpty() &&
             programma.all { it.titolo.isNotBlank() && it.descrizione.isNotBlank() }
-
     val isFormValido = titolo.isNotBlank() && destinazione.isNotBlank() && isPrezzoValido &&
             isPeriodoRichiestoValido && isPartecipantiValidi && isProgrammaValido
-
     if (mostraDatePickerInizio) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = dataInizioMillis,
@@ -187,7 +152,6 @@ fun CreaItinerarioScreen(
             DatePicker(state = datePickerState, title = { Text("Seleziona data di inizio", modifier = Modifier.padding(16.dp)) })
         }
     }
-
     if (mostraDatePickerFine) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = dataFineMillis,
@@ -218,7 +182,6 @@ fun CreaItinerarioScreen(
             DatePicker(state = datePickerState, title = { Text("Seleziona data di fine", modifier = Modifier.padding(16.dp)) })
         }
     }
-
     if (mostraDatePickerLimite) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = dataLimiteMillis ?: dataInizioMillis,
@@ -252,7 +215,6 @@ fun CreaItinerarioScreen(
             )
         }
     }
-
     LaunchedEffect(uiState.salvataggioCompletato) {
         if (uiState.salvataggioCompletato) {
             Toast.makeText(
@@ -264,13 +226,11 @@ fun CreaItinerarioScreen(
             onBack()
         }
     }
-
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
         }
     }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -305,7 +265,6 @@ fun CreaItinerarioScreen(
                 fontSize = 12.sp,
                 color = TravelTextMuted
             )
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -327,8 +286,6 @@ fun CreaItinerarioScreen(
                         Text("Aggiungi foto", color = TravelTextMuted, fontSize = 12.sp)
                     }
                 }
-
-                // Foto già esistenti in modifica (se presenti e nessuna nuova selezionata o da affiancare)
                 if (immaginiUri.isEmpty() && isModifica) {
                     itinerarioDaModificare.immagini.forEach { img ->
                         Box(
@@ -345,8 +302,6 @@ fun CreaItinerarioScreen(
                         }
                     }
                 }
-
-                // Nuove foto selezionate localmente
                 immaginiUri.forEachIndexed { index, uri ->
                     Box(
                         modifier = Modifier
@@ -377,7 +332,6 @@ fun CreaItinerarioScreen(
                     }
                 }
             }
-
             OutlinedTextField(
                 value = titolo,
                 onValueChange = { if (it.length <= 150) titolo = it },
@@ -386,7 +340,6 @@ fun CreaItinerarioScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-
             OutlinedTextField(
                 value = destinazione,
                 onValueChange = { if (it.length <= 150) destinazione = it },
@@ -395,7 +348,6 @@ fun CreaItinerarioScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-
             OutlinedTextField(
                 value = descrizione,
                 onValueChange = { if (it.length <= 5000) descrizione = it },
@@ -404,7 +356,6 @@ fun CreaItinerarioScreen(
                 minLines = 4,
                 modifier = Modifier.fillMaxWidth()
             )
-
             SezioneProgramma(
                 programma = programma,
                 onGiornataCambiata = { indice, giornata ->
@@ -419,7 +370,6 @@ fun CreaItinerarioScreen(
                     programma = programma + GiornataForm()
                 }
             )
-
             if (isModifica) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -440,14 +390,12 @@ fun CreaItinerarioScreen(
                             fontSize = 13.sp
                         )
                     }
-
                     Switch(
                         checked = aggiungiPartenza,
                         onCheckedChange = { aggiungiPartenza = it }
                     )
                 }
             }
-
             if (aggiungiPartenza) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -468,7 +416,6 @@ fun CreaItinerarioScreen(
                             .weight(1f)
                             .clickable { mostraDatePickerInizio = true }
                     )
-
                     OutlinedTextField(
                         value = displayDateFormat.format(Date(dataFineMillis)),
                         onValueChange = {},
@@ -485,7 +432,6 @@ fun CreaItinerarioScreen(
                             .clickable { mostraDatePickerFine = true }
                     )
                 }
-
                 Text(
                     text = when {
                         !isInizioValido -> "La data di inizio non puo' essere nel passato"
@@ -495,7 +441,6 @@ fun CreaItinerarioScreen(
                     color = if (isPeriodoValido) TravelTextMuted else MaterialTheme.colorScheme.error,
                     fontSize = 13.sp
                 )
-
                 OutlinedTextField(
                     value = dataLimiteMillis?.let { displayDateFormat.format(Date(it)) }
                         ?: "Nessun limite: si prenota fino alla partenza",
@@ -526,7 +471,6 @@ fun CreaItinerarioScreen(
                         .clickable { mostraDatePickerLimite = true }
                 )
             }
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -542,7 +486,6 @@ fun CreaItinerarioScreen(
                     modifier = Modifier.weight(1f),
                     isError = prezzoInput.isNotEmpty() && !isPrezzoValido
                 )
-
                 OutlinedTextField(
                     value = maxPartecipantiInput,
                     onValueChange = { input -> if (input.all { it.isDigit() }) maxPartecipantiInput = input },
@@ -553,7 +496,6 @@ fun CreaItinerarioScreen(
                     isError = maxPartecipantiInput.isNotEmpty() && !isPartecipantiValidi
                 )
             }
-
             Surface(
                 shape = RoundedCornerShape(10.dp),
                 color = TravelChipBg,
@@ -572,9 +514,7 @@ fun CreaItinerarioScreen(
                     )
                 }
             }
-
             Spacer(Modifier.height(10.dp))
-
             Button(
                 onClick = {
                     if (isFormValido && !uiState.isSalvataggioInCorso) {
@@ -586,9 +526,6 @@ fun CreaItinerarioScreen(
                                 descrizione = descrizione,
                                 destinazionePrincipale = destinazione,
                                 prezzoBase = BigDecimal(prezzoNumerico!!),
-                                // Senza una nuova partenza non si inviano date: il server
-                                // le interpreterebbe come una partenza in piu'. La durata
-                                // va comunque mandata, perche' deve restare determinabile.
                                 dataInizio = if (aggiungiPartenza) isoDateFormat.format(Date(dataInizioMillis)) else null,
                                 dataFine = if (aggiungiPartenza) isoDateFormat.format(Date(dataFineMillis)) else null,
                                 dataLimitePrenotazione = if (aggiungiPartenza) {
@@ -598,8 +535,6 @@ fun CreaItinerarioScreen(
                                 },
                                 durataGiorni = if (aggiungiPartenza) null else durataIniziale,
                                 maxPartecipanti = partecipantiNumerici!!,
-                                // Il numero della giornata lo assegna il server dalla
-                                // posizione: qui conta solo l'ordine dell'elenco.
                                 programma = programma.map {
                                     GiornoProgrammaDto(
                                         titolo = it.titolo.trim(),
@@ -636,19 +571,10 @@ fun CreaItinerarioScreen(
         }
     }
 }
-/** Una giornata del programma mentre la si sta scrivendo: ancora senza numero, che assegna il server. */
 private data class GiornataForm(
     val titolo: String = "",
     val descrizione: String = ""
 )
-
-/**
- * Editor del programma dell'itinerario: l'elenco delle giornate che il viaggiatore legge
- * nella scheda prima di prenotare.
- *
- * Le giornate sono numerate dalla posizione, quindi eliminandone una le successive si
- * rinumerano da sole. L'ultima non e' eliminabile: il programma e' obbligatorio.
- */
 @Composable
 private fun SezioneProgramma(
     programma: List<GiornataForm>,
@@ -656,55 +582,44 @@ private fun SezioneProgramma(
     onRimuoviGiornata: (Int) -> Unit,
     onAggiungiGiornata: () -> Unit
 ) {
-
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
         Text(
             text = "PROGRAMMA DELL'ITINERARIO",
             fontWeight = FontWeight.Bold,
             fontSize = 12.sp,
             color = TravelTextMuted
         )
-
         Text(
             text = "Racconta cosa si fa giorno per giorno: è quello che il viaggiatore " +
                     "legge per capire cosa sta prenotando. Serve almeno una giornata.",
             color = TravelTextMuted,
             fontSize = 13.sp
         )
-
         programma.forEachIndexed { indice, giornata ->
-
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = TravelSurface,
                 border = BorderStroke(1.dp, TravelBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
-
                 Column(
                     modifier = Modifier.padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-
                         Text(
                             text = "Giorno ${indice + 1}",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = TravelTextDark
                         )
-
-                        // Con una sola giornata il cestino sparisce: toglierla lascerebbe
-                        // l'itinerario senza programma, che non e' uno stato salvabile.
                         if (programma.size > 1) {
                             IconButton(onClick = { onRimuoviGiornata(indice) }) {
                                 Icon(
@@ -715,7 +630,6 @@ private fun SezioneProgramma(
                             }
                         }
                     }
-
                     OutlinedTextField(
                         value = giornata.titolo,
                         onValueChange = { nuovo ->
@@ -729,7 +643,6 @@ private fun SezioneProgramma(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-
                     OutlinedTextField(
                         value = giornata.descrizione,
                         onValueChange = { nuovo ->
@@ -746,7 +659,6 @@ private fun SezioneProgramma(
                 }
             }
         }
-
         OutlinedButton(
             onClick = onAggiungiGiornata,
             shape = RoundedCornerShape(10.dp),
