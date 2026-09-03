@@ -16,7 +16,6 @@ public interface PagamentoRepository extends JpaRepository<Pagamento, Long> {
 
     List<Pagamento> findByPrenotazioneIdIn(List<Long> prenotazioneIds);
 
-    // Recupera lo storico dei pagamenti associati alle prenotazioni di un utente.
     Page<Pagamento> findByPrenotazioneViaggiatoreId(
             Long viaggiatoreId,
             Pageable pageable

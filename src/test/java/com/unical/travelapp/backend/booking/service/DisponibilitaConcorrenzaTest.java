@@ -80,9 +80,6 @@ class DisponibilitaConcorrenzaTest {
             );
 
         } finally {
-
-            // Dopo un errore di optimistic locking
-            // la seconda transazione va annullata
             if (em2.getTransaction().isActive()) {
                 em2.getTransaction().rollback();
             }

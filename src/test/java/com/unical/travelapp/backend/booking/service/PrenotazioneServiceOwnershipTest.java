@@ -25,9 +25,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-
-// Verifica il fix BOLA: getPrenotazioneById/getPrenotazioniByUtente usano l'ownership
-// nella query (404 se la prenotazione non e' dell'utente corrente), non un semplice findById.
 @ExtendWith(MockitoExtension.class)
 class PrenotazioneServiceOwnershipTest {
 
